@@ -1,0 +1,39 @@
+# 2000.exe 项目全局开发规约
+
+## 1. 项目背景与视觉灵魂 (Vibe)
+- **项目名称**：2000.exe (赛博树洞 / Cyber Dream Space)
+- **核心视觉**：Y2K (千禧年复古赛博风)。
+- **UI 规范**：使用高饱和度颜色（霓虹紫 #bc00ff, 赛博蓝 #00f0ff, 荧光绿 #39ff14）。
+- **组件风格**：Windows 95/98 立体边框、像素风图标、扫描线效果、发光（Glow）特效。
+- **动效**：打字机效果、闪烁光标、复古转场。
+
+## 2. 技术栈约束 (Tech Stack)
+- **Monorepo 结构**：
+  - `/frontend`: React + TypeScript + TailwindCSS + Vite.
+  - `/backend`: Python 3.10+ + FastAPI + Uvicorn + WebSockets.
+- **前端规范**：
+  - 优先使用 TailwindCSS 进行样式编写，严禁在组件内写长串 inline-style。
+  - 组件采用 函数式组件 (Functional Components) + Hooks。
+  - 状态管理：优先使用 React Context 或简单的 Zustand。
+- **后端规范 (FastAPI 核心)**：
+  - 路由与函数必须使用异步处理 (`async def`)，确保高并发下的非阻塞。
+  - 数据校验：强制使用 `Pydantic` 模型 (BaseModel) 定义请求体和响应体，严禁裸写字典传参。
+  - WebSocket：使用 FastAPI 自带的 `WebSocket` 类，必须建立专门的 `ConnectionManager` 来管理在线用户、广播消息和掉线清理。
+  - 依赖注入：使用 `Depends` 处理公共逻辑（如指纹校验、频率限制等）。
+  - 环境管理：使用 `requirements.txt` 或 `Pipfile`，代码中需使用 `python-dotenv` 加载环境变量（如 AI 模型的 API Key）。
+
+## 3. Cursor 行为准则 (AI Instructions)
+- **跨文件思考**：在修改前端请求代码时，请自动检查 `@backend/main.py` 或相关路由下的 Pydantic Schema 是否匹配。
+- **代码合并**：使用 `Ctrl+I` 生成代码时，请确保不破坏原有的 Y2K 样式类名。
+- **Terminal 操作**：涉及依赖安装或服务启动时，请明确区分目录（例如：`cd frontend && npm install` 或 `cd backend && pip install -r requirements.txt`）。如果是启动后端，请使用 `uvicorn main:app --reload`。
+- **自动纠错**：如果检测到我正在编写原生微信小程序语法，请提醒我当前项目是“React 跨端 H5”架构。
+
+## 4. 业务逻辑要点
+- **匿名机制**：前端不存储真实用户信息，仅存储临时分配的 `cyber_name` 和随机生成的设备指纹 UUID。
+- **内容安全**：所有后端接口和消息广播前，必须在 FastAPI 路由中预留 `content_moderation` 拦截器/依赖。
+- **AI Agent 集成**：所有房间的“气氛组”AI 逻辑应独立封装在 `/backend/services/ai_agent.py` 中，保持主路由的清爽。
+
+## 5. 常用 UI 样式参考 (Tailwind Classes)
+- **发光文本**：`text-neon-purple shadow-[0_0_10px_#bc00ff]`
+- **复古容器**：`border-2 border-t-white border-l-white border-b-gray-800 border-r-gray-800 bg-gray-300`
+- **黑客背景**：`bg-[#050505] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]`

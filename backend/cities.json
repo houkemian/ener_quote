@@ -1,0 +1,51 @@
+[
+  {
+    "id": "sao_paulo",
+    "lat": -23.5505,
+    "lon": -46.6333,
+    "is_pro_only": false,
+    "name": { "zh": "🇧🇷 圣保罗 (巴西)", "en": "🇧🇷 São Paulo (Brazil)" }
+  },
+  {
+    "id": "mexico_city",
+    "lat": 19.4326,
+    "lon": -99.1332,
+    "is_pro_only": false,
+    "name": { "zh": "🇲🇽 墨西哥城 (墨西哥)", "en": "🇲🇽 Mexico City (Mexico)" }
+  },
+  {
+    "id": "santiago",
+    "lat": -33.4489,
+    "lon": -70.6693,
+    "is_pro_only": false,
+    "name": { "zh": "🇨🇱 圣地亚哥 (智利)", "en": "🇨🇱 Santiago (Chile)" }
+  },
+  {
+    "id": "munich",
+    "lat": 48.1351,
+    "lon": 11.5820,
+    "is_pro_only": false,
+    "name": { "zh": "🇩🇪 慕尼黑 (德国)", "en": "🇩🇪 Munich (Germany)" }
+  },
+  {
+    "id": "madrid",
+    "lat": 40.4168,
+    "lon": -3.7038,
+    "is_pro_only": false,
+    "name": { "zh": "🇪🇸 马德里 (西班牙)", "en": "🇪🇸 Madrid (Spain)" }
+  },
+  {
+    "id": "johannesburg",
+    "lat": -26.2041,
+    "lon": 28.0473,
+    "is_pro_only": false,
+    "name": { "zh": "🇿🇦 约翰内斯堡 (南非)", "en": "🇿🇦 Johannesburg (South Africa)" }
+  },
+  {
+    "id": "sydney",
+    "lat": -33.8688,
+    "lon": 151.2093,
+    "is_pro_only": false,
+    "name": { "zh": "🇦🇺 悉尼 (澳大利亚)", "en": "🇦🇺 Sydney (Australia)" }
+  }
+]

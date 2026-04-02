@@ -1,0 +1,4632 @@
+
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\analysis_options.yaml
+============================================================
+
+# This file configures the analyzer, which statically analyzes Dart code to
+# check for errors, warnings, and lints.
+#
+# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
+# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
+# invoked from the command line by running `flutter analyze`.
+
+# The following line activates a set of recommended lints for Flutter apps,
+# packages, and plugins designed to encourage good coding practices.
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  # The lint rules applied to this project can be customized in the
+  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
+  # included above or to enable additional rules. A list of all available lints
+  # and their documentation is published at https://dart.dev/lints.
+  #
+  # Instead of disabling a lint rule for the entire project in the
+  # section below, it can also be suppressed for a single line of code
+  # or a specific dart file by using the `// ignore: name_of_lint` and
+  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
+  # producing the lint.
+  rules:
+    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
+    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+
+# Additional information about this file can be found at
+# https://dart.dev/guides/language/analysis-options
+
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\l10n.yaml
+============================================================
+
+arb-dir: lib/l10n
+template-arb-file: app_zh.arb
+output-localization-file: app_localizations.dart
+
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\pubspec.yaml
+============================================================
+
+name: pv_ess_quote_frontend
+description: "A new Flutter project."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+# The following defines the version and build number for your application.
+# A version number is three numbers separated by dots, like 1.2.43
+# followed by an optional build number separated by a +.
+# Both the version and the builder number may be overridden in flutter
+# build by specifying --build-name and --build-number, respectively.
+# In Android, build-name is used as versionName while build-number used as versionCode.
+# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
+# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
+# Read more about iOS versioning at
+# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+# In Windows, build-name is used as the major, minor, and patch parts
+# of the product and file versions while build-number is used as the build suffix.
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.0
+
+# Dependencies specify other packages that your package needs in order to work.
+# To automatically upgrade your package dependencies to the latest versions
+# consider running `flutter pub upgrade --major-versions`. Alternatively,
+# dependencies can be manually updated by changing the version numbers below to
+# the latest version available on pub.dev. To see which dependencies have newer
+# versions available, run `flutter pub outdated`.
+dependencies:
+  flutter:
+    sdk: flutter
+    # 🌟 1. 引入系统多语言支持包
+  flutter_localizations:
+    sdk: flutter
+  intl: any # 国际化格式化核心库
+
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  cupertino_icons: ^1.0.8
+  fl_chart: ^1.1.1
+  http: ^1.6.0
+  google_fonts: ^8.0.2
+  pdf: ^3.11.3
+  printing: ^5.14.2
+  path_provider: ^2.1.5
+  shared_preferences: ^2.5.4
+  dio: ^5.9.1
+  url_launcher: ^6.3.2
+  image_picker: ^1.2.1
+  sentry_flutter: ^9.14.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_launcher_icons: ^0.13.1   # 🌟 新增：图标生成器
+  flutter_native_splash: ^2.3.6     # 🌟 新增：闪屏生成器
+
+  # The "flutter_lints" package below contains a set of recommended lints to
+  # encourage good coding practices. The lint set provided by the package is
+  # activated in the `analysis_options.yaml` file located at the root of your
+  # package. See that file for information about deactivating specific lint
+  # rules and activating additional ones.
+  flutter_lints: ^6.0.0
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+
+# The following section is specific to Flutter packages.
+flutter:
+  assets:
+    - assets/fonts/NotoSansSC-VariableFont_wght.ttf
+    - assets/images/
+
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+  # 🌟 2. 极其重要：开启自动生成语言代码的开关！
+  generate: true
+
+  # To add assets to your application, add an assets section, like this:
+  # assets:
+  #   - images/a_dot_burr.jpeg
+  #   - images/a_dot_ham.jpeg
+
+  # An image asset can refer to one or more resolution-specific "variants", see
+  # https://flutter.dev/to/resolution-aware-images
+
+  # For details regarding adding assets from package dependencies, see
+  # https://flutter.dev/to/asset-from-package
+
+  # To add custom fonts to your application, add a fonts section here,
+  # in this "flutter" section. Each entry in this list should have a
+  # "family" key with the font family name, and a "fonts" key with a
+  # list giving the asset and other descriptors for the font. For
+  # example:
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+  #   - family: Trajan Pro
+  #     fonts:
+  #       - asset: fonts/TrajanPro.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+  #
+  # For details regarding fonts from package dependencies,
+  # see https://flutter.dev/to/font-from-package
+
+# ==========================================
+# 1. 桌面图标配置 (App Icon)
+# ==========================================
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.png"
+  # 针对安卓高版本的自适应图标优化（可选，底色使用深色）
+  adaptive_icon_background: "#0F172A"
+  adaptive_icon_foreground: "assets/images/logo.png"
+
+# ==========================================
+# 2. 启动屏配置 (Splash Screen)
+# ==========================================
+flutter_native_splash:
+  color: "#0F172A" # 🌟 你的 App 品牌底色
+  image: "assets/images/logo.png"
+  android: true
+  ios: true
+  android_gravity: center
+  ios_content_mode: center
+  # 适配 Android 12+ 的全新闪屏规范
+  android_12:
+    image: "assets/images/logo.png"
+    color: "#0F172A"
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\lib\main.dart
+============================================================
+
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'; // 👈 引入
+import 'l10n/app_localizations.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'screens/dashboard_screen.dart';
+import 'screens/login_screen.dart';
+import 'package:flutter/services.dart'; // 🌟 1. 引入系统服务包
+import 'screens/login_screen.dart';
+import 'package:flutter/services.dart';
+import 'package:sentry_flutter/sentry_flutter.dart'; // 🌟 新增：引入探针
+
+
+// 🌟 新增：打造一把全局路由的“万能钥匙”
+final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
+
+void main() async {
+  // 🌟 1. 必须加这一行：确保 Flutter 引擎准备就绪
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 🌟 2. 强制锁死为横屏！
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
+
+  // 🌟 启动 Sentry 监控探针
+  await SentryFlutter.init(
+        (options) {
+      // ⚠️ 这里填入你在 Sentry 官网免费注册后拿到的专属 DSN 链接
+      options.dsn = 'https://076f74fbdfa1fe859e616b25d86a0850@o4511063897604096.ingest.us.sentry.io/4511063903174656';
+
+      // 设置为 1.0 代表 100% 收集性能追踪数据（初期强烈建议全量收集）
+      options.tracesSampleRate = 1.0;
+
+      // 开启未捕获异常的自动记录
+      options.enableAutoSessionTracking = true;
+    },
+    appRunner: () => runApp(const PvEssQuoteApp()), // 你的主程序放这里
+  );
+}
+
+
+class PvEssQuoteApp extends StatelessWidget {
+  const PvEssQuoteApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      navigatorKey: globalNavigatorKey, // 🌟 核心：把这把钥匙插进 App 的大门上！
+      title: 'Quote Master',
+      debugShowCheckedModeBanner: false, // 隐藏右上角的 Debug 标签
+
+      // 🌟 核心：挂载多语言引擎
+      localizationsDelegates: const [
+        AppLocalizations.delegate, // 你的语言包字典
+        GlobalMaterialLocalizations.delegate, // Flutter 基础组件的多语言
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      // 🌟 声明你的 App 支持哪些语言
+      supportedLocales: const [
+        Locale('zh'), // 中文
+        Locale('en'), // 英语
+        Locale('es'), // 西班牙语 (拉美备用)
+        Locale('pt'), // 葡萄牙语 (巴西备用)
+      ],
+
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        // 极客深藏青底色
+        scaffoldBackgroundColor: const Color(0xFF121826),
+        // 全局字体：使用 Google Fonts 的 Inter 字体，数字部分极其工整
+        textTheme: GoogleFonts.interTextTheme(
+          Theme.of(context).textTheme,
+        ).apply(bodyColor: Colors.white, displayColor: Colors.white),
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF00E676), // 全局点缀色：代表收益与能量的荧光绿
+          surface: Color(0xFF1E293B), // 卡片底色
+        ),
+        useMaterial3: true,
+      ),
+      home: const LoginScreen(),
+    );
+  }
+}
+
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\lib\core\network\api_client.dart
+============================================================
+
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart'; // 🌟 引入 UI 库
+import '../../main.dart'; // 🌟 引入全局钥匙
+import '../../screens/login_screen.dart'; // 🌟 引入登录页
+import '../../l10n/app_localizations.dart'; // 👈 新增这行
+
+class ApiClient {
+  // 1. 单例模式：确保全局只生成一个 ApiClient 实例
+  static final ApiClient _instance = ApiClient._internal();
+  factory ApiClient() => _instance;
+
+  late Dio dio;
+
+  ApiClient._internal() {
+    // 2. 统一基础配置 (Base URL)
+    BaseOptions options = BaseOptions(
+      // 🌟 统一切换开关：
+      // 模拟器用：http://10.0.2.2:8000/api/v1
+      // 真机用：http://192.168.x.x:8000/api/v1 (你的电脑局域网 IP)
+      // baseUrl: 'http://10.1.50.211:8000/api/v1',
+      // 🌟 核心修改：枪口一致对外，直连 AWS 生产服务器！
+      baseUrl: 'https://dothings.one/api/v1',
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+    );
+
+    dio = Dio(options);
+
+    final l10n = AppLocalizations.of(globalNavigatorKey.currentContext!)!;
+
+
+    // 3. 🌟 核心魔法：全局拦截器 (Interceptor)
+    dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        // 如果是登录接口，不需要 Token，直接放行
+        if (options.path.contains('/auth/login')) {
+          print("/auth/login");
+          return handler.next(options);
+        }
+
+        // ⚠️ 其他所有接口：自动去本地掏出 Token，悄悄塞进请求头！
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('jwt_token');
+
+        if (token != null) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+
+        // 放行请求，带着 Token 飞向后端
+        return handler.next(options);
+      },
+      onError: (DioException e, handler) async {
+        // 🌟 全局 401 拦截：Token 过期或被篡改，自动踢回登录页！
+        if (e.response?.statusCode == 401) {
+          print("🔒 [全局拦截] Token 无效或已过期！强制登出...");
+
+
+          // 1. 彻底撕毁本地所有缓存
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('jwt_token');
+          await prefs.remove('user_tier');
+
+          // 2. 使用万能钥匙跨层级操作 UI
+          if (globalNavigatorKey.currentContext != null) {
+            // 弹出无情警告
+            ScaffoldMessenger.of(globalNavigatorKey.currentContext!).showSnackBar(
+              SnackBar(
+                content: Text(l10n.sessionExpired),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+            // 摧毁所有历史路由，强制押送回登录页
+            globalNavigatorKey.currentState?.pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+            );
+          }
+        }
+        return handler.next(e);
+      },
+    ));
+  }
+
+  // 🌟 呼叫云端印钞机：获取 Stripe 专属支付链接
+  Future<String?> getStripeCheckoutUrl() async {
+    try {
+      // 这里的 dio 就是你代码里已经初始化的那个实例
+      final response = await dio.post('/payment/checkout');
+      if (response.statusCode == 200 && response.data != null) {
+        return response.data['checkout_url']; // 拿到那条神圣的 URL
+      }
+      return null;
+    } catch (e) {
+      print("❌ 获取支付链接失败: $e");
+      rethrow;
+    }
+  }
+// 🌟 刷新本地门禁卡
+  Future<String?> refreshUserToken() async {
+    try {
+      final response = await dio.post('/auth/refresh');
+      if (response.statusCode == 200) {
+        final newToken = response.data['access_token'];
+        final newTier = response.data['tier'];
+
+        // 瞬间替换本地缓存，完成无感升级
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('jwt_token', newToken);
+        await prefs.setString('user_tier', newTier);
+
+        return newTier;
+      }
+      return null;
+    } catch (e) {
+      print("❌ Token 刷新失败: $e");
+      return null;
+    }
+  }
+
+  // 🌟 动态拉取云端城市列表
+  Future<List<dynamic>> getSupportedCities() async {
+    try {
+      final response = await dio.get('/locations/cities');
+      return response.data as List<dynamic>;
+    } catch (e) {
+      print("❌ 获取城市列表失败: $e");
+      return [];
+    }
+  }
+
+  // 请求重置密码验证码
+  Future<bool> requestPasswordReset(String email, String langCode) async {
+
+    try {
+      await dio.post('/auth/forgot-password', data: {"email": email, "language":langCode});
+      return true; // 不管后端返回什么，前端都展示发送成功
+    } catch (e) {
+      print("发送验证码失败: $e");
+      return false;
+    }
+  }
+
+  // 提交新密码
+  Future<bool> resetPassword(String email, String code, String newPassword) async {
+    try {
+      final response = await dio.post('/auth/reset-password', data: {
+        "email": email,
+        "reset_code": code,
+        "new_password": newPassword
+      });
+      return response.statusCode == 200;
+    } catch (e) {
+      print("重置密码失败: $e");
+      return false;
+    }
+  }
+
+}
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\lib\l10n\app_en.arb
+============================================================
+
+{
+    "@@locale": "en",
+    "appTitle": "EnerQuote V1.0",
+    "appSubtitle": "Enterprise SaaS Quoting System",
+    "emailLabel": "Corporate Email",
+    "passwordLabel": "Password",
+    "confirmPasswordLabel": "Confirm Password",
+    "secureLoginBtn": "Secure Login",
+    "registerPrompt": "Don't have an account? Sign up free",
+    "registerTitle": "Create your account",
+    "registerSubtitle": "Join EnerQuote, unlock enterprise engine",
+    "freeRegisterBtn": "Sign Up Free",
+    "errEmpty": "Email and password cannot be empty",
+    "errPasswordLength": "Password must be at least 6 characters",
+    "errPasswordMatch": "Passwords do not match",
+    "msgRegisterSuccess": "🎉 Account created successfully! Please log in.",
+    "errAuthFailed401": "Incorrect account or password (401)",
+    "errNetwork": "Network Error: {message}",
+    "@errNetwork": {
+      "placeholders": {
+        "message": {
+          "type": "String"
+        }
+      }
+    },
+    "errSystem": "System Error: {error}",
+    "@errSystem": {
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "errRegisterFailedFallback": "Registration failed, please check your input",
+    "unauthorized": "Unauthorized, please log in again",
+    "simulateFailed": "Simulation failed: {error}",
+    "@simulateFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+    },
+    "parseError": "Data parsing exception, please check logs",
+    "dashboardTitle": "EnerQuote PV+ESS",
+    "exportProposal": "Export Proposal",
+    "kpiTotalCapex": "Total CAPEX",
+    "kpiIrr": "Internal Rate of Return (IRR)",
+    "kpiFirstYearGen": "1st Year Generation",
+    "kpiPayback": "Payback Period",
+    "clientEnvProfile": "Client Environment & Load Profile",
+    "factoryPeakLoad": "Factory Peak Load: {val} kW",
+    "@factoryPeakLoad": {
+    "placeholders": {
+      "val": { "type": "String" }
+    }
+    },
+    "hardwareConfig": "Hardware Configuration",
+    "pvCapacity": "PV Capacity: {val} kWp",
+    "@pvCapacity": {
+    "placeholders": {
+      "val": { "type": "String" }
+    }
+    },
+    "essCapacity": "ESS Capacity: {val} kWh",
+    "@essCapacity": {
+    "placeholders": {
+      "val": { "type": "String" }
+    }
+    },
+    "cashFlowChartTitle": "20-Year Net Cash Flow Forecast",
+    "connectingPvgis": "Connecting to PVGIS...",
+    "citySaoPaulo": "🇧🇷 São Paulo (Brazil - LATAM)",
+    "cityMunich": "🇩🇪 Munich (Germany - EU)",
+    "cityHaikou": "🇨🇳 Haikou (China - Hainan)",
+    "cityLinfen": "🇨🇳 Linfen (China - Shanxi)",
+    "yearFormat": "Yr {year}",
+    "@yearFormat": {
+    "placeholders": {
+      "year": { "type": "String" }
+    }
+    },
+    "upgradeToProTitle": "Upgrade to PRO",
+    "upgradeToProSubtitle": "Generate enterprise-grade PDF proposals with your exclusive logo, custom margins, and no watermarks to close deals instantly!",
+    "proFeatureLogo": "Custom company logo and name",
+    "proFeatureCost": "Custom base procurement costs and margins",
+    "proFeaturePvgis": "Unlock 8760-hour PVGIS satellite weather data",
+    "redirectingToPayment": "Redirecting to payment gateway...",
+    "unlockProBtn": "Unlock Now ($19.9/mo)",
+    "settingsTitle": "Workspace Settings",
+    "brandingSection": "Branding & Logo",
+    "companyNameLabel": "Company Name",
+    "logoUrlLabel": "Logo Image URL / Base64",
+    "costSection": "Procurement Costs & Margins",
+    "pvCostLabel": "PV Base Cost ($/W)",
+    "essCostLabel": "ESS Base Cost ($/Wh)",
+    "marginLabel": "Target Margin (%)",
+    "saveSettingsBtn": "Save Configuration",
+    "saveSuccess": "✅ Settings saved locally!",
+    "pdfProposalTitle": "Commercial Energy Storage Investment Proposal",
+    "pdfSystemConfig": "1. System Configuration",
+    "pdfPvArray": "PV Array Capacity",
+    "pdfEssBattery": "ESS Battery Capacity",
+    "pdfGridPolicy": "Grid Policy: Zero Export (Anti-backflow)",
+    "pdfTotalCapex": "Total System CAPEX",
+    "pdfFinancialHighlights": "2. Financial Highlights",
+    "pdfNpv": "Net Present Value (NPV)",
+    "pdfIrr": "Internal Rate of Return",
+    "pdfPayback": "Payback Period",
+    "pdfYears": "Years",
+    "pdfEmsStrategyTitle": "2.5 EMS Strategy & Year 1 Revenue Stacking",
+    "pdfEmsStrategyDesc": "Energy Management System (EMS) is configured for aggressive Peak Shaving and Time-of-Use (TOU) arbitrage, maximizing grid savings.",
+    "pdfRevDirectSolar": "1. Direct Solar Consumption (PV)",
+    "pdfRevDirectSolarDesc": "Offset daytime base load",
+    "pdfRevTou": "2. TOU Arbitrage",
+    "pdfRevTouDesc": "Grid charge at night, discharge at peak",
+    "pdfRevPeakShaving": "3. Peak Shaving",
+    "pdfRevPeakShavingDesc": "Demand charge reduction ($/kW)",
+    "pdfRevBackup": "4. Backup Power Value",
+    "pdfRevBackupDesc": "Avoided lost load during outages",
+    "pdfCashFlowTitle": "3. 20-Year Cash Flow Projection",
+    "pdfCfYear": "Year",
+    "pdfCfEnergySavings": "Energy Savings",
+    "pdfCfBackupValue": "Backup Value",
+    "pdfCfOmBattery": "O&M / Battery",
+    "pdfCfDebtService": "Debt Service",
+    "pdfCfNetCashFlow": "Net Cash Flow",
+    "pdfCfCumulative": "Cumulative",
+    "pdfDate": "Date: {date}",
+    "@pdfDate": { "placeholders": { "date": { "type": "String" } } },
+    "pdfPageOf": "Page {current} of {total}",
+    "@pdfPageOf": { "placeholders": { "current": { "type": "String" }, "total": { "type": "String" } } },
+    "pdfConfidential": "Confidential & Proprietary",
+    "logoutTooltip": "Logout",
+    "logoutTitle": "Logout",
+    "logoutMessage": "Are you sure you want to log out of the current account?",
+    "cancel": "Cancel",
+    "confirmLogout": "Logout",
+    "tierFree": "Current Plan: FREE Edition",
+    "tierPro": "👑 PRO Subscription Member",
+    "upgradeNow": "Upgrade Now",
+    "forgotPasswordTitle": "Reset Password",
+    "enterEmailPrompt": "Enter your registered email address",
+    "emailLabel": "Work Email",
+    "sendCodeBtn": "Send Code",
+    "codeSentMsg": "Code sent to {email}",
+    "@codeSentMsg": {
+      "placeholders": {
+        "email": { "type": "Object" }
+      }
+    },
+    "codeInputHint": "Enter 6-digit code",
+    "newPasswordLabel": "New Password",
+    "confirmResetBtn": "Confirm Reset",
+    "resendPrompt": "Didn't receive it? Re-enter email",
+    "sessionExpired": "Session expired, please log in again!",
+    "paymentConfirmTitle": "Waiting for Payment",
+    "paymentConfirmDesc": "If you have completed the payment in the browser, click the button below to verify and activate PRO.",
+    "verifyLater": "Verify Later",
+    "paymentCompleted": "I have paid",
+    "paymentSuccessPro": "🎉 Payment successful! PRO features activated!",
+    "paymentPending": "⏳ Payment not received yet. Please wait a few seconds and try again.",
+    "paymentError": "Payment gateway error: {error}",
+    "@paymentError": { "placeholders": { "error": { "type": "String" } } },
+    "errInvalidEmail": "Please enter a valid email address",
+    "msgCodeSent": "✅ Code sent to your email, please check.",
+    "errCodeLength": "Please enter a 6-digit code",
+    "errNewPwdLength": "New password must be at least 6 characters",
+    "msgResetSuccess": "🎉 Password reset successful! Please log in.",
+    "errCodeInvalid": "❌ Invalid or expired code",
+    "msgPayToUpgrade": "✅ After payment, please re-login to activate PRO features!",
+    "logoInputHint": "Enter URL or click right to pick from gallery ->",
+    "msgLogoConverted": "✅ Logo converted to Base64! Please click save.",
+    "errSaveFailed": "Save failed, please check your network!",
+    "pdfPreviewTitle": "Proposal Preview"
+}
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\lib\l10n\app_localizations.dart
+============================================================
+
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart' as intl;
+
+import 'app_localizations_en.dart';
+import 'app_localizations_zh.dart';
+
+// ignore_for_file: type=lint
+
+/// Callers can lookup localized strings with an instance of AppLocalizations
+/// returned by `AppLocalizations.of(context)`.
+///
+/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// `localizationDelegates` list, and the locales they support in the app's
+/// `supportedLocales` list. For example:
+///
+/// ```dart
+/// import 'l10n/app_localizations.dart';
+///
+/// return MaterialApp(
+///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+///   supportedLocales: AppLocalizations.supportedLocales,
+///   home: MyApplicationHome(),
+/// );
+/// ```
+///
+/// ## Update pubspec.yaml
+///
+/// Please make sure to update your pubspec.yaml to include the following
+/// packages:
+///
+/// ```yaml
+/// dependencies:
+///   # Internationalization support.
+///   flutter_localizations:
+///     sdk: flutter
+///   intl: any # Use the pinned version from flutter_localizations
+///
+///   # Rest of dependencies
+/// ```
+///
+/// ## iOS Applications
+///
+/// iOS applications define key application metadata, including supported
+/// locales, in an Info.plist file that is built into the application bundle.
+/// To configure the locales supported by your app, you’ll need to edit this
+/// file.
+///
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
+/// Then, in the Project Navigator, open the Info.plist file under the Runner
+/// project’s Runner folder.
+///
+/// Next, select the Information Property List item, select Add Item from the
+/// Editor menu, then select Localizations from the pop-up menu.
+///
+/// Select and expand the newly-created Localizations item then, for each
+/// locale your application supports, add a new item and select the locale
+/// you wish to add from the pop-up menu in the Value field. This list should
+/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// property.
+abstract class AppLocalizations {
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+
+  final String localeName;
+
+  static AppLocalizations? of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations);
+  }
+
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
+
+  /// A list of this localizations delegate along with the default localizations
+  /// delegates.
+  ///
+  /// Returns a list of localizations delegates containing this delegate along with
+  /// GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate,
+  /// and GlobalWidgetsLocalizations.delegate.
+  ///
+  /// Additional delegates can be added by appending to this list in
+  /// MaterialApp. This list does not have to be used at all if a custom list
+  /// of delegates is preferred or required.
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
+
+  /// A list of this localizations delegate's supported locales.
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('en'),
+    Locale('zh'),
+  ];
+
+  /// No description provided for @appTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'EnerQuote V1.0'**
+  String get appTitle;
+
+  /// No description provided for @appSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'企业级 SaaS 报价系统'**
+  String get appSubtitle;
+
+  /// No description provided for @emailLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'企业邮箱'**
+  String get emailLabel;
+
+  /// No description provided for @passwordLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'密码 (Password)'**
+  String get passwordLabel;
+
+  /// No description provided for @confirmPasswordLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认密码'**
+  String get confirmPasswordLabel;
+
+  /// No description provided for @secureLoginBtn.
+  ///
+  /// In zh, this message translates to:
+  /// **'安全登录'**
+  String get secureLoginBtn;
+
+  /// No description provided for @registerPrompt.
+  ///
+  /// In zh, this message translates to:
+  /// **'还没有账号？点击这里免费注册'**
+  String get registerPrompt;
+
+  /// No description provided for @registerTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'创建您的账号'**
+  String get registerTitle;
+
+  /// No description provided for @registerSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'加入EnerQuote，解锁企业级测算引擎'**
+  String get registerSubtitle;
+
+  /// No description provided for @freeRegisterBtn.
+  ///
+  /// In zh, this message translates to:
+  /// **'免费注册'**
+  String get freeRegisterBtn;
+
+  /// No description provided for @errEmpty.
+  ///
+  /// In zh, this message translates to:
+  /// **'邮箱和密码不能为空'**
+  String get errEmpty;
+
+  /// No description provided for @errPasswordLength.
+  ///
+  /// In zh, this message translates to:
+  /// **'密码长度至少需要 6 位'**
+  String get errPasswordLength;
+
+  /// No description provided for @errPasswordMatch.
+  ///
+  /// In zh, this message translates to:
+  /// **'两次输入的密码不一致'**
+  String get errPasswordMatch;
+
+  /// No description provided for @msgRegisterSuccess.
+  ///
+  /// In zh, this message translates to:
+  /// **'🎉 账号注册成功！请使用新账号登录。'**
+  String get msgRegisterSuccess;
+
+  /// No description provided for @errAuthFailed401.
+  ///
+  /// In zh, this message translates to:
+  /// **'账号或密码错误 (401)'**
+  String get errAuthFailed401;
+
+  /// 网络请求失败时的报错
+  ///
+  /// In zh, this message translates to:
+  /// **'网络错误：{message}'**
+  String errNetwork(String message);
+
+  /// 捕获到未知系统异常时的报错
+  ///
+  /// In zh, this message translates to:
+  /// **'系统异常: {error}'**
+  String errSystem(String error);
+
+  /// No description provided for @errRegisterFailedFallback.
+  ///
+  /// In zh, this message translates to:
+  /// **'注册失败，请检查输入'**
+  String get errRegisterFailedFallback;
+
+  /// No description provided for @unauthorized.
+  ///
+  /// In zh, this message translates to:
+  /// **'未授权，请重新登录'**
+  String get unauthorized;
+
+  /// No description provided for @simulateFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'测算失败: {error}'**
+  String simulateFailed(String error);
+
+  /// No description provided for @parseError.
+  ///
+  /// In zh, this message translates to:
+  /// **'数据格式解析异常，请查看控制台日志'**
+  String get parseError;
+
+  /// No description provided for @dashboardTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'EnerQuote PV+ESS'**
+  String get dashboardTitle;
+
+  /// No description provided for @exportProposal.
+  ///
+  /// In zh, this message translates to:
+  /// **'导出建议书 (Export Proposal)'**
+  String get exportProposal;
+
+  /// No description provided for @kpiTotalCapex.
+  ///
+  /// In zh, this message translates to:
+  /// **'系统总造价 (CAPEX)'**
+  String get kpiTotalCapex;
+
+  /// No description provided for @kpiIrr.
+  ///
+  /// In zh, this message translates to:
+  /// **'内部收益率 (IRR)'**
+  String get kpiIrr;
+
+  /// No description provided for @kpiFirstYearGen.
+  ///
+  /// In zh, this message translates to:
+  /// **'首年发电量'**
+  String get kpiFirstYearGen;
+
+  /// No description provided for @kpiPayback.
+  ///
+  /// In zh, this message translates to:
+  /// **'投资回收期'**
+  String get kpiPayback;
+
+  /// No description provided for @clientEnvProfile.
+  ///
+  /// In zh, this message translates to:
+  /// **'客户环境与用电模型'**
+  String get clientEnvProfile;
+
+  /// No description provided for @factoryPeakLoad.
+  ///
+  /// In zh, this message translates to:
+  /// **'工厂白天峰值功率: {val} kW'**
+  String factoryPeakLoad(String val);
+
+  /// No description provided for @hardwareConfig.
+  ///
+  /// In zh, this message translates to:
+  /// **'硬件资产配置'**
+  String get hardwareConfig;
+
+  /// No description provided for @pvCapacity.
+  ///
+  /// In zh, this message translates to:
+  /// **'PV 光伏容量: {val} kWp'**
+  String pvCapacity(String val);
+
+  /// No description provided for @essCapacity.
+  ///
+  /// In zh, this message translates to:
+  /// **'ESS 电池容量: {val} kWh'**
+  String essCapacity(String val);
+
+  /// No description provided for @cashFlowChartTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'20年生命周期 净现金流预测'**
+  String get cashFlowChartTitle;
+
+  /// No description provided for @connectingPvgis.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在连接 PVGIS 气象卫星...'**
+  String get connectingPvgis;
+
+  /// No description provided for @citySaoPaulo.
+  ///
+  /// In zh, this message translates to:
+  /// **'🇧🇷 São Paulo (巴西 - 拉美区)'**
+  String get citySaoPaulo;
+
+  /// No description provided for @cityMunich.
+  ///
+  /// In zh, this message translates to:
+  /// **'🇩🇪 Munich (德国 - 欧洲区)'**
+  String get cityMunich;
+
+  /// No description provided for @cityHaikou.
+  ///
+  /// In zh, this message translates to:
+  /// **'🇨🇳 Haikou (中国 - 海南)'**
+  String get cityHaikou;
+
+  /// No description provided for @cityLinfen.
+  ///
+  /// In zh, this message translates to:
+  /// **'🇨🇳 Linfen (中国 - 山西)'**
+  String get cityLinfen;
+
+  /// No description provided for @yearFormat.
+  ///
+  /// In zh, this message translates to:
+  /// **'Yr {year}'**
+  String yearFormat(String year);
+
+  /// No description provided for @upgradeToProTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'升级到 PRO 专业版'**
+  String get upgradeToProTitle;
+
+  /// No description provided for @upgradeToProSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'生成带有贵司专属 Logo、自定义利润率和隐藏水印的商业级 PDF 建议书，立刻促成交易！'**
+  String get upgradeToProSubtitle;
+
+  /// No description provided for @proFeatureLogo.
+  ///
+  /// In zh, this message translates to:
+  /// **'自定义企业 Logo 与公司名称'**
+  String get proFeatureLogo;
+
+  /// No description provided for @proFeatureCost.
+  ///
+  /// In zh, this message translates to:
+  /// **'自定义底层采购成本与利润率'**
+  String get proFeatureCost;
+
+  /// No description provided for @proFeaturePvgis.
+  ///
+  /// In zh, this message translates to:
+  /// **'解锁 8760 小时 PVGIS 卫星气候数据'**
+  String get proFeaturePvgis;
+
+  /// No description provided for @redirectingToPayment.
+  ///
+  /// In zh, this message translates to:
+  /// **'即将跳转支付网关...'**
+  String get redirectingToPayment;
+
+  /// No description provided for @unlockProBtn.
+  ///
+  /// In zh, this message translates to:
+  /// **'立刻解锁 (\$19.9/月)'**
+  String get unlockProBtn;
+
+  /// No description provided for @settingsTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'工作台设置'**
+  String get settingsTitle;
+
+  /// No description provided for @brandingSection.
+  ///
+  /// In zh, this message translates to:
+  /// **'企业品牌与 Logo'**
+  String get brandingSection;
+
+  /// No description provided for @companyNameLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'公司名称'**
+  String get companyNameLabel;
+
+  /// No description provided for @logoUrlLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'Logo 图片链接 (URL / Base64)'**
+  String get logoUrlLabel;
+
+  /// No description provided for @costSection.
+  ///
+  /// In zh, this message translates to:
+  /// **'采购成本与利润率'**
+  String get costSection;
+
+  /// No description provided for @pvCostLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'光伏单瓦底价 (\$/W)'**
+  String get pvCostLabel;
+
+  /// No description provided for @essCostLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'储能单瓦时底价 (\$/Wh)'**
+  String get essCostLabel;
+
+  /// No description provided for @marginLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'期望利润率 (%)'**
+  String get marginLabel;
+
+  /// No description provided for @saveSettingsBtn.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存配置'**
+  String get saveSettingsBtn;
+
+  /// No description provided for @saveSuccess.
+  ///
+  /// In zh, this message translates to:
+  /// **'✅ 设置已保存在本地！'**
+  String get saveSuccess;
+
+  /// No description provided for @pdfProposalTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'工商业光储投资收益建议书'**
+  String get pdfProposalTitle;
+
+  /// No description provided for @pdfSystemConfig.
+  ///
+  /// In zh, this message translates to:
+  /// **'1. 系统硬件配置'**
+  String get pdfSystemConfig;
+
+  /// No description provided for @pdfPvArray.
+  ///
+  /// In zh, this message translates to:
+  /// **'光伏阵列装机容量'**
+  String get pdfPvArray;
+
+  /// No description provided for @pdfEssBattery.
+  ///
+  /// In zh, this message translates to:
+  /// **'储能系统额定容量'**
+  String get pdfEssBattery;
+
+  /// No description provided for @pdfGridPolicy.
+  ///
+  /// In zh, this message translates to:
+  /// **'并网策略：防逆流 (零上网)'**
+  String get pdfGridPolicy;
+
+  /// No description provided for @pdfTotalCapex.
+  ///
+  /// In zh, this message translates to:
+  /// **'项目总投资 (CAPEX)'**
+  String get pdfTotalCapex;
+
+  /// No description provided for @pdfFinancialHighlights.
+  ///
+  /// In zh, this message translates to:
+  /// **'2. 核心财务指标'**
+  String get pdfFinancialHighlights;
+
+  /// No description provided for @pdfNpv.
+  ///
+  /// In zh, this message translates to:
+  /// **'项目净现值 (NPV)'**
+  String get pdfNpv;
+
+  /// No description provided for @pdfIrr.
+  ///
+  /// In zh, this message translates to:
+  /// **'内部收益率 (IRR)'**
+  String get pdfIrr;
+
+  /// No description provided for @pdfPayback.
+  ///
+  /// In zh, this message translates to:
+  /// **'投资回收期'**
+  String get pdfPayback;
+
+  /// No description provided for @pdfYears.
+  ///
+  /// In zh, this message translates to:
+  /// **'年'**
+  String get pdfYears;
+
+  /// No description provided for @pdfEmsStrategyTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'2.5 EMS 策略与首年收益拆解'**
+  String get pdfEmsStrategyTitle;
+
+  /// No description provided for @pdfEmsStrategyDesc.
+  ///
+  /// In zh, this message translates to:
+  /// **'能量管理系统 (EMS) 默认开启削峰填谷与夜间谷电套利策略，最大化降低工厂峰值电费。'**
+  String get pdfEmsStrategyDesc;
+
+  /// No description provided for @pdfRevDirectSolar.
+  ///
+  /// In zh, this message translates to:
+  /// **'1. 光伏自发自用收益'**
+  String get pdfRevDirectSolar;
+
+  /// No description provided for @pdfRevDirectSolarDesc.
+  ///
+  /// In zh, this message translates to:
+  /// **'直供工厂白天基础负载'**
+  String get pdfRevDirectSolarDesc;
+
+  /// No description provided for @pdfRevTou.
+  ///
+  /// In zh, this message translates to:
+  /// **'2. 峰谷套利收益'**
+  String get pdfRevTou;
+
+  /// No description provided for @pdfRevTouDesc.
+  ///
+  /// In zh, this message translates to:
+  /// **'利用夜间谷电充电，白天峰电放电'**
+  String get pdfRevTouDesc;
+
+  /// No description provided for @pdfRevPeakShaving.
+  ///
+  /// In zh, this message translates to:
+  /// **'3. 削峰填谷收益'**
+  String get pdfRevPeakShaving;
+
+  /// No description provided for @pdfRevPeakShavingDesc.
+  ///
+  /// In zh, this message translates to:
+  /// **'削减工厂最大需量电费 (\$/kW)'**
+  String get pdfRevPeakShavingDesc;
+
+  /// No description provided for @pdfRevBackup.
+  ///
+  /// In zh, this message translates to:
+  /// **'4. 备用电源 (UPS) 价值'**
+  String get pdfRevBackup;
+
+  /// No description provided for @pdfRevBackupDesc.
+  ///
+  /// In zh, this message translates to:
+  /// **'挽回停电导致的工厂产能损失'**
+  String get pdfRevBackupDesc;
+
+  /// No description provided for @pdfCashFlowTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'3. 20年项目生命周期现金流明细'**
+  String get pdfCashFlowTitle;
+
+  /// No description provided for @pdfCfYear.
+  ///
+  /// In zh, this message translates to:
+  /// **'年份'**
+  String get pdfCfYear;
+
+  /// No description provided for @pdfCfEnergySavings.
+  ///
+  /// In zh, this message translates to:
+  /// **'节省电费'**
+  String get pdfCfEnergySavings;
+
+  /// No description provided for @pdfCfBackupValue.
+  ///
+  /// In zh, this message translates to:
+  /// **'挽回停电损失'**
+  String get pdfCfBackupValue;
+
+  /// No description provided for @pdfCfOmBattery.
+  ///
+  /// In zh, this message translates to:
+  /// **'运维与电池重置'**
+  String get pdfCfOmBattery;
+
+  /// No description provided for @pdfCfDebtService.
+  ///
+  /// In zh, this message translates to:
+  /// **'偿还贷款'**
+  String get pdfCfDebtService;
+
+  /// No description provided for @pdfCfNetCashFlow.
+  ///
+  /// In zh, this message translates to:
+  /// **'当年净现金流'**
+  String get pdfCfNetCashFlow;
+
+  /// No description provided for @pdfCfCumulative.
+  ///
+  /// In zh, this message translates to:
+  /// **'累计净现金流'**
+  String get pdfCfCumulative;
+
+  /// No description provided for @pdfDate.
+  ///
+  /// In zh, this message translates to:
+  /// **'日期: {date}'**
+  String pdfDate(String date);
+
+  /// No description provided for @pdfPageOf.
+  ///
+  /// In zh, this message translates to:
+  /// **'第 {current} 页，共 {total} 页'**
+  String pdfPageOf(String current, String total);
+
+  /// No description provided for @pdfConfidential.
+  ///
+  /// In zh, this message translates to:
+  /// **'商业机密，严禁外传'**
+  String get pdfConfidential;
+
+  /// No description provided for @logoutTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'登出 (Logout)'**
+  String get logoutTooltip;
+
+  /// No description provided for @logoutTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'退出登录'**
+  String get logoutTitle;
+
+  /// No description provided for @logoutMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要退出当前账号吗？'**
+  String get logoutMessage;
+
+  /// No description provided for @cancel.
+  ///
+  /// In zh, this message translates to:
+  /// **'取消'**
+  String get cancel;
+
+  /// No description provided for @confirmLogout.
+  ///
+  /// In zh, this message translates to:
+  /// **'退出'**
+  String get confirmLogout;
+
+  /// No description provided for @tierFree.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前版本：基础免费版'**
+  String get tierFree;
+
+  /// No description provided for @tierPro.
+  ///
+  /// In zh, this message translates to:
+  /// **'👑 尊贵的 PRO 订阅会员'**
+  String get tierPro;
+
+  /// No description provided for @upgradeNow.
+  ///
+  /// In zh, this message translates to:
+  /// **'立即升级'**
+  String get upgradeNow;
+
+  /// No description provided for @forgotPasswordTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'重置密码'**
+  String get forgotPasswordTitle;
+
+  /// No description provided for @enterEmailPrompt.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入您注册时的邮箱地址'**
+  String get enterEmailPrompt;
+
+  /// No description provided for @sendCodeBtn.
+  ///
+  /// In zh, this message translates to:
+  /// **'发送验证码'**
+  String get sendCodeBtn;
+
+  /// No description provided for @codeSentMsg.
+  ///
+  /// In zh, this message translates to:
+  /// **'验证码已发送至 {email}'**
+  String codeSentMsg(Object email);
+
+  /// No description provided for @codeInputHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'输入 6 位验证码'**
+  String get codeInputHint;
+
+  /// No description provided for @newPasswordLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'设置新密码'**
+  String get newPasswordLabel;
+
+  /// No description provided for @confirmResetBtn.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认重置'**
+  String get confirmResetBtn;
+
+  /// No description provided for @resendPrompt.
+  ///
+  /// In zh, this message translates to:
+  /// **'没收到？重新填写邮箱'**
+  String get resendPrompt;
+
+  /// No description provided for @sessionExpired.
+  ///
+  /// In zh, this message translates to:
+  /// **'登录状态已过期，请重新登录！'**
+  String get sessionExpired;
+
+  /// No description provided for @paymentConfirmTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'等待支付确认'**
+  String get paymentConfirmTitle;
+
+  /// No description provided for @paymentConfirmDesc.
+  ///
+  /// In zh, this message translates to:
+  /// **'如果您已在浏览器中完成付款，请点击下方按钮核实状态并激活特权。'**
+  String get paymentConfirmDesc;
+
+  /// No description provided for @verifyLater.
+  ///
+  /// In zh, this message translates to:
+  /// **'稍后核实'**
+  String get verifyLater;
+
+  /// No description provided for @paymentCompleted.
+  ///
+  /// In zh, this message translates to:
+  /// **'我已完成支付'**
+  String get paymentCompleted;
+
+  /// No description provided for @paymentSuccessPro.
+  ///
+  /// In zh, this message translates to:
+  /// **'🎉 支付成功！已为您激活 PRO 专属特权！'**
+  String get paymentSuccessPro;
+
+  /// No description provided for @paymentPending.
+  ///
+  /// In zh, this message translates to:
+  /// **'⏳ 尚未收到款项，请确保支付成功或稍等几秒再试。'**
+  String get paymentPending;
+
+  /// No description provided for @paymentError.
+  ///
+  /// In zh, this message translates to:
+  /// **'呼叫收银台失败：{error}'**
+  String paymentError(String error);
+
+  /// No description provided for @errInvalidEmail.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入有效的邮箱地址'**
+  String get errInvalidEmail;
+
+  /// No description provided for @msgCodeSent.
+  ///
+  /// In zh, this message translates to:
+  /// **'✅ 验证码已发送至您的邮箱，请注意查收。'**
+  String get msgCodeSent;
+
+  /// No description provided for @errCodeLength.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入 6 位验证码'**
+  String get errCodeLength;
+
+  /// No description provided for @errNewPwdLength.
+  ///
+  /// In zh, this message translates to:
+  /// **'新密码至少 6 位'**
+  String get errNewPwdLength;
+
+  /// No description provided for @msgResetSuccess.
+  ///
+  /// In zh, this message translates to:
+  /// **'🎉 密码重置成功！请使用新密码登录。'**
+  String get msgResetSuccess;
+
+  /// No description provided for @errCodeInvalid.
+  ///
+  /// In zh, this message translates to:
+  /// **'❌ 验证码错误或已过期'**
+  String get errCodeInvalid;
+
+  /// No description provided for @msgPayToUpgrade.
+  ///
+  /// In zh, this message translates to:
+  /// **'✅ 支付完成后，请重新登录账号，即可激活 PRO 专属特权！'**
+  String get msgPayToUpgrade;
+
+  /// No description provided for @logoInputHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'填链接或点击右侧从相册选择 ->'**
+  String get logoInputHint;
+
+  /// No description provided for @msgLogoConverted.
+  ///
+  /// In zh, this message translates to:
+  /// **'✅ Logo 已成功转为 Base64！请点击保存'**
+  String get msgLogoConverted;
+
+  /// No description provided for @errSaveFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存失败，请检查网络！'**
+  String get errSaveFailed;
+
+  /// No description provided for @pdfPreviewTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'建议书预览'**
+  String get pdfPreviewTitle;
+}
+
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
+  const _AppLocalizationsDelegate();
+
+  @override
+  Future<AppLocalizations> load(Locale locale) {
+    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
+  }
+
+  @override
+  bool isSupported(Locale locale) =>
+      <String>['en', 'zh'].contains(locale.languageCode);
+
+  @override
+  bool shouldReload(_AppLocalizationsDelegate old) => false;
+}
+
+AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when only language code is specified.
+  switch (locale.languageCode) {
+    case 'en':
+      return AppLocalizationsEn();
+    case 'zh':
+      return AppLocalizationsZh();
+  }
+
+  throw FlutterError(
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
+}
+
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\lib\l10n\app_localizations_en.dart
+============================================================
+
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for English (`en`).
+class AppLocalizationsEn extends AppLocalizations {
+  AppLocalizationsEn([String locale = 'en']) : super(locale);
+
+  @override
+  String get appTitle => 'EnerQuote V1.0';
+
+  @override
+  String get appSubtitle => 'Enterprise SaaS Quoting System';
+
+  @override
+  String get emailLabel => 'Work Email';
+
+  @override
+  String get passwordLabel => 'Password';
+
+  @override
+  String get confirmPasswordLabel => 'Confirm Password';
+
+  @override
+  String get secureLoginBtn => 'Secure Login';
+
+  @override
+  String get registerPrompt => 'Don\'t have an account? Sign up free';
+
+  @override
+  String get registerTitle => 'Create your account';
+
+  @override
+  String get registerSubtitle => 'Join EnerQuote, unlock enterprise engine';
+
+  @override
+  String get freeRegisterBtn => 'Sign Up Free';
+
+  @override
+  String get errEmpty => 'Email and password cannot be empty';
+
+  @override
+  String get errPasswordLength => 'Password must be at least 6 characters';
+
+  @override
+  String get errPasswordMatch => 'Passwords do not match';
+
+  @override
+  String get msgRegisterSuccess =>
+      '🎉 Account created successfully! Please log in.';
+
+  @override
+  String get errAuthFailed401 => 'Incorrect account or password (401)';
+
+  @override
+  String errNetwork(String message) {
+    return 'Network Error: $message';
+  }
+
+  @override
+  String errSystem(String error) {
+    return 'System Error: $error';
+  }
+
+  @override
+  String get errRegisterFailedFallback =>
+      'Registration failed, please check your input';
+
+  @override
+  String get unauthorized => 'Unauthorized, please log in again';
+
+  @override
+  String simulateFailed(String error) {
+    return 'Simulation failed: $error';
+  }
+
+  @override
+  String get parseError => 'Data parsing exception, please check logs';
+
+  @override
+  String get dashboardTitle => 'EnerQuote PV+ESS';
+
+  @override
+  String get exportProposal => 'Export Proposal';
+
+  @override
+  String get kpiTotalCapex => 'Total CAPEX';
+
+  @override
+  String get kpiIrr => 'Internal Rate of Return (IRR)';
+
+  @override
+  String get kpiFirstYearGen => '1st Year Generation';
+
+  @override
+  String get kpiPayback => 'Payback Period';
+
+  @override
+  String get clientEnvProfile => 'Client Environment & Load Profile';
+
+  @override
+  String factoryPeakLoad(String val) {
+    return 'Factory Peak Load: $val kW';
+  }
+
+  @override
+  String get hardwareConfig => 'Hardware Configuration';
+
+  @override
+  String pvCapacity(String val) {
+    return 'PV Capacity: $val kWp';
+  }
+
+  @override
+  String essCapacity(String val) {
+    return 'ESS Capacity: $val kWh';
+  }
+
+  @override
+  String get cashFlowChartTitle => '20-Year Net Cash Flow Forecast';
+
+  @override
+  String get connectingPvgis => 'Connecting to PVGIS...';
+
+  @override
+  String get citySaoPaulo => '🇧🇷 São Paulo (Brazil - LATAM)';
+
+  @override
+  String get cityMunich => '🇩🇪 Munich (Germany - EU)';
+
+  @override
+  String get cityHaikou => '🇨🇳 Haikou (China - Hainan)';
+
+  @override
+  String get cityLinfen => '🇨🇳 Linfen (China - Shanxi)';
+
+  @override
+  String yearFormat(String year) {
+    return 'Yr $year';
+  }
+
+  @override
+  String get upgradeToProTitle => 'Upgrade to PRO';
+
+  @override
+  String get upgradeToProSubtitle =>
+      'Generate enterprise-grade PDF proposals with your exclusive logo, custom margins, and no watermarks to close deals instantly!';
+
+  @override
+  String get proFeatureLogo => 'Custom company logo and name';
+
+  @override
+  String get proFeatureCost => 'Custom base procurement costs and margins';
+
+  @override
+  String get proFeaturePvgis => 'Unlock 8760-hour PVGIS satellite weather data';
+
+  @override
+  String get redirectingToPayment => 'Redirecting to payment gateway...';
+
+  @override
+  String get unlockProBtn => 'Unlock Now (\$19.9/mo)';
+
+  @override
+  String get settingsTitle => 'Workspace Settings';
+
+  @override
+  String get brandingSection => 'Branding & Logo';
+
+  @override
+  String get companyNameLabel => 'Company Name';
+
+  @override
+  String get logoUrlLabel => 'Logo Image URL / Base64';
+
+  @override
+  String get costSection => 'Procurement Costs & Margins';
+
+  @override
+  String get pvCostLabel => 'PV Base Cost (\$/W)';
+
+  @override
+  String get essCostLabel => 'ESS Base Cost (\$/Wh)';
+
+  @override
+  String get marginLabel => 'Target Margin (%)';
+
+  @override
+  String get saveSettingsBtn => 'Save Configuration';
+
+  @override
+  String get saveSuccess => '✅ Settings saved locally!';
+
+  @override
+  String get pdfProposalTitle =>
+      'Commercial Energy Storage Investment Proposal';
+
+  @override
+  String get pdfSystemConfig => '1. System Configuration';
+
+  @override
+  String get pdfPvArray => 'PV Array Capacity';
+
+  @override
+  String get pdfEssBattery => 'ESS Battery Capacity';
+
+  @override
+  String get pdfGridPolicy => 'Grid Policy: Zero Export (Anti-backflow)';
+
+  @override
+  String get pdfTotalCapex => 'Total System CAPEX';
+
+  @override
+  String get pdfFinancialHighlights => '2. Financial Highlights';
+
+  @override
+  String get pdfNpv => 'Net Present Value (NPV)';
+
+  @override
+  String get pdfIrr => 'Internal Rate of Return';
+
+  @override
+  String get pdfPayback => 'Payback Period';
+
+  @override
+  String get pdfYears => 'Years';
+
+  @override
+  String get pdfEmsStrategyTitle =>
+      '2.5 EMS Strategy & Year 1 Revenue Stacking';
+
+  @override
+  String get pdfEmsStrategyDesc =>
+      'Energy Management System (EMS) is configured for aggressive Peak Shaving and Time-of-Use (TOU) arbitrage, maximizing grid savings.';
+
+  @override
+  String get pdfRevDirectSolar => '1. Direct Solar Consumption (PV)';
+
+  @override
+  String get pdfRevDirectSolarDesc => 'Offset daytime base load';
+
+  @override
+  String get pdfRevTou => '2. TOU Arbitrage';
+
+  @override
+  String get pdfRevTouDesc => 'Grid charge at night, discharge at peak';
+
+  @override
+  String get pdfRevPeakShaving => '3. Peak Shaving';
+
+  @override
+  String get pdfRevPeakShavingDesc => 'Demand charge reduction (\$/kW)';
+
+  @override
+  String get pdfRevBackup => '4. Backup Power Value';
+
+  @override
+  String get pdfRevBackupDesc => 'Avoided lost load during outages';
+
+  @override
+  String get pdfCashFlowTitle => '3. 20-Year Cash Flow Projection';
+
+  @override
+  String get pdfCfYear => 'Year';
+
+  @override
+  String get pdfCfEnergySavings => 'Energy Savings';
+
+  @override
+  String get pdfCfBackupValue => 'Backup Value';
+
+  @override
+  String get pdfCfOmBattery => 'O&M / Battery';
+
+  @override
+  String get pdfCfDebtService => 'Debt Service';
+
+  @override
+  String get pdfCfNetCashFlow => 'Net Cash Flow';
+
+  @override
+  String get pdfCfCumulative => 'Cumulative';
+
+  @override
+  String pdfDate(String date) {
+    return 'Date: $date';
+  }
+
+  @override
+  String pdfPageOf(String current, String total) {
+    return 'Page $current of $total';
+  }
+
+  @override
+  String get pdfConfidential => 'Confidential & Proprietary';
+
+  @override
+  String get logoutTooltip => 'Logout';
+
+  @override
+  String get logoutTitle => 'Logout';
+
+  @override
+  String get logoutMessage =>
+      'Are you sure you want to log out of the current account?';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get confirmLogout => 'Logout';
+
+  @override
+  String get tierFree => 'Current Plan: FREE Edition';
+
+  @override
+  String get tierPro => '👑 PRO Subscription Member';
+
+  @override
+  String get upgradeNow => 'Upgrade Now';
+
+  @override
+  String get forgotPasswordTitle => 'Reset Password';
+
+  @override
+  String get enterEmailPrompt => 'Enter your registered email address';
+
+  @override
+  String get sendCodeBtn => 'Send Code';
+
+  @override
+  String codeSentMsg(Object email) {
+    return 'Code sent to $email';
+  }
+
+  @override
+  String get codeInputHint => 'Enter 6-digit code';
+
+  @override
+  String get newPasswordLabel => 'New Password';
+
+  @override
+  String get confirmResetBtn => 'Confirm Reset';
+
+  @override
+  String get resendPrompt => 'Didn\'t receive it? Re-enter email';
+
+  @override
+  String get sessionExpired => 'Session expired, please log in again!';
+
+  @override
+  String get paymentConfirmTitle => 'Waiting for Payment';
+
+  @override
+  String get paymentConfirmDesc =>
+      'If you have completed the payment in the browser, click the button below to verify and activate PRO.';
+
+  @override
+  String get verifyLater => 'Verify Later';
+
+  @override
+  String get paymentCompleted => 'I have paid';
+
+  @override
+  String get paymentSuccessPro =>
+      '🎉 Payment successful! PRO features activated!';
+
+  @override
+  String get paymentPending =>
+      '⏳ Payment not received yet. Please wait a few seconds and try again.';
+
+  @override
+  String paymentError(String error) {
+    return 'Payment gateway error: $error';
+  }
+
+  @override
+  String get errInvalidEmail => 'Please enter a valid email address';
+
+  @override
+  String get msgCodeSent => '✅ Code sent to your email, please check.';
+
+  @override
+  String get errCodeLength => 'Please enter a 6-digit code';
+
+  @override
+  String get errNewPwdLength => 'New password must be at least 6 characters';
+
+  @override
+  String get msgResetSuccess => '🎉 Password reset successful! Please log in.';
+
+  @override
+  String get errCodeInvalid => '❌ Invalid or expired code';
+
+  @override
+  String get msgPayToUpgrade =>
+      '✅ After payment, please re-login to activate PRO features!';
+
+  @override
+  String get logoInputHint =>
+      'Enter URL or click right to pick from gallery ->';
+
+  @override
+  String get msgLogoConverted =>
+      '✅ Logo converted to Base64! Please click save.';
+
+  @override
+  String get errSaveFailed => 'Save failed, please check your network!';
+
+  @override
+  String get pdfPreviewTitle => 'Proposal Preview';
+}
+
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\lib\l10n\app_localizations_zh.dart
+============================================================
+
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Chinese (`zh`).
+class AppLocalizationsZh extends AppLocalizations {
+  AppLocalizationsZh([String locale = 'zh']) : super(locale);
+
+  @override
+  String get appTitle => 'EnerQuote V1.0';
+
+  @override
+  String get appSubtitle => '企业级 SaaS 报价系统';
+
+  @override
+  String get emailLabel => '企业邮箱';
+
+  @override
+  String get passwordLabel => '密码 (Password)';
+
+  @override
+  String get confirmPasswordLabel => '确认密码';
+
+  @override
+  String get secureLoginBtn => '安全登录';
+
+  @override
+  String get registerPrompt => '还没有账号？点击这里免费注册';
+
+  @override
+  String get registerTitle => '创建您的账号';
+
+  @override
+  String get registerSubtitle => '加入EnerQuote，解锁企业级测算引擎';
+
+  @override
+  String get freeRegisterBtn => '免费注册';
+
+  @override
+  String get errEmpty => '邮箱和密码不能为空';
+
+  @override
+  String get errPasswordLength => '密码长度至少需要 6 位';
+
+  @override
+  String get errPasswordMatch => '两次输入的密码不一致';
+
+  @override
+  String get msgRegisterSuccess => '🎉 账号注册成功！请使用新账号登录。';
+
+  @override
+  String get errAuthFailed401 => '账号或密码错误 (401)';
+
+  @override
+  String errNetwork(String message) {
+    return '网络错误：$message';
+  }
+
+  @override
+  String errSystem(String error) {
+    return '系统异常: $error';
+  }
+
+  @override
+  String get errRegisterFailedFallback => '注册失败，请检查输入';
+
+  @override
+  String get unauthorized => '未授权，请重新登录';
+
+  @override
+  String simulateFailed(String error) {
+    return '测算失败: $error';
+  }
+
+  @override
+  String get parseError => '数据格式解析异常，请查看控制台日志';
+
+  @override
+  String get dashboardTitle => 'EnerQuote PV+ESS';
+
+  @override
+  String get exportProposal => '导出建议书 (Export Proposal)';
+
+  @override
+  String get kpiTotalCapex => '系统总造价 (CAPEX)';
+
+  @override
+  String get kpiIrr => '内部收益率 (IRR)';
+
+  @override
+  String get kpiFirstYearGen => '首年发电量';
+
+  @override
+  String get kpiPayback => '投资回收期';
+
+  @override
+  String get clientEnvProfile => '客户环境与用电模型';
+
+  @override
+  String factoryPeakLoad(String val) {
+    return '工厂白天峰值功率: $val kW';
+  }
+
+  @override
+  String get hardwareConfig => '硬件资产配置';
+
+  @override
+  String pvCapacity(String val) {
+    return 'PV 光伏容量: $val kWp';
+  }
+
+  @override
+  String essCapacity(String val) {
+    return 'ESS 电池容量: $val kWh';
+  }
+
+  @override
+  String get cashFlowChartTitle => '20年生命周期 净现金流预测';
+
+  @override
+  String get connectingPvgis => '正在连接 PVGIS 气象卫星...';
+
+  @override
+  String get citySaoPaulo => '🇧🇷 São Paulo (巴西 - 拉美区)';
+
+  @override
+  String get cityMunich => '🇩🇪 Munich (德国 - 欧洲区)';
+
+  @override
+  String get cityHaikou => '🇨🇳 Haikou (中国 - 海南)';
+
+  @override
+  String get cityLinfen => '🇨🇳 Linfen (中国 - 山西)';
+
+  @override
+  String yearFormat(String year) {
+    return 'Yr $year';
+  }
+
+  @override
+  String get upgradeToProTitle => '升级到 PRO 专业版';
+
+  @override
+  String get upgradeToProSubtitle =>
+      '生成带有贵司专属 Logo、自定义利润率和隐藏水印的商业级 PDF 建议书，立刻促成交易！';
+
+  @override
+  String get proFeatureLogo => '自定义企业 Logo 与公司名称';
+
+  @override
+  String get proFeatureCost => '自定义底层采购成本与利润率';
+
+  @override
+  String get proFeaturePvgis => '解锁 8760 小时 PVGIS 卫星气候数据';
+
+  @override
+  String get redirectingToPayment => '即将跳转支付网关...';
+
+  @override
+  String get unlockProBtn => '立刻解锁 (\$19.9/月)';
+
+  @override
+  String get settingsTitle => '工作台设置';
+
+  @override
+  String get brandingSection => '企业品牌与 Logo';
+
+  @override
+  String get companyNameLabel => '公司名称';
+
+  @override
+  String get logoUrlLabel => 'Logo 图片链接 (URL / Base64)';
+
+  @override
+  String get costSection => '采购成本与利润率';
+
+  @override
+  String get pvCostLabel => '光伏单瓦底价 (\$/W)';
+
+  @override
+  String get essCostLabel => '储能单瓦时底价 (\$/Wh)';
+
+  @override
+  String get marginLabel => '期望利润率 (%)';
+
+  @override
+  String get saveSettingsBtn => '保存配置';
+
+  @override
+  String get saveSuccess => '✅ 设置已保存在本地！';
+
+  @override
+  String get pdfProposalTitle => '工商业光储投资收益建议书';
+
+  @override
+  String get pdfSystemConfig => '1. 系统硬件配置';
+
+  @override
+  String get pdfPvArray => '光伏阵列装机容量';
+
+  @override
+  String get pdfEssBattery => '储能系统额定容量';
+
+  @override
+  String get pdfGridPolicy => '并网策略：防逆流 (零上网)';
+
+  @override
+  String get pdfTotalCapex => '项目总投资 (CAPEX)';
+
+  @override
+  String get pdfFinancialHighlights => '2. 核心财务指标';
+
+  @override
+  String get pdfNpv => '项目净现值 (NPV)';
+
+  @override
+  String get pdfIrr => '内部收益率 (IRR)';
+
+  @override
+  String get pdfPayback => '投资回收期';
+
+  @override
+  String get pdfYears => '年';
+
+  @override
+  String get pdfEmsStrategyTitle => '2.5 EMS 策略与首年收益拆解';
+
+  @override
+  String get pdfEmsStrategyDesc =>
+      '能量管理系统 (EMS) 默认开启削峰填谷与夜间谷电套利策略，最大化降低工厂峰值电费。';
+
+  @override
+  String get pdfRevDirectSolar => '1. 光伏自发自用收益';
+
+  @override
+  String get pdfRevDirectSolarDesc => '直供工厂白天基础负载';
+
+  @override
+  String get pdfRevTou => '2. 峰谷套利收益';
+
+  @override
+  String get pdfRevTouDesc => '利用夜间谷电充电，白天峰电放电';
+
+  @override
+  String get pdfRevPeakShaving => '3. 削峰填谷收益';
+
+  @override
+  String get pdfRevPeakShavingDesc => '削减工厂最大需量电费 (\$/kW)';
+
+  @override
+  String get pdfRevBackup => '4. 备用电源 (UPS) 价值';
+
+  @override
+  String get pdfRevBackupDesc => '挽回停电导致的工厂产能损失';
+
+  @override
+  String get pdfCashFlowTitle => '3. 20年项目生命周期现金流明细';
+
+  @override
+  String get pdfCfYear => '年份';
+
+  @override
+  String get pdfCfEnergySavings => '节省电费';
+
+  @override
+  String get pdfCfBackupValue => '挽回停电损失';
+
+  @override
+  String get pdfCfOmBattery => '运维与电池重置';
+
+  @override
+  String get pdfCfDebtService => '偿还贷款';
+
+  @override
+  String get pdfCfNetCashFlow => '当年净现金流';
+
+  @override
+  String get pdfCfCumulative => '累计净现金流';
+
+  @override
+  String pdfDate(String date) {
+    return '日期: $date';
+  }
+
+  @override
+  String pdfPageOf(String current, String total) {
+    return '第 $current 页，共 $total 页';
+  }
+
+  @override
+  String get pdfConfidential => '商业机密，严禁外传';
+
+  @override
+  String get logoutTooltip => '登出 (Logout)';
+
+  @override
+  String get logoutTitle => '退出登录';
+
+  @override
+  String get logoutMessage => '确定要退出当前账号吗？';
+
+  @override
+  String get cancel => '取消';
+
+  @override
+  String get confirmLogout => '退出';
+
+  @override
+  String get tierFree => '当前版本：基础免费版';
+
+  @override
+  String get tierPro => '👑 尊贵的 PRO 订阅会员';
+
+  @override
+  String get upgradeNow => '立即升级';
+
+  @override
+  String get forgotPasswordTitle => '重置密码';
+
+  @override
+  String get enterEmailPrompt => '请输入您注册时的邮箱地址';
+
+  @override
+  String get sendCodeBtn => '发送验证码';
+
+  @override
+  String codeSentMsg(Object email) {
+    return '验证码已发送至 $email';
+  }
+
+  @override
+  String get codeInputHint => '输入 6 位验证码';
+
+  @override
+  String get newPasswordLabel => '设置新密码';
+
+  @override
+  String get confirmResetBtn => '确认重置';
+
+  @override
+  String get resendPrompt => '没收到？重新填写邮箱';
+
+  @override
+  String get sessionExpired => '登录状态已过期，请重新登录！';
+
+  @override
+  String get paymentConfirmTitle => '等待支付确认';
+
+  @override
+  String get paymentConfirmDesc => '如果您已在浏览器中完成付款，请点击下方按钮核实状态并激活特权。';
+
+  @override
+  String get verifyLater => '稍后核实';
+
+  @override
+  String get paymentCompleted => '我已完成支付';
+
+  @override
+  String get paymentSuccessPro => '🎉 支付成功！已为您激活 PRO 专属特权！';
+
+  @override
+  String get paymentPending => '⏳ 尚未收到款项，请确保支付成功或稍等几秒再试。';
+
+  @override
+  String paymentError(String error) {
+    return '呼叫收银台失败：$error';
+  }
+
+  @override
+  String get errInvalidEmail => '请输入有效的邮箱地址';
+
+  @override
+  String get msgCodeSent => '✅ 验证码已发送至您的邮箱，请注意查收。';
+
+  @override
+  String get errCodeLength => '请输入 6 位验证码';
+
+  @override
+  String get errNewPwdLength => '新密码至少 6 位';
+
+  @override
+  String get msgResetSuccess => '🎉 密码重置成功！请使用新密码登录。';
+
+  @override
+  String get errCodeInvalid => '❌ 验证码错误或已过期';
+
+  @override
+  String get msgPayToUpgrade => '✅ 支付完成后，请重新登录账号，即可激活 PRO 专属特权！';
+
+  @override
+  String get logoInputHint => '填链接或点击右侧从相册选择 ->';
+
+  @override
+  String get msgLogoConverted => '✅ Logo 已成功转为 Base64！请点击保存';
+
+  @override
+  String get errSaveFailed => '保存失败，请检查网络！';
+
+  @override
+  String get pdfPreviewTitle => '建议书预览';
+}
+
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\lib\l10n\app_zh.arb
+============================================================
+
+{
+    "@@locale": "zh",
+    "appTitle": "EnerQuote V1.0",
+    "appSubtitle": "企业级 SaaS 报价系统",
+    "emailLabel": "企业邮箱 (Email)",
+    "passwordLabel": "密码 (Password)",
+    "confirmPasswordLabel": "确认密码",
+    "secureLoginBtn": "安全登录",
+    "registerPrompt": "还没有账号？点击这里免费注册",
+    "registerTitle": "创建您的账号",
+    "registerSubtitle": "加入EnerQuote，解锁企业级测算引擎",
+    "freeRegisterBtn": "免费注册",
+    "errEmpty": "邮箱和密码不能为空",
+    "errPasswordLength": "密码长度至少需要 6 位",
+    "errPasswordMatch": "两次输入的密码不一致",
+    "msgRegisterSuccess": "🎉 账号注册成功！请使用新账号登录。",
+    "errAuthFailed401": "账号或密码错误 (401)",
+    "errNetwork": "网络错误：{message}",
+    "@errNetwork": {
+    "description": "网络请求失败时的报错",
+    "placeholders": {
+    "message": {
+    "type": "String",
+    "example": "Connection refused"
+    }
+    }
+    },
+    "errSystem": "系统异常: {error}",
+    "@errSystem": {
+    "description": "捕获到未知系统异常时的报错",
+    "placeholders": {
+    "error": {
+    "type": "String",
+    "example": "Exception details"
+    }
+    }
+    },
+    "errRegisterFailedFallback": "注册失败，请检查输入",
+    "unauthorized": "未授权，请重新登录",
+    "simulateFailed": "测算失败: {error}",
+    "@simulateFailed": {
+    "placeholders": {
+    "error": { "type": "String" }
+    }
+    },
+    "parseError": "数据格式解析异常，请查看控制台日志",
+    "dashboardTitle": "EnerQuote PV+ESS",
+    "exportProposal": "导出建议书 (Export Proposal)",
+    "kpiTotalCapex": "系统总造价 (CAPEX)",
+    "kpiIrr": "内部收益率 (IRR)",
+    "kpiFirstYearGen": "首年发电量",
+    "kpiPayback": "投资回收期",
+    "clientEnvProfile": "客户环境与用电模型",
+    "factoryPeakLoad": "工厂白天峰值功率: {val} kW",
+    "@factoryPeakLoad": {
+    "placeholders": {
+    "val": { "type": "String" }
+    }
+    },
+    "hardwareConfig": "硬件资产配置",
+    "pvCapacity": "PV 光伏容量: {val} kWp",
+    "@pvCapacity": {
+    "placeholders": {
+    "val": { "type": "String" }
+    }
+    },
+    "essCapacity": "ESS 电池容量: {val} kWh",
+    "@essCapacity": {
+    "placeholders": {
+    "val": { "type": "String" }
+    }
+    },
+    "cashFlowChartTitle": "20年生命周期 净现金流预测",
+    "connectingPvgis": "正在连接 PVGIS 气象卫星...",
+    "citySaoPaulo": "🇧🇷 São Paulo (巴西 - 拉美区)",
+    "cityMunich": "🇩🇪 Munich (德国 - 欧洲区)",
+    "cityHaikou": "🇨🇳 Haikou (中国 - 海南)",
+    "cityLinfen": "🇨🇳 Linfen (中国 - 山西)",
+    "yearFormat": "Yr {year}",
+    "@yearFormat": {
+    "placeholders": {
+    "year": { "type": "String" }
+    }
+    },
+    "upgradeToProTitle": "升级到 PRO 专业版",
+    "upgradeToProSubtitle": "生成带有贵司专属 Logo、自定义利润率和隐藏水印的商业级 PDF 建议书，立刻促成交易！",
+    "proFeatureLogo": "自定义企业 Logo 与公司名称",
+    "proFeatureCost": "自定义底层采购成本与利润率",
+    "proFeaturePvgis": "解锁 8760 小时 PVGIS 卫星气候数据",
+    "redirectingToPayment": "即将跳转支付网关...",
+    "unlockProBtn": "立刻解锁 ($19.9/月)",
+    "settingsTitle": "工作台设置",
+    "brandingSection": "企业品牌与 Logo",
+    "companyNameLabel": "公司名称",
+    "logoUrlLabel": "Logo 图片链接 (URL / Base64)",
+    "costSection": "采购成本与利润率",
+    "pvCostLabel": "光伏单瓦底价 ($/W)",
+    "essCostLabel": "储能单瓦时底价 ($/Wh)",
+    "marginLabel": "期望利润率 (%)",
+    "saveSettingsBtn": "保存配置",
+    "saveSuccess": "✅ 设置已保存在本地！",
+    "pdfProposalTitle": "工商业光储投资收益建议书",
+    "pdfSystemConfig": "1. 系统硬件配置",
+    "pdfPvArray": "光伏阵列装机容量",
+    "pdfEssBattery": "储能系统额定容量",
+    "pdfGridPolicy": "并网策略：防逆流 (零上网)",
+    "pdfTotalCapex": "项目总投资 (CAPEX)",
+    "pdfFinancialHighlights": "2. 核心财务指标",
+    "pdfNpv": "项目净现值 (NPV)",
+    "pdfIrr": "内部收益率 (IRR)",
+    "pdfPayback": "投资回收期",
+    "pdfYears": "年",
+    "pdfEmsStrategyTitle": "2.5 EMS 策略与首年收益拆解",
+    "pdfEmsStrategyDesc": "能量管理系统 (EMS) 默认开启削峰填谷与夜间谷电套利策略，最大化降低工厂峰值电费。",
+    "pdfRevDirectSolar": "1. 光伏自发自用收益",
+    "pdfRevDirectSolarDesc": "直供工厂白天基础负载",
+    "pdfRevTou": "2. 峰谷套利收益",
+    "pdfRevTouDesc": "利用夜间谷电充电，白天峰电放电",
+    "pdfRevPeakShaving": "3. 削峰填谷收益",
+    "pdfRevPeakShavingDesc": "削减工厂最大需量电费 ($/kW)",
+    "pdfRevBackup": "4. 备用电源 (UPS) 价值",
+    "pdfRevBackupDesc": "挽回停电导致的工厂产能损失",
+    "pdfCashFlowTitle": "3. 20年项目生命周期现金流明细",
+    "pdfCfYear": "年份",
+    "pdfCfEnergySavings": "节省电费",
+    "pdfCfBackupValue": "挽回停电损失",
+    "pdfCfOmBattery": "运维与电池重置",
+    "pdfCfDebtService": "偿还贷款",
+    "pdfCfNetCashFlow": "当年净现金流",
+    "pdfCfCumulative": "累计净现金流",
+    "pdfDate": "日期: {date}",
+    "@pdfDate": { "placeholders": { "date": { "type": "String" } } },
+    "pdfPageOf": "第 {current} 页，共 {total} 页",
+    "@pdfPageOf": { "placeholders": { "current": { "type": "String" }, "total": { "type": "String" } } },
+    "pdfConfidential": "商业机密，严禁外传",
+    "logoutTooltip": "登出 (Logout)",
+    "logoutTitle": "退出登录",
+    "logoutMessage": "确定要退出当前账号吗？",
+    "cancel": "取消",
+    "confirmLogout": "退出",
+    "tierFree": "当前版本：基础免费版",
+    "tierPro": "👑 尊贵的 PRO 订阅会员",
+    "upgradeNow": "立即升级",
+    "forgotPasswordTitle": "重置密码",
+    "enterEmailPrompt": "请输入您注册时的邮箱地址",
+    "emailLabel": "企业邮箱",
+    "sendCodeBtn": "发送验证码",
+    "codeSentMsg": "验证码已发送至 {email}",
+    "codeInputHint": "输入 6 位验证码",
+    "newPasswordLabel": "设置新密码",
+    "confirmResetBtn": "确认重置",
+    "resendPrompt": "没收到？重新填写邮箱",
+    "sessionExpired": "登录状态已过期，请重新登录！",
+    "paymentConfirmTitle": "等待支付确认",
+    "paymentConfirmDesc": "如果您已在浏览器中完成付款，请点击下方按钮核实状态并激活特权。",
+    "verifyLater": "稍后核实",
+    "paymentCompleted": "我已完成支付",
+    "paymentSuccessPro": "🎉 支付成功！已为您激活 PRO 专属特权！",
+    "paymentPending": "⏳ 尚未收到款项，请确保支付成功或稍等几秒再试。",
+    "paymentError": "呼叫收银台失败：{error}",
+    "@paymentError": { "placeholders": { "error": { "type": "String" } } },
+    "errInvalidEmail": "请输入有效的邮箱地址",
+    "msgCodeSent": "✅ 验证码已发送至您的邮箱，请注意查收。",
+    "errCodeLength": "请输入 6 位验证码",
+    "errNewPwdLength": "新密码至少 6 位",
+    "msgResetSuccess": "🎉 密码重置成功！请使用新密码登录。",
+    "errCodeInvalid": "❌ 验证码错误或已过期",
+    "msgPayToUpgrade": "✅ 支付完成后，请重新登录账号，即可激活 PRO 专属特权！",
+    "logoInputHint": "填链接或点击右侧从相册选择 ->",
+    "msgLogoConverted": "✅ Logo 已成功转为 Base64！请点击保存",
+    "errSaveFailed": "保存失败，请检查网络！",
+    "pdfPreviewTitle": "建议书预览"
+}
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\lib\screens\dashboard_screen.dart
+============================================================
+
+import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
+import '../utils/pdf_export.dart';
+import '../core/network/api_client.dart';
+import 'package:dio/dio.dart';
+// 🌟 引入刚生成的实体多语言文件
+import '../l10n/app_localizations.dart';
+import 'settings_screen.dart';
+import 'pdf_preview_screen.dart';
+import 'login_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:sentry/sentry.dart';
+
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
+
+  @override
+  _DashboardScreenState createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  double _pvCapacity = 60.0;
+  double _batteryCapacity = 50.0;
+  double _factoryPeakLoad = 80.0;
+  double _totalCapex = 0.0;
+
+  // 🌟 核心架构升级：解耦！
+  // 这个字典只存物理坐标和纯净的 ID（永远不变）
+  // final Map<String, Map<String, double>> _cityCoordinates = {
+  //   'sao_paulo': {'lat': -23.5505, 'lon': -46.6333},
+  //   'munich': {'lat': 48.1351, 'lon': 11.5820},
+  //   'haikou': {'lat': 20.0311, 'lon': 110.3312},
+  //   'linfen': {'lat': 36.0880, 'lon': 111.5190},
+  // };
+
+  // 🌟 动态存储从云端拉取下来的城市列表
+  List<dynamic> _cloudCities = [];
+// 选中的值依然只存 ID
+  String _selectedCityId = 'sao_paulo';
+  // 动态保存当前选中的经纬度（传给后端测算用）
+  double _currentLat = -23.5505;
+  double _currentLon = -46.6333;
+
+  List<double> _cashFlowData = List.filled(20, 0.0);
+  List<dynamic> _fullCashFlowData = [];
+
+  double _npv = 0.0;
+  double _irr = 0.0;
+  double _payback = 0.0;
+  double _annualGeneration = 0.0;
+
+  bool _isLoading = false;
+  String _errorMessage = '';
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    // 页面初始化时延迟一帧执行，以确保能拿到安全的 context 用于多语言
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchRealData();
+    });
+  }
+
+  Future<void> _onCityChanged(String? newCityId) async {
+    if (newCityId == null) return;
+
+    // 🌟 1. 从本地掏出他在登录时拿到的真实权限卡
+    final prefs = await SharedPreferences.getInstance();
+    String currentUserTier = prefs.getString('user_tier') ?? "FREE";
+
+    // 🌟 2. 核心逼单逻辑：如果他是免费用户，且想选择非默认城市 (比如慕尼黑)
+    if (currentUserTier != "PRO" && newCityId != 'sao_paulo') {
+      // 🚫 拒绝切换城市，并弹出我们刚写好的付费墙！
+      _showProPaywall();
+      return;
+    }
+
+    // ✅ 3. 权限校验通过（或者选的就是免费城市），放行并重新拉取测算数据
+    setState(() => _selectedCityId = newCityId);
+    _fetchRealData();
+  }
+
+  void _onSliderChanged(VoidCallback stateUpdate) {
+    setState(stateUpdate);
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(
+      const Duration(milliseconds: 300),
+          () => _fetchRealData(),
+    );
+  }
+
+  List<double> _generateFactoryLoadProfile(double peakLoad) {
+    return List.generate(8760, (index) {
+      int hour = index % 24;
+      if (hour >= 8 && hour < 18) {
+        return peakLoad;
+      } else {
+        return peakLoad * 0.2;
+      }
+    });
+  }
+
+  Future<void> _fetchRealData() async {
+    // 提前在同步上下文中抓取语言包
+    final l10n = AppLocalizations.of(context)!;
+
+    // 🌟 如果本地还没有城市列表，先去云端拉取！
+    if (_cloudCities.isEmpty) {
+      final cities = await ApiClient().getSupportedCities();
+      if (cities.isNotEmpty) {
+        setState(() {
+          _cloudCities = cities;
+        });
+      }
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    if (token == null) {
+      setState(() {
+        _errorMessage = l10n.unauthorized; // 🌟 多语言提示
+        _isLoading = false;
+      });
+      return;
+    }
+
+    // 🌟 1. 从本地缓存动态读取销售的专属成本与利润率
+    // 如果缓存没有（第一次登录），则使用后备默认值
+    double pvCostPerKw = prefs.getDouble('pv_cost') ?? 800.0;
+    double essCostPerKwh = prefs.getDouble('ess_cost') ?? 350.0;
+    double marginPct = prefs.getDouble('margin_pct') ?? 20.0;
+
+    // 🌟 2. 商业逻辑：计算底层硬成本 (Hard Cost)
+    // 假设固定施工费 5000 刀
+    double baseCost = (_pvCapacity * pvCostPerKw) + (_batteryCapacity * essCostPerKwh) + 5000.0;
+
+    // 🌟 3. 商业逻辑：计算最终面向客户的报价 (Customer Price / CAPEX)
+    double currentCapex = baseCost * (1 + (marginPct / 100.0));
+
+    final payload = {
+      "physics_params": {
+        "env": {
+          // 🌟 通过安全解耦的 ID 获取坐标
+          "lat": _currentLat,
+          "lon": _currentLon,
+          "irradiance_8760": List.filled(8760, 600.0),
+          "load_profile_8760": _generateFactoryLoadProfile(_factoryPeakLoad),
+          "grid_status_8760": List.generate(8760, (index) => index % 24 == 18 ? 0 : 1),
+        },
+        "pv": {
+          "pv_dc_capacity_kwp": _pvCapacity,
+          "inverter_ac_capacity_kw": _pvCapacity * 0.8,
+          "system_loss_factor": 0.15,
+        },
+        "ess": {
+          "batt_nominal_capacity_kwh": _batteryCapacity,
+          "dod_limit": 0.1,
+          "max_charge_discharge_kw": _batteryCapacity * 0.5,
+          "rte_efficiency": 0.90,
+          "initial_soc": 1.0,
+        },
+        "grid": {"export_limit_kw": 0.0},
+      },
+      "financial_params": {
+        "total_capex": currentCapex,
+        "annual_opex": 150.0 + (_pvCapacity * 2),
+        "battery_replacement_cost": _batteryCapacity * 200,
+        "battery_replacement_year": 10,
+        "current_electricity_price": 0.25,
+        "electricity_inflation_rate": 0.08,
+        "voll_price": 2.0,
+        "system_degradation_rate": 0.015,
+        "down_payment_pct": 0.20,
+        "loan_term_years": 5,
+        "loan_interest_rate": 0.12,
+        "discount_rate": 0.10,
+        "project_lifespan": 20,
+      },
+    };
+
+    try {
+      final response = await ApiClient().dio.post(
+        '/simulate',
+        data: payload,
+      );
+
+      final data = response.data;
+
+      setState(() {
+        final financial = data['finance_result'] ?? {};
+        final physics = data['physics_result'] ?? {};
+        final physicsKpis = physics['kpis'] ?? {};
+
+        _annualGeneration = (physicsKpis['total_generation_kwh'] as num?)?.toDouble() ?? 0.0;
+        _totalCapex = (financial['total_capex'] as num?)?.toDouble() ?? currentCapex;
+        _irr = (financial['irr'] as num?)?.toDouble() ?? 0.0;
+        _npv = (financial['npv'] as num?)?.toDouble() ?? 0.0;
+        _payback = (financial['payback_period_years'] as num?)?.toDouble() ?? 0.0;
+
+        if (financial['cash_flow_statement'] != null) {
+          _cashFlowData = (financial['cash_flow_statement'] as List)
+              .skip(1)
+              .map((e) => (e['net_cash_flow'] as num).toDouble())
+              .toList();
+        }
+
+        _fullCashFlowData = financial['cash_flow_statement'] ?? [];
+      });
+
+    } on DioException catch (e, stackTrace) {
+      print("🔴 Dio Error: ${e.response?.data}");
+
+      // 🌟 主动把这种非致命错误也传给 Sentry 控制台
+      await Sentry.captureException(
+        e,
+        stackTrace: stackTrace,
+      );
+
+      setState(() {
+        final errorMsg = e.response?.data['detail'] ?? e.message ?? "Error";
+        _errorMessage = l10n.simulateFailed(errorMsg); // 🌟 动态抛错
+      });
+    } catch (e, stacktrace) {
+      print("🔥 Parse Error: $e");
+      print(stacktrace);
+
+    // 🌟 主动把这种非致命错误也传给 Sentry 控制台
+    await Sentry.captureException(
+    e,
+    stackTrace: stacktrace,
+    );
+
+      setState(() {
+        _errorMessage = l10n.parseError; // 🌟 兜底报错
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    // 🌟 动态映射字典：根据当前语言环境，把纯净 ID 映射成带国旗的超长显示名字
+    final Map<String, String> cityDisplayNames = {
+      'sao_paulo': l10n.citySaoPaulo,
+      'munich': l10n.cityMunich,
+      'haikou': l10n.cityHaikou,
+      'linfen': l10n.cityLinfen,
+    };
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          l10n.dashboardTitle, // 🌟
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+
+
+          IconButton(
+            tooltip: l10n.exportProposal, // 🌟
+            icon: const Icon(Icons.picture_as_pdf, color: Color(0xFF00E676)),
+            onPressed: _isLoading
+                ? null
+                : () async {
+
+              // 🌟 1. 拿取真实的权限等级和自定义公司名
+              final prefs = await SharedPreferences.getInstance();
+              String currentUserTier = prefs.getString('user_tier') ?? "FREE";
+              String customCompanyName = prefs.getString('company_name') ?? "PV+ESS QUOTE MASTER";
+              String customLogoUrl = prefs.getString('logo_url') ?? ""; // 👈 获取 Logo 链接
+              print("👉 [2. 主页读取] 导出 PDF 前，从本地拿到的 Logo 长度: ${customLogoUrl.length}");
+
+              // 🌟 2. 终极付费墙拦截！
+              if (currentUserTier != "PRO") {
+                _showProPaywall();
+              } else {
+                // ✅ PRO 用户：直接放行！把他的定制公司名传给 PDF 引擎
+
+                // 1. 拿到生成的 PDF 字节流
+                final bytes = await PdfExport.generateAndPrintProposal(
+                  l10n: l10n,
+                  companyName: customCompanyName,
+                  logoUrl: customLogoUrl,        // 👈 传入 Logo
+                  pvCapacity: _pvCapacity,
+                  batteryCapacity: _batteryCapacity,
+                  totalCapex: _totalCapex,
+                  npv: _npv,
+                  irr: _irr,
+                  payback: _payback,
+                  fullCashFlowData: _fullCashFlowData,
+                );
+
+                if (!mounted) return;
+
+                // 🌟 2. 跳转到高大上的预览页！
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => PdfPreviewScreen(pdfBytes: bytes),
+                  ),
+                );
+
+              }
+            },
+          ),
+          // 🌟 新增的设置齿轮按钮
+          IconButton(
+            tooltip: 'Settings',
+            icon: const Icon(Icons.settings, color: Colors.white54),
+            onPressed: () async {
+              // 🌟 1. 加上 await，等待用户从设置页返回
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
+
+              // 🌟 2. 用户返回后，立刻触发重新测算，应用他刚改的成本和利润率！
+              if (mounted) {
+                _fetchRealData();
+              }
+            },
+          ),
+          // 🌟 1. 国际化版本的登出按钮
+          IconButton(
+            tooltip: l10n.logoutTooltip, // 👈 替换 Tooltip
+            icon: const Icon(Icons.logout, color: Colors.redAccent),
+            onPressed: () async {
+              // 弹出确认对话框
+              bool? confirm = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  backgroundColor: const Color(0xFF1E293B),
+                  title: Text(l10n.logoutTitle, style: const TextStyle(color: Colors.white)), // 👈 替换标题
+                  content: Text(l10n.logoutMessage, style: const TextStyle(color: Colors.white70)), // 👈 替换内容
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text(l10n.cancel, style: const TextStyle(color: Colors.white54)), // 👈 替换取消
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: Text(l10n.confirmLogout, style: const TextStyle(color: Colors.redAccent)), // 👈 替换确认
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirm == true) {
+                // 1. 撕毁本地门禁卡
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('jwt_token');
+                await prefs.remove('user_tier');
+
+                if (!mounted) return;
+
+                // 2. 踢回登录页，并摧毁之前的全部路由记录
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                );
+              }
+            },
+          ),
+          const SizedBox(width: 16),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                _buildKpiCard(
+                  l10n.kpiTotalCapex, // 🌟
+                  '\$${_totalCapex.toStringAsFixed(0)}',
+                  Colors.redAccent,
+                ),
+                const SizedBox(width: 12),
+                _buildKpiCard(
+                  l10n.kpiIrr, // 🌟
+                  '${_irr.toStringAsFixed(1)}%',
+                  const Color(0xFF00E676),
+                ),
+                const SizedBox(width: 12),
+                _buildKpiCard(
+                  l10n.kpiFirstYearGen, // 🌟
+                  '${(_annualGeneration / 1000).toStringAsFixed(1)} MWh',
+                  Colors.amber,
+                ),
+                const SizedBox(width: 12),
+                _buildKpiCard(
+                  l10n.kpiPayback, // 🌟
+                  '${_payback.toStringAsFixed(1)} Yrs',
+                  Colors.white,
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.clientEnvProfile, // 🌟
+                              style: const TextStyle(color: Colors.white54, fontSize: 14),
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.black26,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.white12),
+                              ),
+                              // 🌟 核心：极其安全的下拉菜单渲染逻辑
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: _selectedCityId, // 内部永远用干净的 ID
+                                  isExpanded: true,
+                                  dropdownColor: const Color(0xFF1E293B),
+                                  // 🌟 核心：依靠云端数据动态渲染！
+                                  items: _cloudCities.map((cityObj) {
+                                    // 自动识别当前手机语言，提取对应的多语言名字
+                                    String langCode = Localizations.localeOf(context).languageCode;
+                                    String displayName = cityObj['name'][langCode] ?? cityObj['name']['en'];
+                                    bool isProOnly = cityObj['is_pro_only'];
+
+                                    return DropdownMenuItem<String>(
+                                      value: cityObj['id'],
+                                      child: Row(
+                                        children: [
+                                          Text(displayName, style: const TextStyle(fontSize: 14, color: Colors.white)),
+                                          if (isProOnly) ...[
+                                            const SizedBox(width: 8),
+                                            const Icon(Icons.workspace_premium, color: Colors.amber, size: 14),
+                                          ]
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (String? newCityId) async {
+                                    if (newCityId == null) return;
+
+                                    // 在云端列表里找出用户选的这个城市
+                                    final selectedCityObj = _cloudCities.firstWhere((c) => c['id'] == newCityId);
+
+                                    // 1. 掏出权限卡
+                                    final prefs = await SharedPreferences.getInstance();
+                                    String currentUserTier = prefs.getString('user_tier') ?? "FREE";
+
+                                    // 2. 🌟 云端级防黑客拦截：如果云端标记这个城市是 PRO，且用户是免费的，直接拦截！
+                                    if (selectedCityObj['is_pro_only'] == true && currentUserTier != "PRO") {
+                                      _showProPaywall();
+                                      return;
+                                    }
+
+                                    // 3. 放行，更新当前坐标并重新测算
+                                    setState(() {
+                                      _selectedCityId = newCityId;
+                                      _currentLat = selectedCityObj['lat'];
+                                      _currentLon = selectedCityObj['lon'];
+                                    });
+                                    _fetchRealData();
+                                  },
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+
+                            Text(
+                              l10n.factoryPeakLoad(_factoryPeakLoad.toStringAsFixed(0)), // 🌟
+                              style: const TextStyle(fontSize: 14, color: Colors.lightBlueAccent),
+                            ),
+                            Slider(
+                              value: _factoryPeakLoad,
+                              min: 10.0,
+                              max: 200.0,
+                              divisions: 38,
+                              activeColor: Colors.lightBlueAccent,
+                              inactiveColor: Colors.white12,
+                              onChanged: (v) => _onSliderChanged(() => _factoryPeakLoad = v),
+                            ),
+
+                            const Divider(color: Colors.white12, height: 16),
+                            Text(
+                              l10n.hardwareConfig, // 🌟
+                              style: const TextStyle(color: Colors.white54, fontSize: 14),
+                            ),
+                            const SizedBox(height: 6),
+
+                            Text(
+                              l10n.pvCapacity(_pvCapacity.toStringAsFixed(0)), // 🌟
+                              style: const TextStyle(fontSize: 14, color: Colors.amber),
+                            ),
+                            Slider(
+                              value: _pvCapacity,
+                              min: 0.0,
+                              max: 200.0,
+                              divisions: 40,
+                              activeColor: Colors.amber,
+                              inactiveColor: Colors.white12,
+                              onChanged: (v) => _onSliderChanged(() => _pvCapacity = v),
+                            ),
+
+                            Text(
+                              l10n.essCapacity(_batteryCapacity.toStringAsFixed(0)), // 🌟
+                              style: const TextStyle(fontSize: 14, color: Color(0xFF00E676)),
+                            ),
+                            Slider(
+                              value: _batteryCapacity,
+                              min: 0.0,
+                              max: 200.0,
+                              divisions: 40,
+                              activeColor: const Color(0xFF00E676),
+                              inactiveColor: Colors.white12,
+                              onChanged: (v) => _onSliderChanged(() => _batteryCapacity = v),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+
+                  Expanded(
+                    flex: 7,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start, // 🌟 顶部对齐
+                          children: [
+                            Expanded( // 🌟 核心修复：套上 Expanded，强制它在规定范围内
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 16.0),
+                                child: Text(
+                                  _errorMessage,
+                                  style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                                  maxLines: 2, // 这里顺便也改成 2 行，防止报错信息过长
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                            if (_errorMessage.isNotEmpty)
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 16.0),
+                                  child: Text(
+                                    _errorMessage,
+                                    style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              BarChart(
+                                BarChartData(
+                                  alignment: BarChartAlignment.spaceAround,
+                                  barTouchData: BarTouchData(
+                                    touchTooltipData: BarTouchTooltipData(
+                                      getTooltipColor: (group) => Colors.black87,
+                                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                                        return BarTooltipItem(
+                                          '\$${rod.toY.toStringAsFixed(0)}',
+                                          const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  titlesData: FlTitlesData(
+                                    show: true,
+                                    bottomTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        getTitlesWidget: (value, meta) {
+                                          if (value % 5 == 0 || value == 1) {
+                                            return Padding(
+                                              padding: const EdgeInsets.only(top: 8.0),
+                                              child: Text(
+                                                l10n.yearFormat(value.toInt().toString()), // 🌟 动态年份
+                                                style: const TextStyle(color: Colors.white54, fontSize: 12),
+                                              ),
+                                            );
+                                          }
+                                          return const Text('');
+                                        },
+                                      ),
+                                    ),
+                                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                  ),
+                                  borderData: FlBorderData(show: false),
+                                  gridData: FlGridData(
+                                    show: true,
+                                    drawVerticalLine: false,
+                                    getDrawingHorizontalLine: (value) => const FlLine(color: Colors.white10, strokeWidth: 1),
+                                  ),
+                                  barGroups: _cashFlowData.asMap().entries.map((entry) {
+                                    bool isPositive = entry.value >= 0;
+                                    return BarChartGroupData(
+                                      x: entry.key + 1,
+                                      barRods: [
+                                        BarChartRodData(
+                                          toY: entry.value,
+                                          width: 14,
+                                          color: isPositive ? const Color(0xFF00E676) : const Color(0xFFFF3D00),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
+                                swapAnimationDuration: const Duration(milliseconds: 350),
+                                swapAnimationCurve: Curves.easeOutCubic,
+                              ),
+                              if (_isLoading)
+                                Container(
+                                  color: Colors.black45,
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const CircularProgressIndicator(color: Color(0xFF00E676)),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          l10n.connectingPvgis, // 🌟
+                                          style: const TextStyle(color: Color(0xFF00E676), fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildKpiCard(String title, String value, Color valueColor) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+            const SizedBox(height: 6),
+            Text(value, style: TextStyle(color: valueColor, fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 🌟 核心：触发国际化版本的付费墙弹窗 (已修复溢出问题)
+  void _showProPaywall() {
+    final l10n = AppLocalizations.of(context)!; // 召唤多语言
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // 🌟 1. 突破默认半屏的高度限制！
+      backgroundColor: const Color(0xFF1E293B),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext buildContext) {
+        // 🌟 2. 套上 SafeArea 防止被底部小白条遮挡
+        return SafeArea(
+          // 🌟 3. 套上 SingleChildScrollView，高度不够时自动变成可滑动，彻底告别溢出！
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Icon(Icons.workspace_premium, size: 64, color: Colors.amber),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n.upgradeToProTitle, // 🌟 动态标题
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.upgradeToProSubtitle, // 🌟 动态副标题
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 14, color: Colors.white54),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 🌟 动态权益列表
+                  _buildProFeatureRow(Icons.check_circle, l10n.proFeatureLogo, Colors.amber),
+                  _buildProFeatureRow(Icons.check_circle, l10n.proFeatureCost, Colors.amber),
+                  // _buildProFeatureRow(Icons.check_circle, l10n.proFeaturePvgis, Colors.amber),
+
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    // 🌟 核心修复：注入真实的 Stripe 唤起逻辑
+                    onPressed: () async {
+                      // 1. 先关闭当前的付费墙弹窗
+                      Navigator.pop(buildContext);
+
+                      // 2. 告诉用户稍等
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.redirectingToPayment)),
+                      );
+
+                      try {
+                        // 3. 向云端索要专属的 Stripe 支付链接
+                        final urlStr = await ApiClient().getStripeCheckoutUrl();
+
+                        if (urlStr != null) {
+                          final Uri url = Uri.parse(urlStr);
+
+                          // 4. 瞬间打破次元壁，唤起手机原生浏览器！
+                          if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+                            throw Exception('无法唤起原生浏览器');
+                          }
+
+                          if (!mounted) return;
+
+                          // 🌟 5. 商业级交互：弹出一个不可关闭的确认框，等待用户从浏览器切回来
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false, // 强制用户必须点按钮
+                            builder: (dialogContext) => AlertDialog(
+                              backgroundColor: const Color(0xFF1E293B),
+                              title: Text(l10n.paymentConfirmTitle, style: TextStyle(color: Colors.white)),
+                              content: Text(l10n.paymentConfirmDesc, style: TextStyle(color: Colors.white70)),
+                              actions: [
+                                TextButton(
+                                  child: Text(l10n.verifyLater, style: TextStyle(color: Colors.white54)),
+                                  onPressed: () => Navigator.pop(dialogContext),
+                                ),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
+                                  child: Text(l10n.paymentCompleted, style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                                  onPressed: () async {
+                                    // 🌟 核心逻辑：用户点确认后，向后端请求最新的 Token
+                                    final newTier = await ApiClient().refreshUserToken();
+
+                                    if (!mounted) return;
+
+                                    if (newTier == "PRO") {
+                                      Navigator.pop(dialogContext); // 关掉确认框
+
+                                      // 触发页面刷新，去掉所有付费墙限制
+                                      setState(() {});
+
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text(l10n.paymentSuccessPro), backgroundColor: Colors.green),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text(l10n.paymentPending), backgroundColor: Colors.orange),
+                                      );
+                                    }
+                                  },
+                                )
+                              ],
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(l10n.paymentError(e.toString())), backgroundColor: Colors.redAccent),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text(
+                      l10n.unlockProBtn, // 🌟 动态按钮文字
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProFeatureRow(IconData icon, String text, Color iconColor) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        children: [
+          Icon(icon, color: iconColor, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 14)),
+          ),
+        ],
+      ),
+    );
+  }
+
+}
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\lib\screens\forgot_password_screen.dart
+============================================================
+
+import 'package:flutter/material.dart';
+import '../core/network/api_client.dart';
+import '../l10n/app_localizations.dart'; // 🌟 引入字典
+import '../main.dart'; // 👈 新增这行，为了拿到 globalNavigatorKey
+
+class ForgotPasswordScreen extends StatefulWidget {
+  const ForgotPasswordScreen({super.key});
+
+  @override
+  _ForgotPasswordScreenState createState() => _ForgotPasswordScreenState();
+}
+
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+
+  final l10n = AppLocalizations.of(globalNavigatorKey.currentContext!)!;
+
+  int _step = 1; // 1: 填邮箱, 2: 填验证码和新密码
+  final _emailController = TextEditingController();
+  final _codeController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  bool _isLoading = false;
+
+  Future<void> _sendCode() async {
+
+
+    // 🌟 获取当前的语言代码 (比如 "zh" 或 "en")
+    final langCode = Localizations.localeOf(context).languageCode;
+
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.errInvalidEmail)));
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    await ApiClient().requestPasswordReset(email, langCode);
+    setState(() {
+      _isLoading = false;
+      _step = 2; // 无脑进入第二步
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.msgCodeSent), backgroundColor: Colors.green),
+      );
+    }
+  }
+
+  Future<void> _submitNewPassword() async {
+    final email = _emailController.text.trim();
+    final code = _codeController.text.trim();
+    final newPassword = _newPasswordController.text.trim();
+
+    if (code.length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.errCodeLength)));
+      return;
+    }
+    if (newPassword.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.errNewPwdLength)));
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    final success = await ApiClient().resetPassword(email, code, newPassword);
+    setState(() => _isLoading = false);
+
+    if (success) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.msgResetSuccess), backgroundColor: Colors.green),
+        );
+        Navigator.pop(context); // 回到登录页
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.errCodeInvalid), backgroundColor: Colors.redAccent),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 🌟 召唤当前环境的翻译官
+    final l10n = AppLocalizations.of(context)!;
+
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.forgotPasswordTitle), backgroundColor: Colors.transparent, elevation: 0),
+      body: Center(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Icon(Icons.lock_reset, size: 80, color: Colors.amber),
+                const SizedBox(height: 32),
+
+                if (_step == 1) ...[
+                  Text(l10n.enterEmailPrompt, style: const TextStyle(color: Colors.white70, fontSize: 16), textAlign: TextAlign.center),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _emailController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: l10n.emailLabel, // 🌟
+                      labelStyle: const TextStyle(color: Colors.white54),
+                      prefixIcon: const Icon(Icons.email, color: Colors.white54),
+                      filled: true,
+                      fillColor: Colors.black26,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _sendCode,
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00E676), padding: const EdgeInsets.symmetric(vertical: 16)),
+                    child: _isLoading ? const CircularProgressIndicator() : Text(l10n.sendCodeBtn, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                  ),
+                ] else ...[
+                  Text(l10n.codeSentMsg(_emailController.text), style: const TextStyle(color: Colors.white70, fontSize: 14), textAlign: TextAlign.center), // 🌟 带参数的翻译
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _codeController,
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(color: Colors.white, letterSpacing: 8, fontSize: 20),
+                    textAlign: TextAlign.center,
+                    decoration: InputDecoration(
+                      hintText: l10n.codeInputHint, // 🌟
+                      hintStyle: const TextStyle(color: Colors.white24, letterSpacing: 2, fontSize: 16),
+                      filled: true,
+                      fillColor: Colors.black26,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _newPasswordController,
+                    obscureText: true,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: l10n.newPasswordLabel, // 🌟
+                      labelStyle: const TextStyle(color: Colors.white54),
+                      prefixIcon: const Icon(Icons.lock, color: Colors.white54),
+                      filled: true,
+                      fillColor: Colors.black26,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _submitNewPassword,
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, padding: const EdgeInsets.symmetric(vertical: 16)),
+                    child: _isLoading ? const CircularProgressIndicator() : Text(l10n.confirmResetBtn, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                  ),
+                  TextButton(
+                    onPressed: () => setState(() => _step = 1),
+                    child: Text(l10n.resendPrompt, style: const TextStyle(color: Colors.white54)), // 🌟
+                  )
+                ]
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\lib\screens\login_screen.dart
+============================================================
+
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../core/network/api_client.dart';
+import 'package:dio/dio.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+// 🌟 引入多语言引擎
+import '../l10n/app_localizations.dart';
+import 'dashboard_screen.dart'; // 引入你的测算主页
+import 'forgot_password_screen.dart';
+import 'register_screen.dart';
+// 记得在文件顶部引入 Sentry (如果还没引的话)
+import 'package:sentry_flutter/sentry_flutter.dart';
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController _emailController = TextEditingController(
+    text: 'houkemian@outlook.com',
+  );
+  final TextEditingController _passwordController = TextEditingController(
+    text: 'aaaaaa',
+  );
+  bool _isLoading = false;
+  String _errorMessage = '';
+
+  Future<void> _login() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    final l10n = AppLocalizations.of(context)!;
+
+
+    try {
+      // 🌟 极致瘦身：不再需要写完整的 URL，不再需要手动处理 header！
+      final response = await ApiClient().dio.post(
+        '/auth/login', // 直接写路由短地址即可
+        data: {
+          'username': _emailController.text,
+          'password': _passwordController.text,
+        },
+        // 告诉 Dio 我们发的是表单格式 (FastAPI 登录强依赖这个)
+        options: Options(contentType: Headers.formUrlEncodedContentType),
+      );
+
+
+      // Dio 的 response.statusCode 正常是 200，且 response.data 已经是解析好的 Map 了！不需要再 jsonDecode
+      final token = response.data['access_token'];
+      final prefs = await SharedPreferences.getInstance();
+
+      // 🌟 核心：手动拆解 JWT，提取后端发给我们的 tier 权限！
+      final parts = token.split('.');
+      if (parts.length == 3) {
+        // 补充 Base64 缺少的 '=' 补位，否则 Dart 会报错
+        final payloadString = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+        final payloadMap = jsonDecode(payloadString);
+
+        // 把权限等级和公司 ID 存入本地缓存
+        await prefs.setString('user_tier', payloadMap['tier'] ?? 'FREE');
+        print("🎉 登录成功！当前用户权限: ${payloadMap['tier']}");
+      }
+
+      await prefs.setString('jwt_token', token);
+
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+    } on DioException catch (e) {
+      // Dio 捕获异常更优雅
+      setState(() {
+        if (e.response?.statusCode == 401) {
+          _errorMessage = l10n.errAuthFailed401;
+        } else {
+          _errorMessage = l10n.errNetwork(e.message ?? 'Unknown Error');
+        }
+      });
+    } catch (e) {
+      // 捕获极其罕见的未知错误
+      setState(() {
+        _errorMessage = l10n.errSystem(e.toString());
+      });
+    } finally {
+      // 增加 mounted 判断，防止组件被替换后还执行 setState
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 🌟 在 build 方法里召唤多语言字典
+    final l10n = AppLocalizations.of(context)!;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F172A),
+      // 🌟 核心修复：在外层套上 SingleChildScrollView，解决横屏高度溢出问题！
+      body: Center(
+        child: SingleChildScrollView(
+          child: Padding(
+            // 稍微增加一点上下的 padding，让横屏滑动时更舒适
+            padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Icon(Icons.solar_power, size: 80, color: Color(0xFF00E676)),
+                // const SizedBox(height: 5),
+                // const Text(
+                //   '光储大师 V1.0',
+                // ... (保留你的注释)
+                const SizedBox(height: 40),
+
+                TextField(
+                  controller: _emailController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: l10n.emailLabel, // 🌟 动态多语言替换
+                    labelStyle: const TextStyle(color: Colors.white54),
+                    filled: true,
+                    fillColor: Colors.white10,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: l10n.passwordLabel, // 🌟 动态多语言替换
+                    labelStyle: const TextStyle(color: Colors.white54),
+                    filled: true,
+                    fillColor: Colors.white10,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (_errorMessage.isNotEmpty)
+                  Text(
+                    _errorMessage,
+                    style: const TextStyle(color: Colors.redAccent, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                const SizedBox(height: 24),
+
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00E676),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(color: Colors.black),
+                  )
+                      : Text(
+                    l10n.secureLoginBtn, // 🌟 动态多语言替换
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16), // 👈 原有按钮下面的间距
+
+
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()));
+                  },
+                  child: Text(l10n.forgotPasswordTitle, style: const TextStyle(color: Colors.white54)),
+
+                ),
+
+                // 🌟 新增的注册入口按钮
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                    );
+                  },
+                  child: Text(
+                    l10n.registerPrompt, // 🌟 动态多语言替换
+                    style: const TextStyle(
+                      color: Color(0xFF00E676),
+                      fontSize: 14,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\lib\screens\pdf_preview_screen.dart
+============================================================
+
+import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
+import 'dart:typed_data';
+import '../l10n/app_localizations.dart'; // 👈 新增这行
+
+class PdfPreviewScreen extends StatelessWidget {
+  final Uint8List pdfBytes;
+
+  const PdfPreviewScreen({super.key, required this.pdfBytes});
+
+  @override
+  Widget build(BuildContext context) {
+
+    final l10n = AppLocalizations.of(context)!;
+
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.pdfPreviewTitle, style: TextStyle(fontSize: 16)),
+        backgroundColor: const Color(0xFF0F172A),
+        elevation: 0,
+      ),
+      // 🌟 核心：自带缩放、打印、分享功能的专业预览器！
+      body: PdfPreview(
+        build: (format) => pdfBytes,
+        allowSharing: true, // 允许分享
+        allowPrinting: true, // 允许打印
+        canChangeOrientation: false,
+        canChangePageFormat: false,
+        pdfFileName: 'PV_ESS_Proposal_${DateTime.now().millisecondsSinceEpoch}.pdf',
+      ),
+    );
+  }
+}
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\lib\screens\register_screen.dart
+============================================================
+
+import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import '../core/network/api_client.dart';
+import '../l10n/app_localizations.dart'; // 🌟 引入多语言
+
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+
+  bool _isLoading = false;
+  String _errorMessage = '';
+
+  Future<void> _register() async {
+    final l10n = AppLocalizations.of(context)!;
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _errorMessage = l10n.errEmpty); // 🌟 动态错误提示
+      return;
+    }
+    if (password.length < 6) {
+      setState(() => _errorMessage = l10n.errPasswordLength);
+      return;
+    }
+    if (password != confirmPassword) {
+      setState(() => _errorMessage = l10n.errPasswordMatch);
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+
+    try {
+      await ApiClient().dio.post(
+        '/auth/register',
+        data: {'email': email, 'password': password},
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.msgRegisterSuccess), // 🌟 动态成功提示
+          backgroundColor: const Color(0xFF00E676),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      Navigator.of(context).pop();
+
+    } on DioException catch (e) {
+      setState(() {
+        if (e.response?.statusCode == 400) {
+          _errorMessage = e.response?.data['detail'] ?? l10n.errRegisterFailedFallback;
+        } else {
+          _errorMessage = l10n.errNetwork(e.message ?? 'Unknown Error');
+        }
+      });
+    } catch (e) {
+      setState(() => _errorMessage = l10n.errSystem(e.toString()));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F172A),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white54),
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Icon(Icons.person_add_alt_1, size: 64, color: Color(0xFF00E676)),
+                const SizedBox(height: 20),
+                Text(
+                  l10n.registerTitle, // 🌟 动态注册标题
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  l10n.registerSubtitle, // 🌟 动态注册副标题
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 14, color: Colors.white54),
+                ),
+                const SizedBox(height: 40),
+
+                _buildTextField(_emailController, l10n.emailLabel, false),
+                const SizedBox(height: 16),
+                _buildTextField(_passwordController, l10n.passwordLabel, true),
+                const SizedBox(height: 16),
+                _buildTextField(_confirmPasswordController, l10n.confirmPasswordLabel, true),
+
+                const SizedBox(height: 12),
+                if (_errorMessage.isNotEmpty)
+                  Text(_errorMessage, style: const TextStyle(color: Colors.redAccent, fontSize: 14), textAlign: TextAlign.center),
+                const SizedBox(height: 24),
+
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _register,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00E676),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.black))
+                      : Text(
+                    l10n.freeRegisterBtn, // 🌟 动态免费注册按钮
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label, bool isPassword) {
+    return TextField(
+      controller: controller,
+      obscureText: isPassword,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white54),
+        filled: true,
+        fillColor: Colors.white10,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+      ),
+    );
+  }
+}
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\lib\screens\settings_screen.dart
+============================================================
+
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../l10n/app_localizations.dart';
+import '../core/network/api_client.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:convert'; // 用于 Base64 转换
+import '../l10n/app_localizations.dart'; // 👈 新增这行
+
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+
+  String _userTier = "FREE"; // 🌟 新增身份变量
+  bool _isUpgrading = false; // 🌟 新增：是否正在呼叫收银台
+
+  // 控制器
+  final TextEditingController _companyNameController = TextEditingController();
+  final TextEditingController _logoUrlController = TextEditingController();
+  final TextEditingController _pvCostController = TextEditingController();
+  final TextEditingController _essCostController = TextEditingController();
+  final TextEditingController _marginController = TextEditingController();
+
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  // 🌟 初始化时从云端拉取配置
+  Future<void> _loadSettings() async {
+    try {
+      // 优先从云端拉取
+      final response = await ApiClient().dio.get('/settings/me');
+      final data = response.data;
+      final prefs = await SharedPreferences.getInstance();
+
+
+      setState(() {
+        _userTier = prefs.getString('user_tier') ?? "FREE"; // 🌟 捞出身价
+        _companyNameController.text = data['company_name'] ?? '';
+        _logoUrlController.text = data['logo_url'] ?? '';
+        _pvCostController.text = data['pv_cost_per_kw']?.toString() ?? '800.0';
+        _essCostController.text = data['ess_cost_per_kwh']?.toString() ?? '350.0';
+        _marginController.text = data['margin_pct']?.toString() ?? '20.0';
+        _isLoading = false;
+      });
+
+      // 顺手备份到本地，给主页测算用
+      await prefs.setString('company_name', _companyNameController.text);
+      await prefs.setDouble('pv_cost', double.tryParse(_pvCostController.text) ?? 800.0);
+      await prefs.setDouble('ess_cost', double.tryParse(_essCostController.text) ?? 350.0);
+      await prefs.setDouble('margin_pct', double.tryParse(_marginController.text) ?? 20.0);
+
+    } catch (e) {
+      print("拉取云端配置失败: $e");
+      // 如果断网或失败，降级使用本地缓存 (保持你原有的逻辑不变)
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _companyNameController.text = prefs.getString('company_name') ?? '';
+        _pvCostController.text = prefs.getDouble('pv_cost')?.toString() ?? '800.0';
+        _logoUrlController.text = prefs.getString('logo_url') ?? '';
+        _essCostController.text = prefs.getDouble('ess_cost')?.toString() ?? '350.0'; // 默认 350
+        _marginController.text = prefs.getDouble('margin_pct')?.toString() ?? '20.0'; // 默认 20%
+        _isLoading = false;
+      });
+    }
+  }
+
+  // 🌟 点击保存，将数据写入本地缓存
+  Future<void> _saveSettings() async {
+    final l10n = AppLocalizations.of(context)!;
+  FocusScope.of(context).unfocus();
+
+  try {
+    // 1. 推送到云端
+    await ApiClient().dio.put('/settings/me', data: {
+      "company_name": _companyNameController.text.trim(),
+      "logo_url": _logoUrlController.text.trim(),
+      "pv_cost_per_kw": double.tryParse(_pvCostController.text) ?? 800.0,
+      "ess_cost_per_kwh": double.tryParse(_essCostController.text) ?? 350.0,
+      "margin_pct": double.tryParse(_marginController.text) ?? 20.0,
+    });
+
+    // 2. 备份到本地 (主页需要用到)
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('company_name', _companyNameController.text.trim());
+    await prefs.setString('logo_url', _logoUrlController.text.trim());
+    print("👉 [1. 存入设置] 准备存入本地的 Logo 长度: ${_logoUrlController.text.trim().length}");
+    await prefs.setDouble('pv_cost', double.tryParse(_pvCostController.text) ?? 800.0);
+    await prefs.setDouble('ess_cost', double.tryParse(_essCostController.text) ?? 350.0);
+    await prefs.setDouble('margin_pct', double.tryParse(_marginController.text) ?? 20.0);
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.saveSuccess),
+        backgroundColor: const Color(0xFF00E676),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.errSaveFailed), backgroundColor: Colors.red),
+    );
+  }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0F172A),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF00E676))),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F172A),
+      appBar: AppBar(
+        title: Text(l10n.settingsTitle, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white54),
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 🌟 核心：身份卡片渲染！
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  gradient: _userTier == "PRO"
+                      ? const LinearGradient(colors: [Color(0xFFB8860B), Color(0xFFFFD700)]) // PRO 用户土豪金渐变
+                      : const LinearGradient(colors: [Colors.black38, Colors.black12]),      // 免费用户低调灰黑
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: _userTier == "PRO" ? Colors.amberAccent : Colors.white12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _userTier == "PRO" ? l10n.tierPro : l10n.tierFree,
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: _userTier == "PRO" ? Colors.black87 : Colors.white70
+                      ),
+                    ),
+                    if (_userTier != "PRO")
+                      ElevatedButton(
+                        // 🌟 防连点：正在加载时按钮变灰并禁用
+                        onPressed: _isUpgrading ? null : () async {
+                          setState(() {
+                            _isUpgrading = true;
+                          });
+
+                          try {
+                            // 1. 向后端索要支付链接
+                            final urlStr = await ApiClient().getStripeCheckoutUrl();
+
+                            if (urlStr != null) {
+                              final Uri url = Uri.parse(urlStr);
+
+                              // 2. 呼出手机原生浏览器打开 Stripe
+                              if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+                                throw Exception('无法唤起浏览器');
+                              }
+
+                              if (!mounted) return;
+                              // 3. 温馨提示：MVP 阶段的最简状态同步方案
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(l10n.msgPayToUpgrade),
+                                  backgroundColor: Colors.green,
+                                  duration: Duration(seconds: 5),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(l10n.paymentError(e.toString())), backgroundColor: Colors.redAccent),
+                            );
+                          } finally {
+                            if (mounted) {
+                              setState(() {
+                                _isUpgrading = false;
+                              });
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber,
+                          minimumSize: const Size(80, 36),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                        ),
+                        // 🌟 动态 UI：加载时显示转圈圈，平时显示文字
+                        child: _isUpgrading
+                            ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black)
+                        )
+                            : Text(l10n.upgradeNow, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                      ),
+                  ],
+                ),
+              ),
+              // 🎨 品牌设置卡片
+              _buildSectionHeader(Icons.branding_watermark, l10n.brandingSection),
+              const SizedBox(height: 12),
+              _buildSettingsCard([
+                _buildTextField(_companyNameController, l10n.companyNameLabel, Icons.business),
+                const SizedBox(height: 16),
+          _buildTextField(
+            _logoUrlController,
+            l10n.logoUrlLabel,
+            Icons.image,
+            hintText: l10n.logoInputHint,
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.photo_library, color: Colors.amber),
+              onPressed: () async {
+                try {
+                  final picker = ImagePicker();
+                  // 🌟 核心：从相册选图，并强制压缩宽度以防 Base64 太长撑爆数据库！
+                  final XFile? image = await picker.pickImage(
+                    source: ImageSource.gallery,
+                    maxWidth: 300,
+                    imageQuality: 80,
+                  );
+                  if (image != null) {
+                    final bytes = await image.readAsBytes();
+                    final base64Str = base64Encode(bytes);
+                    setState(() {
+                      // 瞬间填入转化好的 Base64 密文！
+                      _logoUrlController.text = base64Str;
+                    });
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.msgLogoConverted), backgroundColor: Colors.green),
+                    );
+                  }
+                } catch (e) {
+                  print("选取图片失败: $e");
+                }
+              },
+            ),
+          ),
+              ]),
+
+              const SizedBox(height: 32),
+
+              // 💰 成本设置卡片
+              _buildSectionHeader(Icons.attach_money, l10n.costSection),
+              const SizedBox(height: 12),
+              _buildSettingsCard([
+                _buildTextField(_pvCostController, l10n.pvCostLabel, Icons.solar_power, isNumber: true),
+                const SizedBox(height: 16),
+                _buildTextField(_essCostController, l10n.essCostLabel, Icons.battery_charging_full, isNumber: true),
+                const SizedBox(height: 16),
+                _buildTextField(_marginController, l10n.marginLabel, Icons.percent, isNumber: true),
+              ]),
+
+              const SizedBox(height: 40),
+
+              // 💾 保存按钮
+              ElevatedButton(
+                onPressed: _saveSettings,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00E676),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: Text(
+                  l10n.saveSettingsBtn,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                ),
+              ),
+              const SizedBox(height: 40),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // UI 辅助方法：段落标题
+  Widget _buildSectionHeader(IconData icon, String title) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.amber, size: 20),
+        const SizedBox(width: 8),
+        Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  // UI 辅助方法：设置项卡片
+  Widget _buildSettingsCard(List<Widget> children) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  // UI 辅助方法：输入框
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {bool isNumber = false, String? hintText, Widget? suffixIcon}) {
+    return TextField(
+      controller: controller,
+      keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white54),
+        hintText: hintText,
+        hintStyle: const TextStyle(color: Colors.white24),
+        prefixIcon: Icon(icon, color: Colors.white54, size: 20),
+        suffixIcon: suffixIcon, // 🌟 挂载右侧的相册按钮
+        filled: true,
+        fillColor: Colors.black26,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+      ),
+    );
+  }
+}
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\lib\utils\pdf_export.dart
+============================================================
+
+import 'package:flutter/services.dart' show rootBundle;
+import 'dart:typed_data';
+import 'dart:convert';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+// 🌟 引入刚生成的实体多语言文件
+import '../l10n/app_localizations.dart';
+import 'package:dio/dio.dart'; // 🌟 新增引入
+import 'package:http/http.dart' as http; // 🌟 引入 http 库
+
+class PdfExport {
+  static Future<Uint8List> generateAndPrintProposal({
+    required AppLocalizations l10n,
+    required String companyName,
+    required String logoUrl,
+    required double pvCapacity,
+    required double batteryCapacity,
+    required double totalCapex,
+    required double npv,
+    required double irr,
+    required double payback,
+    required List<dynamic> fullCashFlowData,
+  }) async {
+    print("👉 [3. PDF 引擎] 最终传进 PDF 引擎的 Logo 长度: ${logoUrl.length}");
+    final font = pw.Font.ttf(await rootBundle.load('assets/fonts/NotoSansSC-VariableFont_wght.ttf'));
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: font,
+        bold: font,       // 👈 填补 Helvetica-Bold 的漏洞
+        italic: font,     // 👈 填补 Helvetica-Oblique 的漏洞
+        boldItalic: font,
+      ),
+    );
+
+    // 🌟 核心排错法：把错误信息存起来，等下直接印在 PDF 上！
+    pw.ImageProvider? logoImage;
+    String logoErrorMessage = "";
+
+    if (logoUrl.isNotEmpty) {
+      try {
+        if (logoUrl.startsWith('http')) {
+          final response = await http.get(
+            Uri.parse(logoUrl),
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+              'Accept': 'image/png,image/jpeg,image/*;q=0.8',
+            },
+          ).timeout(const Duration(seconds: 8)); // 增加超时判定
+
+          if (response.statusCode == 200) {
+            logoImage = pw.MemoryImage(response.bodyBytes);
+          } else {
+            logoErrorMessage = "HTTP Err: ${response.statusCode}";
+          }
+        } else {
+          // 🌟 Base64 终极净化：剔除空白，并自动补齐末尾缺失的等号！
+          String base64String = logoUrl.contains(',') ? logoUrl.split(',').last : logoUrl;
+          base64String = base64String.replaceAll(RegExp(r'\s+'), '');
+
+          int padding = base64String.length % 4;
+          if (padding > 0) {
+            base64String += '=' * (4 - padding); // 自动补齐，防止 FormatException
+          }
+
+          logoImage = pw.MemoryImage(base64Decode(base64String));
+        }
+      } catch (e) {
+        // 抓取异常的第一行，准备印在 PDF 上
+        logoErrorMessage = "Err: ${e.toString().split('\n')[0]}";
+        print("🔥 Logo 加载异常: $e");
+      }
+    }
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        header: (pw.Context context) {
+          return pw.Column(
+            children: [
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      // 🌟 如果图片加载成功，画图片
+                      if (logoImage != null) ...[
+                        pw.Image(logoImage, height: 32),
+                        pw.SizedBox(width: 12),
+                      ]
+                      // 🌟 如果失败了，把红色的错误代码印在公司名字前面！
+                      else if (logoErrorMessage.isNotEmpty) ...[
+                        pw.Text(
+                          logoErrorMessage,
+                          style: pw.TextStyle(color: PdfColors.red, fontSize: 10),
+                        ),
+                        pw.SizedBox(width: 12),
+                      ],
+                      pw.Text(
+                        companyName,
+                        style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.teal800),
+                      ),
+                    ],
+                  ),
+                  pw.Text(
+                    l10n.pdfDate(DateTime.now().toString().split(' ')[0]),
+                    style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 8),
+              pw.Divider(thickness: 2, color: PdfColors.teal800),
+            ],
+          );
+        },
+        // 🌟 页脚：多语言免责与页码
+        footer: (pw.Context context) {
+          return pw.Column(
+            children: [
+              pw.Divider(color: PdfColors.grey300),
+              pw.SizedBox(height: 4),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(l10n.pdfConfidential, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+                  pw.Text(
+                    l10n.pdfPageOf(context.pageNumber.toString(), context.pagesCount.toString()),
+                    style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+        build: (pw.Context context) => [
+          // 1. 报告主标题
+          pw.SizedBox(height: 20),
+          pw.Text(l10n.pdfProposalTitle, style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 20),
+
+          // 2. 核心系统配置
+          pw.Text(l10n.pdfSystemConfig, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.teal800)),
+          pw.SizedBox(height: 10),
+          pw.Bullet(text: '${l10n.pdfPvArray}: ${pvCapacity.toStringAsFixed(1)} kWp'),
+          pw.Bullet(text: '${l10n.pdfEssBattery}: ${batteryCapacity.toStringAsFixed(1)} kWh'),
+          pw.Bullet(text: l10n.pdfGridPolicy),
+          pw.SizedBox(height: 8),
+          pw.Text(
+            '${l10n.pdfTotalCapex}: \$${totalCapex.toStringAsFixed(0)}',
+            style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.red800),
+          ),
+          pw.SizedBox(height: 20),
+
+          // 3. 高级财务指标 (KPI)
+          pw.Text(l10n.pdfFinancialHighlights, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.teal800)),
+          pw.SizedBox(height: 10),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.grey100,
+              border: pw.Border.all(color: PdfColors.grey300),
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+              children: [
+                _buildKpiItem(l10n.pdfNpv, '\$${npv.toStringAsFixed(0)}'),
+                _buildKpiItem(l10n.pdfIrr, '${irr.toStringAsFixed(1)}%'),
+                _buildKpiItem(l10n.pdfPayback, '${payback.toStringAsFixed(1)} ${l10n.pdfYears}'),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 30),
+
+          // 4. EMS 策略拆解
+          pw.Text(l10n.pdfEmsStrategyTitle, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.teal800)),
+          pw.SizedBox(height: 10),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.white,
+              border: pw.Border.all(color: PdfColors.teal200, width: 1),
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(l10n.pdfEmsStrategyDesc, style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic, color: PdfColors.grey700)),
+                pw.SizedBox(height: 12),
+                _buildRevenueStackItem(l10n.pdfRevDirectSolar, l10n.pdfRevDirectSolarDesc, '\$2,150.00'),
+                pw.Divider(color: PdfColors.grey200),
+                _buildRevenueStackItem(l10n.pdfRevTou, l10n.pdfRevTouDesc, '\$1,840.00', isHighlight: true),
+                pw.Divider(color: PdfColors.grey200),
+                _buildRevenueStackItem(l10n.pdfRevPeakShaving, l10n.pdfRevPeakShavingDesc, '\$1,069.16', isHighlight: true),
+                pw.Divider(color: PdfColors.grey200),
+                _buildRevenueStackItem(l10n.pdfRevBackup, l10n.pdfRevBackupDesc, '\$4,500.00'),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 30),
+
+          // 5. 现金流表
+          pw.Text(l10n.pdfCashFlowTitle, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.teal800)),
+          pw.SizedBox(height: 10),
+          _buildCashFlowTable(fullCashFlowData, l10n),
+        ],
+      ),
+    );
+
+    return await pdf.save();
+  }
+
+  static pw.Widget _buildKpiItem(String title, String value) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(title, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+        pw.SizedBox(height: 4),
+        pw.Text(value, style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.teal900)),
+      ],
+    );
+  }
+
+  static pw.Widget _buildCashFlowTable(List<dynamic> cashFlow, AppLocalizations l10n) {
+    return pw.TableHelper.fromTextArray(
+      context: null,
+      cellAlignment: pw.Alignment.centerRight,
+      headerAlignment: pw.Alignment.centerRight,
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.teal100),
+      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8),
+      cellStyle: const pw.TextStyle(fontSize: 8),
+      headers: [
+        l10n.pdfCfYear,
+        l10n.pdfCfEnergySavings,
+        l10n.pdfCfBackupValue,
+        l10n.pdfCfOmBattery,
+        l10n.pdfCfDebtService,
+        l10n.pdfCfNetCashFlow,
+        l10n.pdfCfCumulative,
+      ],
+      data: List<List<String>>.generate(cashFlow.length, (index) {
+        final row = cashFlow[index];
+        return [
+          '${row['year']}',
+          '\$${(row['energy_savings_revenue'] as num).toStringAsFixed(0)}',
+          '\$${(row['backup_power_value'] as num).toStringAsFixed(0)}',
+          '-\$${(row['opex_and_replacement'] as num).toStringAsFixed(0)}',
+          '-\$${(row['debt_service'] as num).toStringAsFixed(0)}',
+          '\$${(row['net_cash_flow'] as num).toStringAsFixed(0)}',
+          '\$${(row['cumulative_cash_flow'] as num).toStringAsFixed(0)}',
+        ];
+      }),
+    );
+  }
+
+  static pw.Widget _buildRevenueStackItem(String title, String desc, String amount, {bool isHighlight = false}) {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: pw.CrossAxisAlignment.center,
+      children: [
+        pw.Expanded(
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                title,
+                style: pw.TextStyle(fontSize: 10, fontWeight: isHighlight ? pw.FontWeight.bold : pw.FontWeight.normal, color: isHighlight ? PdfColors.teal900 : PdfColors.black),
+              ),
+              pw.SizedBox(height: 2),
+              pw.Text(desc, style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+            ],
+          ),
+        ),
+        pw.Text(
+          amount,
+          style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: isHighlight ? PdfColors.teal700 : PdfColors.black),
+        ),
+      ],
+    );
+  }
+}
+============================================================
+📁 File: D:\APP\pv_ess_quote_frontend\test\widget_test.dart
+============================================================
+
+// This is a basic Flutter widget test.
+//
+// To perform an interaction with a widget in your test, use the WidgetTester
+// utility in the flutter_test package. For example, you can send tap and scroll
+// gestures. You can also use WidgetTester to find child widgets in the widget
+// tree, read text, and verify that the values of widget properties are correct.
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:pv_ess_quote_frontend/main.dart';
+
+void main() {
+  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+    // Build our app and trigger a frame.
+    await tester.pumpWidget(const MyApp());
+
+    // Verify that our counter starts at 0.
+    expect(find.text('0'), findsOneWidget);
+    expect(find.text('1'), findsNothing);
+
+    // Tap the '+' icon and trigger a frame.
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pump();
+
+    // Verify that our counter has incremented.
+    expect(find.text('0'), findsNothing);
+    expect(find.text('1'), findsOneWidget);
+  });
+}

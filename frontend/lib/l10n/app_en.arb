@@ -1,0 +1,174 @@
+{
+    "@@locale": "en",
+    "appTitle": "EnerQuote V1.0",
+    "appSubtitle": "Enterprise SaaS Quoting System",
+    "emailLabel": "Corporate Email",
+    "passwordLabel": "Password",
+    "confirmPasswordLabel": "Confirm Password",
+    "secureLoginBtn": "Secure Login",
+    "registerPrompt": "Don't have an account? Sign up free",
+    "registerTitle": "Create your account",
+    "registerSubtitle": "Join EnerQuote, unlock enterprise engine",
+    "freeRegisterBtn": "Sign Up Free",
+    "errEmpty": "Email and password cannot be empty",
+    "errPasswordLength": "Password must be at least 6 characters",
+    "errPasswordMatch": "Passwords do not match",
+    "msgRegisterSuccess": "🎉 Account created successfully! Please log in.",
+    "errAuthFailed401": "Incorrect account or password (401)",
+    "errNetwork": "Network Error: {message}",
+    "@errNetwork": {
+      "placeholders": {
+        "message": {
+          "type": "String"
+        }
+      }
+    },
+    "errSystem": "System Error: {error}",
+    "@errSystem": {
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "errRegisterFailedFallback": "Registration failed, please check your input",
+    "unauthorized": "Unauthorized, please log in again",
+    "simulateFailed": "Simulation failed: {error}",
+    "@simulateFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+    },
+    "parseError": "Data parsing exception, please check logs",
+    "dashboardTitle": "EnerQuote PV+ESS",
+    "exportProposal": "Export Proposal",
+    "kpiTotalCapex": "Total CAPEX",
+    "kpiIrr": "Internal Rate of Return (IRR)",
+    "kpiFirstYearGen": "1st Year Generation",
+    "kpiPayback": "Payback Period",
+    "clientEnvProfile": "Client Environment & Load Profile",
+    "factoryPeakLoad": "Factory Peak Load: {val} kW",
+    "@factoryPeakLoad": {
+    "placeholders": {
+      "val": { "type": "String" }
+    }
+    },
+    "hardwareConfig": "Hardware Configuration",
+    "pvCapacity": "PV Capacity: {val} kWp",
+    "@pvCapacity": {
+    "placeholders": {
+      "val": { "type": "String" }
+    }
+    },
+    "essCapacity": "ESS Capacity: {val} kWh",
+    "@essCapacity": {
+    "placeholders": {
+      "val": { "type": "String" }
+    }
+    },
+    "cashFlowChartTitle": "20-Year Net Cash Flow Forecast",
+    "connectingPvgis": "Connecting to PVGIS...",
+    "citySaoPaulo": "🇧🇷 São Paulo (Brazil - LATAM)",
+    "cityMunich": "🇩🇪 Munich (Germany - EU)",
+    "cityHaikou": "🇨🇳 Haikou (China - Hainan)",
+    "cityLinfen": "🇨🇳 Linfen (China - Shanxi)",
+    "yearFormat": "Yr {year}",
+    "@yearFormat": {
+    "placeholders": {
+      "year": { "type": "String" }
+    }
+    },
+    "upgradeToProTitle": "Upgrade to PRO",
+    "upgradeToProSubtitle": "Generate enterprise-grade PDF proposals with your exclusive logo, custom margins, and no watermarks to close deals instantly!",
+    "proFeatureLogo": "Custom company logo and name",
+    "proFeatureCost": "Custom base procurement costs and margins",
+    "proFeaturePvgis": "Unlock 8760-hour PVGIS satellite weather data",
+    "redirectingToPayment": "Redirecting to payment gateway...",
+    "unlockProBtn": "Unlock Now ($19.9/mo)",
+    "settingsTitle": "Workspace Settings",
+    "brandingSection": "Branding & Logo",
+    "companyNameLabel": "Company Name",
+    "logoUrlLabel": "Logo Image URL / Base64",
+    "costSection": "Procurement Costs & Margins",
+    "pvCostLabel": "PV Base Cost ($/W)",
+    "essCostLabel": "ESS Base Cost ($/Wh)",
+    "marginLabel": "Target Margin (%)",
+    "saveSettingsBtn": "Save Configuration",
+    "saveSuccess": "✅ Settings saved locally!",
+    "pdfProposalTitle": "Commercial Energy Storage Investment Proposal",
+    "pdfSystemConfig": "1. System Configuration",
+    "pdfPvArray": "PV Array Capacity",
+    "pdfEssBattery": "ESS Battery Capacity",
+    "pdfGridPolicy": "Grid Policy: Zero Export (Anti-backflow)",
+    "pdfTotalCapex": "Total System CAPEX",
+    "pdfFinancialHighlights": "2. Financial Highlights",
+    "pdfNpv": "Net Present Value (NPV)",
+    "pdfIrr": "Internal Rate of Return",
+    "pdfPayback": "Payback Period",
+    "pdfYears": "Years",
+    "pdfEmsStrategyTitle": "2.5 EMS Strategy & Year 1 Revenue Stacking",
+    "pdfEmsStrategyDesc": "Energy Management System (EMS) is configured for aggressive Peak Shaving and Time-of-Use (TOU) arbitrage, maximizing grid savings.",
+    "pdfRevDirectSolar": "1. Direct Solar Consumption (PV)",
+    "pdfRevDirectSolarDesc": "Offset daytime base load",
+    "pdfRevTou": "2. TOU Arbitrage",
+    "pdfRevTouDesc": "Grid charge at night, discharge at peak",
+    "pdfRevPeakShaving": "3. Peak Shaving",
+    "pdfRevPeakShavingDesc": "Demand charge reduction ($/kW)",
+    "pdfRevBackup": "4. Backup Power Value",
+    "pdfRevBackupDesc": "Avoided lost load during outages",
+    "pdfCashFlowTitle": "3. 20-Year Cash Flow Projection",
+    "pdfCfYear": "Year",
+    "pdfCfEnergySavings": "Energy Savings",
+    "pdfCfBackupValue": "Backup Value",
+    "pdfCfOmBattery": "O&M / Battery",
+    "pdfCfDebtService": "Debt Service",
+    "pdfCfNetCashFlow": "Net Cash Flow",
+    "pdfCfCumulative": "Cumulative",
+    "pdfDate": "Date: {date}",
+    "@pdfDate": { "placeholders": { "date": { "type": "String" } } },
+    "pdfPageOf": "Page {current} of {total}",
+    "@pdfPageOf": { "placeholders": { "current": { "type": "String" }, "total": { "type": "String" } } },
+    "pdfConfidential": "Confidential & Proprietary",
+    "logoutTooltip": "Logout",
+    "logoutTitle": "Logout",
+    "logoutMessage": "Are you sure you want to log out of the current account?",
+    "cancel": "Cancel",
+    "confirmLogout": "Logout",
+    "tierFree": "Current Plan: FREE Edition",
+    "tierPro": "👑 PRO Subscription Member",
+    "upgradeNow": "Upgrade Now",
+    "forgotPasswordTitle": "Reset Password",
+    "enterEmailPrompt": "Enter your registered email address",
+    "emailLabel": "Work Email",
+    "sendCodeBtn": "Send Code",
+    "codeSentMsg": "Code sent to {email}",
+    "@codeSentMsg": {
+      "placeholders": {
+        "email": { "type": "Object" }
+      }
+    },
+    "codeInputHint": "Enter 6-digit code",
+    "newPasswordLabel": "New Password",
+    "confirmResetBtn": "Confirm Reset",
+    "resendPrompt": "Didn't receive it? Re-enter email",
+    "sessionExpired": "Session expired, please log in again!",
+    "paymentConfirmTitle": "Waiting for Payment",
+    "paymentConfirmDesc": "If you have completed the payment in the browser, click the button below to verify and activate PRO.",
+    "verifyLater": "Verify Later",
+    "paymentCompleted": "I have paid",
+    "paymentSuccessPro": "🎉 Payment successful! PRO features activated!",
+    "paymentPending": "⏳ Payment not received yet. Please wait a few seconds and try again.",
+    "paymentError": "Payment gateway error: {error}",
+    "@paymentError": { "placeholders": { "error": { "type": "String" } } },
+    "errInvalidEmail": "Please enter a valid email address",
+    "msgCodeSent": "✅ Code sent to your email, please check.",
+    "errCodeLength": "Please enter a 6-digit code",
+    "errNewPwdLength": "New password must be at least 6 characters",
+    "msgResetSuccess": "🎉 Password reset successful! Please log in.",
+    "errCodeInvalid": "❌ Invalid or expired code",
+    "msgPayToUpgrade": "✅ After payment, please re-login to activate PRO features!",
+    "logoInputHint": "Enter URL or click right to pick from gallery ->",
+    "msgLogoConverted": "✅ Logo converted to Base64! Please click save.",
+    "errSaveFailed": "Save failed, please check your network!",
+    "pdfPreviewTitle": "Proposal Preview"
+}

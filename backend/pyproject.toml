@@ -1,0 +1,22 @@
+[project]
+name = "pv-ess-quote-backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "bcrypt>=5.0.0",
+    "fastapi>=0.132.0",
+    "httpx>=0.28.1",
+    "passlib>=1.7.4",
+    "pydantic>=2.12.5",
+    "pyjwt>=2.11.0",
+    "python-multipart>=0.0.22",
+    "requests>=2.32.5",
+    "uvicorn>=0.41.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]

@@ -1,0 +1,173 @@
+{
+    "@@locale": "zh",
+    "appTitle": "EnerQuote V1.0",
+    "appSubtitle": "企业级 SaaS 报价系统",
+    "emailLabel": "企业邮箱 (Email)",
+    "passwordLabel": "密码 (Password)",
+    "confirmPasswordLabel": "确认密码",
+    "secureLoginBtn": "安全登录",
+    "registerPrompt": "还没有账号？点击这里免费注册",
+    "registerTitle": "创建您的账号",
+    "registerSubtitle": "加入EnerQuote，解锁企业级测算引擎",
+    "freeRegisterBtn": "免费注册",
+    "errEmpty": "邮箱和密码不能为空",
+    "errPasswordLength": "密码长度至少需要 6 位",
+    "errPasswordMatch": "两次输入的密码不一致",
+    "msgRegisterSuccess": "🎉 账号注册成功！请使用新账号登录。",
+    "errAuthFailed401": "账号或密码错误 (401)",
+    "errNetwork": "网络错误：{message}",
+    "@errNetwork": {
+    "description": "网络请求失败时的报错",
+    "placeholders": {
+    "message": {
+    "type": "String",
+    "example": "Connection refused"
+    }
+    }
+    },
+    "errSystem": "系统异常: {error}",
+    "@errSystem": {
+    "description": "捕获到未知系统异常时的报错",
+    "placeholders": {
+    "error": {
+    "type": "String",
+    "example": "Exception details"
+    }
+    }
+    },
+    "errRegisterFailedFallback": "注册失败，请检查输入",
+    "unauthorized": "未授权，请重新登录",
+    "simulateFailed": "测算失败: {error}",
+    "@simulateFailed": {
+    "placeholders": {
+    "error": { "type": "String" }
+    }
+    },
+    "parseError": "数据格式解析异常，请查看控制台日志",
+    "dashboardTitle": "EnerQuote PV+ESS",
+    "exportProposal": "导出建议书 (Export Proposal)",
+    "kpiTotalCapex": "系统总造价 (CAPEX)",
+    "kpiIrr": "内部收益率 (IRR)",
+    "kpiFirstYearGen": "首年发电量",
+    "kpiPayback": "投资回收期",
+    "clientEnvProfile": "客户环境与用电模型",
+    "factoryPeakLoad": "工厂白天峰值功率: {val} kW",
+    "@factoryPeakLoad": {
+    "placeholders": {
+    "val": { "type": "String" }
+    }
+    },
+    "hardwareConfig": "硬件资产配置",
+    "pvCapacity": "PV 光伏容量: {val} kWp",
+    "@pvCapacity": {
+    "placeholders": {
+    "val": { "type": "String" }
+    }
+    },
+    "essCapacity": "ESS 电池容量: {val} kWh",
+    "@essCapacity": {
+    "placeholders": {
+    "val": { "type": "String" }
+    }
+    },
+    "cashFlowChartTitle": "20年生命周期 净现金流预测",
+    "connectingPvgis": "正在连接 PVGIS 气象卫星...",
+    "citySaoPaulo": "🇧🇷 São Paulo (巴西 - 拉美区)",
+    "cityMunich": "🇩🇪 Munich (德国 - 欧洲区)",
+    "cityHaikou": "🇨🇳 Haikou (中国 - 海南)",
+    "cityLinfen": "🇨🇳 Linfen (中国 - 山西)",
+    "yearFormat": "Yr {year}",
+    "@yearFormat": {
+    "placeholders": {
+    "year": { "type": "String" }
+    }
+    },
+    "upgradeToProTitle": "升级到 PRO 专业版",
+    "upgradeToProSubtitle": "生成带有贵司专属 Logo、自定义利润率和隐藏水印的商业级 PDF 建议书，立刻促成交易！",
+    "proFeatureLogo": "自定义企业 Logo 与公司名称",
+    "proFeatureCost": "自定义底层采购成本与利润率",
+    "proFeaturePvgis": "解锁 8760 小时 PVGIS 卫星气候数据",
+    "redirectingToPayment": "即将跳转支付网关...",
+    "unlockProBtn": "立刻解锁 ($19.9/月)",
+    "settingsTitle": "工作台设置",
+    "brandingSection": "企业品牌与 Logo",
+    "companyNameLabel": "公司名称",
+    "logoUrlLabel": "Logo 图片链接 (URL / Base64)",
+    "costSection": "采购成本与利润率",
+    "pvCostLabel": "光伏单瓦底价 ($/W)",
+    "essCostLabel": "储能单瓦时底价 ($/Wh)",
+    "marginLabel": "期望利润率 (%)",
+    "saveSettingsBtn": "保存配置",
+    "saveSuccess": "✅ 设置已保存在本地！",
+    "pdfProposalTitle": "工商业光储投资收益建议书",
+    "pdfSystemConfig": "1. 系统硬件配置",
+    "pdfPvArray": "光伏阵列装机容量",
+    "pdfEssBattery": "储能系统额定容量",
+    "pdfGridPolicy": "并网策略：防逆流 (零上网)",
+    "pdfTotalCapex": "项目总投资 (CAPEX)",
+    "pdfFinancialHighlights": "2. 核心财务指标",
+    "pdfNpv": "项目净现值 (NPV)",
+    "pdfIrr": "内部收益率 (IRR)",
+    "pdfPayback": "投资回收期",
+    "pdfYears": "年",
+    "pdfEmsStrategyTitle": "2.5 EMS 策略与首年收益拆解",
+    "pdfEmsStrategyDesc": "能量管理系统 (EMS) 默认开启削峰填谷与夜间谷电套利策略，最大化降低工厂峰值电费。",
+    "pdfRevDirectSolar": "1. 光伏自发自用收益",
+    "pdfRevDirectSolarDesc": "直供工厂白天基础负载",
+    "pdfRevTou": "2. 峰谷套利收益",
+    "pdfRevTouDesc": "利用夜间谷电充电，白天峰电放电",
+    "pdfRevPeakShaving": "3. 削峰填谷收益",
+    "pdfRevPeakShavingDesc": "削减工厂最大需量电费 ($/kW)",
+    "pdfRevBackup": "4. 备用电源 (UPS) 价值",
+    "pdfRevBackupDesc": "挽回停电导致的工厂产能损失",
+    "pdfCashFlowTitle": "3. 20年项目生命周期现金流明细",
+    "pdfCfYear": "年份",
+    "pdfCfEnergySavings": "节省电费",
+    "pdfCfBackupValue": "挽回停电损失",
+    "pdfCfOmBattery": "运维与电池重置",
+    "pdfCfDebtService": "偿还贷款",
+    "pdfCfNetCashFlow": "当年净现金流",
+    "pdfCfCumulative": "累计净现金流",
+    "pdfDate": "日期: {date}",
+    "@pdfDate": { "placeholders": { "date": { "type": "String" } } },
+    "pdfPageOf": "第 {current} 页，共 {total} 页",
+    "@pdfPageOf": { "placeholders": { "current": { "type": "String" }, "total": { "type": "String" } } },
+    "pdfConfidential": "商业机密，严禁外传",
+    "logoutTooltip": "登出 (Logout)",
+    "logoutTitle": "退出登录",
+    "logoutMessage": "确定要退出当前账号吗？",
+    "cancel": "取消",
+    "confirmLogout": "退出",
+    "tierFree": "当前版本：基础免费版",
+    "tierPro": "👑 尊贵的 PRO 订阅会员",
+    "upgradeNow": "立即升级",
+    "forgotPasswordTitle": "重置密码",
+    "enterEmailPrompt": "请输入您注册时的邮箱地址",
+    "emailLabel": "企业邮箱",
+    "sendCodeBtn": "发送验证码",
+    "codeSentMsg": "验证码已发送至 {email}",
+    "codeInputHint": "输入 6 位验证码",
+    "newPasswordLabel": "设置新密码",
+    "confirmResetBtn": "确认重置",
+    "resendPrompt": "没收到？重新填写邮箱",
+    "sessionExpired": "登录状态已过期，请重新登录！",
+    "paymentConfirmTitle": "等待支付确认",
+    "paymentConfirmDesc": "如果您已在浏览器中完成付款，请点击下方按钮核实状态并激活特权。",
+    "verifyLater": "稍后核实",
+    "paymentCompleted": "我已完成支付",
+    "paymentSuccessPro": "🎉 支付成功！已为您激活 PRO 专属特权！",
+    "paymentPending": "⏳ 尚未收到款项，请确保支付成功或稍等几秒再试。",
+    "paymentError": "呼叫收银台失败：{error}",
+    "@paymentError": { "placeholders": { "error": { "type": "String" } } },
+    "errInvalidEmail": "请输入有效的邮箱地址",
+    "msgCodeSent": "✅ 验证码已发送至您的邮箱，请注意查收。",
+    "errCodeLength": "请输入 6 位验证码",
+    "errNewPwdLength": "新密码至少 6 位",
+    "msgResetSuccess": "🎉 密码重置成功！请使用新密码登录。",
+    "errCodeInvalid": "❌ 验证码错误或已过期",
+    "msgPayToUpgrade": "✅ 支付完成后，请重新登录账号，即可激活 PRO 专属特权！",
+    "logoInputHint": "填链接或点击右侧从相册选择 ->",
+    "msgLogoConverted": "✅ Logo 已成功转为 Base64！请点击保存",
+    "errSaveFailed": "保存失败，请检查网络！",
+    "pdfPreviewTitle": "建议书预览"
+}

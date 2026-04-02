@@ -1,0 +1,1754 @@
+
+============================================================
+📁 File: .\add_cloumn.py
+============================================================
+
+import sqlite3
+
+# 1. 连上咱们珍贵的核心数据库
+conn = sqlite3.connect('pv_ess.db')
+cursor = conn.cursor()
+
+try:
+    # 2. 执行 ALTER TABLE 增加字段 (注意：SQLite 支持 ADD COLUMN)
+    # 语法：ALTER TABLE 表名 ADD COLUMN 字段名 数据类型;
+    cursor.execute("ALTER TABLE iam_users ADD COLUMN phone VARCHAR(50);")
+    conn.commit()
+    print("✅ 字段追加成功！老数据毫发无损。")
+except Exception as e:
+    print(f"❌ 追加失败，可能是字段已经存在了：{e}")
+finally:
+    conn.close()
+============================================================
+📁 File: .\conftest.py
+============================================================
+
+
+============================================================
+📁 File: .\main.py
+============================================================
+
+def main():
+    print("Hello from pv-ess-quote-backend!")
+
+
+if __name__ == "__main__":
+    main()
+
+============================================================
+📁 File: .\app\main.py
+============================================================
+
+from fastapi.responses import FileResponse
+import os
+
+from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.v1 import simulation, auth # 引入 auth
+from app.api.deps import get_current_user_payload
+
+from app.modules.iam.router import router as iam_router # 导入独立模块
+from app.api.v1.locations import router as locations_router
+
+from app.db.database import engine, Base
+# 引入你写好的 IAM User 模型，这样 Base 才能“看到”它
+from app.modules.iam.models import User
+
+# 🌟 1. 必须导入 UserSettings 模型，否则 Base.metadata.create_all 看不到它！
+from app.models.user_settings import UserSettings 
+# 🌟 2. 导入我们刚刚写好的 settings 路由
+from app.api.v1.settings import router as settings_router
+from app.api.v1 import payment  # 🌟 新增：引入咱们写好的支付模块
+
+
+# 1. 初始化 FastAPI 应用，并配置专业的 Swagger 文档信息
+app = FastAPI(
+    title="光储大师 (PV + ESS Quote Master) 计算引擎",
+    description="面向 2026 年全球市场的 B 端光储财务与物理模拟核心 API。支持 8760 小时能量流闭环与拉美高息/通胀/备电金融测算。",
+    version="0.1.0",
+)
+
+# 🌟 一键生成所有数据库表！(如果表已经存在，它不会覆盖)
+Base.metadata.create_all(bind=engine)
+
+# 2. 配置 CORS (跨域资源共享)
+# 为了方便前期开发，这里允许所有来源("*")。上线时需替换为你的真实 App 域名。
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+app.include_router(iam_router, prefix="/api/v1")
+
+# 3. 注册核心业务路由
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"]) # 注册登录接口
+app.include_router(
+    settings_router, 
+    prefix="/api/v1", 
+    tags=["settings"],
+    dependencies=[Depends(get_current_user_payload)] # 👈 保安站在这里
+)
+
+# 2. 🌟 测算业务模块：在 Router 级别统一挂载拦截器！
+# 这样 simulation.py 里的所有 @router.post 都不用再写鉴权代码了，进这个门必须刷卡！
+app.include_router(
+    simulation.router, 
+    prefix="/api/v1", 
+    tags=["Simulation"],
+    dependencies=[Depends(get_current_user_payload)] # 👈 保安站在这里
+)
+
+app.include_router(
+    locations_router, 
+    prefix="/api/v1", 
+    tags=["locations"])
+
+app.include_router(
+    payment.router, 
+    prefix="/api/v1/payment", 
+    tags=["Payment - Stripe 支付"])
+
+
+# 4. 健康检查探针 (Health Check)
+# 用于云服务器自动检测该引擎是否存活
+@app.get("/", tags=["System / 系统"])
+async def root():
+    return {
+        "status": "online",
+        "message": "光储大师计算引擎已启动！请访问 /docs 查看交互式 API 文档。",
+        "engine_version": "V0.3 (拉美金融完全体)"
+    }
+
+@app.get("/privacy", tags=["Legal"])
+@app.get("/privacy.html", tags=["Legal"])
+def get_privacy_policy():
+    return FileResponse(os.path.join("static", "privacy.html"))
+
+@app.get("/terms", tags=["Legal"])
+@app.get("/terms.html", tags=["Legal"])
+def get_terms_of_service():
+    return FileResponse(os.path.join("static", "terms.html"))
+============================================================
+📁 File: .\app\test_run.py
+============================================================
+
+import requests
+import json
+
+# ==========================================
+# 1. 构造逼真的 8760 小时物理时序数据
+# ==========================================
+irradiance = []
+load_profile = []
+grid_status = []
+
+for hour in range(8760):
+    # 模拟日夜交替：每天早上 8 点到下午 16 点有太阳 (假设平局光照 600 W/m²)
+    hour_of_day = hour % 24
+    if 8 <= hour_of_day <= 16:
+        irradiance.append(600.0)
+    else:
+        irradiance.append(0.0)
+        
+    # 模拟工厂用电负载：每小时稳定用电 3 度 (3 kWh)
+    load_profile.append(3.0)
+    
+    # 模拟拉美电网：大概有 2% 的概率发生随机停电
+    # 为了测试效果，我们强制设定每个月的第一天晚上停电 4 小时
+    if hour % (24 * 30) in [18, 19, 20, 21]: 
+        grid_status.append(0) # 0 代表停电
+    else:
+        grid_status.append(1) # 1 代表正常
+
+# ==========================================
+# 2. 组装发给 API 的完整 JSON 结构包
+# ==========================================
+payload = {
+    "physics_params": {
+        "env": {
+            "irradiance_8760": irradiance,
+            "load_profile_8760": load_profile,
+            "grid_status_8760": grid_status
+        },
+        "pv": {
+            "pv_dc_capacity_kwp": 10.0,      # 10kW 光伏板
+            "inverter_ac_capacity_kw": 8.0,  # 8kW 逆变器
+            "system_loss_factor": 0.15       # 15% 综合损耗
+        },
+        "ess": {
+            "batt_nominal_capacity_kwh": 15.0, # 15度大电池 (为了应对停电)
+            "dod_limit": 0.1,                  # 保护底层 10% 电量不放
+            "max_charge_discharge_kw": 7.5,    # 最大充放电功率 7.5kW
+            "rte_efficiency": 0.90,            # 90% 充放电往返效率
+            "initial_soc": 1.0                 # 假设第一天是满电开始
+        },
+        "grid": {
+            "export_limit_kw": 0.0             # 0代表防逆流 (不允许卖电给电网)
+        }
+    },
+    "financial_params": {
+        "total_capex": 18000.0,              # 系统总造价 $18,000
+        "annual_opex": 150.0,                # 每年基础维护费 $150
+        "battery_replacement_cost": 3000.0,  # 第10年换电池需 $3,000
+        "battery_replacement_year": 10,
+        
+        "current_electricity_price": 0.25,   # 当前电价 $0.25/度 (拉美典型高电价)
+        "electricity_inflation_rate": 0.08,  # 每年电费涨价 8% (刺激客户投资的核心)
+        "voll_price": 2.0,                   # 断电惩罚费率 $2.0/度 (工厂停工损失)
+        "system_degradation_rate": 0.015,    # 每年系统整体衰减 1.5%
+        
+        "down_payment_pct": 0.20,            # 客户只付 20% 首付 ($3,600)
+        "loan_term_years": 5,                # 贷款 5 年
+        "loan_interest_rate": 0.12,          # 贷款年利率高达 12%
+        "discount_rate": 0.10,               # 资金贴现率(WACC) 10%
+        "project_lifespan": 20               # 测算 20 年寿命
+    }
+}
+
+# ==========================================
+# 3. 发送网络请求并打印精美研报
+# ==========================================
+print("🚀 正在向光储引擎发送 8760 小时测算请求...")
+response = requests.post(
+    "http://127.0.0.1:8000/api/v1/simulate", 
+    json=payload,
+    proxies={"http": None, "https": None}
+)
+
+if response.status_code == 200:
+    data = response.json()
+    kpis = data["physics_result"]["kpis"]
+    fin = data["finance_result"]
+    
+    print("\n" + "="*40)
+    print("📊 [光储大师] 20年综合报价研报生成")
+    print("="*40)
+    print(f"🌞 自发自用率:   {kpis['self_consumption_rate']*100:.1f}%")
+    print(f"🔋 能源独立性:   {kpis['autarky_rate']*100:.1f}%")
+    print("-" * 40)
+    print(f"💰 投资净现值(NPV): ${fin['npv']:,.2f}")
+    print(f"📈 内部收益率(IRR): {fin['irr']:.2f}% (含杠杆)")
+    print(f"⏱️ 投资回本周期:   {fin['payback_period_years']} 年")
+    print(f"⚡ 平准化度电成本:  ${fin['lcoe']:.4f} / kWh")
+    print("="*40)
+    
+    print("\n📅 20年现金流明细表 (Cash Flow Statement):")
+    print("-" * 110)
+    print(f"{'年份':<4} | {'节省电费':<12} | {'挽回停电损失':<12} | {'运维/换电池':<12} | {'还本付息(贷款)':<12} | {'当年净现金流':<14} | {'累计现金流':<14}")
+    print("-" * 110)
+    
+    # 使用 [1:] 代表从第 1 年一直遍历到最后一年（第 20 年）
+    for year_data in fin['cash_flow_statement'][1:]: 
+        print(f"第{year_data['year']:2.0f}年 | "
+              f"${year_data['energy_savings_revenue']:>10,.2f} | "
+              f"${year_data['backup_power_value']:>10,.2f} | "
+              f"-${year_data['opex_and_replacement']:>11,.2f} | "
+              f"-${year_data['debt_service']:>12,.2f} | "
+              f"${year_data['net_cash_flow']:>13,.2f} | "
+              f"${year_data['cumulative_cash_flow']:>13,.2f}")
+    print("-" * 110)
+else:
+    print(f"❌ 请求失败，状态码: {response.status_code}")
+    print(response.text)
+============================================================
+📁 File: .\app\__init__.py
+============================================================
+
+
+============================================================
+📁 File: .\app\api\dependencies.py
+============================================================
+
+
+============================================================
+📁 File: .\app\api\deps.py
+============================================================
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+import jwt
+from pydantic import BaseModel
+
+from app.core.security import SECRET_KEY, ALGORITHM
+
+from typing import Generator
+from app.db.database import SessionLocal # 引入刚才写好的 Session 工厂
+
+
+
+# 告诉 FastAPI，前端应该向哪个地址发送账号密码来换取 Token
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+class TokenPayload(BaseModel):
+    user_id: str
+    company_id: str
+    role: str
+    tier: str  # 🌟 新增：拦截器能识别当前用户的付费等级了！
+
+async def get_current_user_payload(token: str = Depends(oauth2_scheme)) -> TokenPayload:
+    """
+    终极安检门：拦截所有请求，撕开 Token，提取公司 ID
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="认证失败，门禁卡无效或已过期",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        # 1. 验证签名是否被篡改，并解码内容
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        # 2. 提取核心 SaaS 隔离数据
+        user_id: str = payload.get("sub")
+        company_id: str = payload.get("company_id")
+        role: str = payload.get("role")
+        tier: str = payload.get("tier", "FREE") # 🌟 提取权限，默认 FREE
+        
+        if user_id is None or company_id is None:
+            raise credentials_exception
+            
+        return TokenPayload(
+            user_id=user_id, 
+            company_id=company_id, 
+            role=role,
+            tier=tier # 🌟 返回给业务方
+        )
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="登录已过期，请重新登录")
+    except jwt.PyJWTError:
+        raise credentials_exception
+    
+
+# 🌟 数据库依赖注入：FastAPI 会在每次接口被调用时，自动开门、关门
+def get_db() -> Generator:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+============================================================
+📁 File: .\app\api\__init__.py
+============================================================
+
+
+============================================================
+📁 File: .\app\api\v1\auth.py
+============================================================
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
+from datetime import timedelta
+from app.api.deps import get_current_user_payload, TokenPayload # 🌟 引入安检门
+
+from app.core.security import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+from app.api.deps import get_db
+# 🌟 引入真实的 IAM 用户表和密码校验工具
+from app.modules.iam.models import User as IAMUser
+from app.modules.iam.security import verify_password
+
+router = APIRouter()
+
+@router.post("/login")
+async def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    """真实查库登录，发放携带 tier (权限) 的 JWT"""
+    # 1. 去数据库查这个邮箱
+    user = db.query(IAMUser).filter(IAMUser.email == form_data.username).first()
+    
+    # 2. 验证密码
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="账号或密码错误",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # 3. 制作 Token 载荷 (Payload)，把真实的主键和权限塞进去！
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={
+            "sub": user.id,              # 真实的 UUID
+            "company_id": "solo-tenant", # MVP 阶段单人单企
+            "role": "SALES",
+            "tier": user.tier            # 🌟 核心：把 FREE 或 PRO 写进通行证！
+        },
+        expires_delta=access_token_expires
+    )
+    
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/refresh")
+async def refresh_token(
+    current_user: TokenPayload = Depends(get_current_user_payload),
+    db: Session = Depends(get_db)
+):
+    """Token 以旧换新：用于支付完成后无感刷新前端权限"""
+    # 1. 拿着旧 Token 里的 user_id 去查数据库的最新状态
+    user = db.query(IAMUser).filter(IAMUser.id == current_user.user_id).first()
+    
+    if not user or not user.is_active:
+        raise HTTPException(status_code=401, detail="用户不存在或已被禁用")
+
+    # 2. 重新签发一张全新的 Token，把最新的 tier 写进去
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    new_token = create_access_token(
+        data={
+            "sub": user.id,
+            "company_id": current_user.company_id,
+            "role": current_user.role,
+            "tier": user.tier  # 🌟 这里会读取刚刚被 Stripe Webhook 改成 PRO 的最新状态！
+        },
+        expires_delta=access_token_expires
+    )
+    
+    return {
+        "access_token": new_token, 
+        "token_type": "bearer",
+        "tier": user.tier # 顺便把状态明文返回给前端更新 UI
+    }
+============================================================
+📁 File: .\app\api\v1\locations.py
+============================================================
+
+import json
+import os
+from fastapi import APIRouter, HTTPException
+
+router = APIRouter(prefix="/locations", tags=["地理位置 - Locations"])
+
+# 🌟 动态计算配置文件的绝对路径：找到当前文件往上推 3 层的根目录
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+CITIES_FILE_PATH = os.path.join(BASE_DIR, "cities.json")
+
+@router.get("/cities")
+def get_supported_cities():
+    """
+    动态下发支持测算的城市列表。
+    直接从根目录的 cities.json 中读取，实现配置解耦。
+    """
+    if not os.path.exists(CITIES_FILE_PATH):
+        print(f"⚠️ 警告: 未找到城市配置文件 {CITIES_FILE_PATH}，返回默认兜底数据。")
+        return [
+            {
+                "id": "sao_paulo", 
+                "lat": -23.5505, 
+                "lon": -46.6333, 
+                "is_pro_only": False, 
+                "name": {"zh": "🇧🇷 圣保罗 (巴西)", "en": "🇧🇷 São Paulo (Brazil)"}
+            }
+        ]
+        
+    try:
+        # 每次请求实时读取文件（如果追求极致性能，未来可以加一层 Redis 或内存缓存）
+        with open(CITIES_FILE_PATH, "r", encoding="utf-8") as f:
+            cities_data = json.load(f)
+        return cities_data
+    except Exception as e:
+        print(f"❌ 读取城市配置文件失败: {e}")
+        raise HTTPException(status_code=500, detail="服务器内部错误：无法加载城市配置列表")
+============================================================
+📁 File: .\app\api\v1\payment.py
+============================================================
+
+import stripe
+from fastapi import APIRouter, Depends, Request, HTTPException
+from sqlalchemy.orm import Session
+import json
+
+# 🌟 1. 修复：引入真实的数据库入口和 JWT 安检门
+from app.api.deps import get_db, get_current_user_payload, TokenPayload
+# 🌟 2. 修复：精准引入 IAM 模块下真实在用的 User 模型
+from app.modules.iam.models import User
+
+from app.core.config import STRIPE_API_KEY, STRIPE_WEBHOOK_SECRET
+
+router = APIRouter()
+
+# 你的 Stripe 测试环境私钥
+
+stripe.api_key = STRIPE_API_KEY
+
+# 你的商品价格 ID
+PRICE_ID = "price_1T5kUtCdfKFiLrNdLfYlkOgI"
+
+@router.post("/checkout")
+def create_checkout_session(current_user: TokenPayload = Depends(get_current_user_payload)): # 👈 修复为 TokenPayload
+    """
+    生成 Stripe 结账链接：前端点击“升级”按钮时调用此接口
+    """
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price': PRICE_ID,
+                'quantity': 1,
+            }],
+            mode='subscription', 
+            success_url='https://dothings.one/docs', 
+            cancel_url='https://dothings.one/docs',
+            # 🌟 极其重要：把用户的真实 UUID 绑在订单上！
+            client_reference_id=str(current_user.user_id), 
+        )
+        return {"checkout_url": session.url}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/webhook")
+async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
+    """
+    Stripe 自动发货员 (安全校验版)
+    """
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+    
+    # 🌟 将这里的 whsec_... 替换成你刚刚在 Stripe 后台复制的真实 Signing secret！
+
+    endpoint_secret = STRIPE_WEBHOOK_SECRET 
+    
+    try:
+        # 核心防伪校验：验证这通请求真的是 Stripe 发来的，而不是黑客伪造的
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, endpoint_secret
+        )
+    except ValueError as e:
+        print("❌ Webhook 报错：Payload 无效")
+        raise HTTPException(status_code=400, detail="Invalid payload")
+    except stripe.error.SignatureVerificationError as e:
+        print("❌ Webhook 报错：数字签名验证失败，可能是伪造请求！")
+        raise HTTPException(status_code=400, detail="Invalid signature")
+
+    # 当监听到“付款成功”事件时
+    if event['type'] == 'checkout.session.completed':
+        session_data = event['data']['object']
+        
+        # 拿回我们之前塞进去的用户 UUID
+        user_id_str = session_data.get('client_reference_id')
+        
+        if user_id_str:
+            user = db.query(User).filter(User.id == user_id_str).first()
+            if user:
+                # 🌟 自动提权！
+                user.tier = "PRO"
+                db.commit()
+                print(f"==========================================")
+                print(f"💰 叮咚！收银台响了！")
+                print(f"👤 用户: {user.email}")
+                print(f"👑 状态: 已成功自动升级为 PRO！")
+                print(f"==========================================")
+
+    return {"status": "success"}
+============================================================
+📁 File: .\app\api\v1\settings.py
+============================================================
+
+# 文件路径: app/api/v1/settings.py
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from app.db.database import SessionLocal
+from app.api.deps import get_db
+from app.api.deps import get_current_user_payload, TokenPayload
+
+# 假设你之前在 deps.py 里写过 JWT 验证，名叫 get_current_user_payload
+# 这个函数应该返回解析后的 Token Payload，里面包含了当前请求的 user_id (通常是 sub 字段)
+from app.api.deps import get_current_user_payload 
+
+from app.models.user_settings import UserSettings
+from app.schemas.user_settings import UserSettingsUpdate, UserSettingsResponse
+
+router = APIRouter(prefix="/settings", tags=["业务配置 - Settings"])
+
+def get_or_create_settings(db: Session, user_id: str) -> UserSettings:
+    """内部辅助函数：获取用户配置，如果没有则懒加载创建"""
+    settings = db.query(UserSettings).filter(UserSettings.user_id == user_id).first()
+    if not settings:
+        settings = UserSettings(user_id=user_id)
+        db.add(settings)
+        db.commit()
+        db.refresh(settings)
+    return settings
+
+@router.get("/me", response_model=UserSettingsResponse)
+def get_my_settings(
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(get_current_user_payload)
+):
+    """获取当前登录用户的专属配置"""
+    user_id = current_user.user_id # 根据你 JWT 里的实际主键字段名来定
+    settings = get_or_create_settings(db, user_id)
+    return settings
+
+@router.put("/me", response_model=UserSettingsResponse)
+def update_my_settings(
+    settings_in: UserSettingsUpdate,
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(get_current_user_payload)
+
+):
+    """修改当前用户的专属配置"""
+    user_id = current_user.user_id
+    settings = get_or_create_settings(db, user_id)
+
+    # 动态更新前端传过来的非空字段
+    update_data = settings_in.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(settings, key, value)
+
+    db.commit()
+    db.refresh(settings)
+    
+    print(f"✅ 用户 {user_id} 的业务配置已更新。")
+    return settings
+============================================================
+📁 File: .\app\api\v1\simulation.py
+============================================================
+
+from fastapi import APIRouter, Depends, HTTPException, requests # 引入 Depends
+from pydantic import BaseModel
+import time
+import traceback
+
+from app.engine.schemas import SimulationInput, SimulationOutput
+from app.engine.finance import FinancialInput, FinancialOutput, run_financial_simulation
+from app.engine.physics import run_physics_simulation
+from app.api.deps import get_current_user_payload, TokenPayload # 引入安检门
+
+
+# 确保你的 app/services/pvgis.py 文件存在并被引入！
+from app.services.pvgis import fetch_pvgis_hourly_irradiance
+
+router = APIRouter()
+
+class FinancialBaseConfig(BaseModel):
+    total_capex: float 
+    annual_opex: float 
+    battery_replacement_cost: float 
+    battery_replacement_year: int 
+    current_electricity_price: float 
+    electricity_inflation_rate: float 
+    voll_price: float 
+    system_degradation_rate: float 
+    down_payment_pct: float 
+    loan_term_years: int 
+    loan_interest_rate: float 
+    discount_rate: float 
+    project_lifespan: int 
+
+class FullQuoteRequest(BaseModel):
+    physics_params: SimulationInput
+    financial_params: FinancialBaseConfig
+
+class FullQuoteResponse(BaseModel):
+    physics_result: SimulationOutput
+    finance_result: FinancialOutput
+
+@router.post("/simulate", response_model=FullQuoteResponse)
+async def simulate_pv_ess_project(
+    request: FullQuoteRequest, 
+    current_user: TokenPayload = Depends(get_current_user_payload) # 👈 保安就位！
+):
+    try:
+
+        print(f"🔒 安全拦截通过：操作人角色 {current_user.role}, 所属公司ID {current_user.company_id}")
+        
+        env = request.physics_params.env
+        
+        # 🌟 监控雷达 1：确认是否收到了坐标
+        print(f"\n👉 收到前端请求 | 目标城市: 纬度 {env.lat}, 经度 {env.lon}")
+
+        # 🟢 核心拦截：如果有真实坐标，狸猫换太子
+        if env.lat != 0.0 and env.lon != 0.0:
+            print("📡 正在跨国连接欧盟 PVGIS 气象卫星...")
+            start_t = time.time()
+            # 呼叫欧盟服务器拉取真实数据
+            real_irradiance = await fetch_pvgis_hourly_irradiance(lat=env.lat, lon=env.lon)
+            # 覆盖前端传来的假数据
+            request.physics_params.env.irradiance_8760 = real_irradiance
+            print(f"✅ 成功获取 8760 小时真实光照！耗时: {time.time() - start_t:.2f}s")
+        else:
+            print("⚠️ 未收到有效坐标，继续使用本地完美假太阳进行测算。")
+
+        # 1. 运行物理引擎
+        phys_out = run_physics_simulation(request.physics_params)
+        
+        tariff = request.physics_params.tariff
+        hourly = phys_out.hourly_data
+        
+        # 2. 算账：峰谷套利与削峰填谷
+        cost_without_sys = 0.0
+        cost_with_sys = 0.0
+        max_kw_without = [0.0] * 12
+        max_kw_with = [0.0] * 12
+        
+        for t in range(8760):
+            hour = t % 24
+            month = (t // 730) % 12 
+            
+            if hour in tariff.peak_hours: rate = tariff.peak_price
+            elif hour in tariff.valley_hours: rate = tariff.valley_price
+            else: rate = tariff.mid_price
+            
+            cost_without_sys += env.load_profile_8760[t] * rate
+            if env.load_profile_8760[t] > max_kw_without[month]:
+                max_kw_without[month] = env.load_profile_8760[t]
+                
+            total_grid_import = hourly.grid_to_load[t] + hourly.grid_to_batt[t]
+            cost_with_sys += total_grid_import * rate
+            if total_grid_import > max_kw_with[month]:
+                max_kw_with[month] = total_grid_import
+                
+        tou_savings = cost_without_sys - cost_with_sys
+        demand_savings = (sum(max_kw_without) - sum(max_kw_with)) * tariff.demand_charge_per_kw
+
+        # 3. 停电损失挽回
+        total_potential_loss = sum(env.load_profile_8760[t] for t in range(8760) if env.grid_status_8760[t] == 0)
+        actual_loss = sum(hourly.lost_load)
+        avoided_loss_kwh = total_potential_loss - actual_loss
+        backup_revenue = avoided_loss_kwh * request.financial_params.voll_price
+
+
+
+        # 4. 运行金融引擎
+        fin_input = FinancialInput(
+            first_year_tou_savings=tou_savings,
+            first_year_demand_savings=demand_savings,
+            first_year_backup_revenue=backup_revenue,
+            **request.financial_params.model_dump() 
+        )
+        fin_out = run_financial_simulation(fin_input)
+
+        # print(f"金融数据:{fin_out}")
+        # print(f"物理数据:{phys_out}")
+        
+        return FullQuoteResponse(physics_result=phys_out, finance_result=fin_out)
+    # 🌟 进阶捕获 1：专门捕获第三方 API 的 HTTP 错误 (如果你用的是 requests)
+    except requests.exceptions.HTTPError as e:
+        # 这样可以直接提取气象局服务器返回的真实错误 JSON
+        error_detail = f"气象 API 拒绝请求, 状态码: {e.response.status_code}, 详情: {e.response.text}"
+        print(f"🔴 [外部 API 错误] {error_detail}") # 打印到后端控制台
+        raise HTTPException(status_code=502, detail=error_detail) # 502 Bad Gateway 更符合语意    
+    except Exception as e:
+        # 获取包含具体报错代码行数的完整追踪信息
+        error_trace = traceback.format_exc()
+        
+        # ⚠️ 核心原则：详细堆栈留在后端自己看，精简信息返回给前端
+        print(f"🔥 [致命异常崩溃] 完整堆栈如下:\n{error_trace}")
+        
+        # repr(e) 会比 str(e) 打印出异常的类型，比如 KeyError('temp') 而不只是 'temp'
+        raise HTTPException(status_code=500, detail=f"内部系统崩溃: {repr(e)}")
+============================================================
+📁 File: .\app\api\v1\__init__.py
+============================================================
+
+
+============================================================
+📁 File: .\app\core\config.py
+============================================================
+
+import os
+from dotenv import load_dotenv
+
+# 自动寻找项目根目录的 .env 文件并加载到操作系统的环境变量中
+load_dotenv()
+
+# 从环境变量中安全提取密钥
+SECRET_KEY = os.getenv("SECRET_KEY", "default_secret_please_change")
+STRIPE_API_KEY = os.getenv("STRIPE_API_KEY")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+
+# 顺便加个保险：如果没有读到 Stripe 密钥，在后端启动时就大声报错
+if not STRIPE_API_KEY or not STRIPE_WEBHOOK_SECRET:
+    print("⚠️ 警告: 未在 .env 文件中检测到 Stripe 密钥，支付模块将无法正常工作！")
+
+
+# --- 邮件配置 ---
+SMTP_SERVER = os.getenv("SMTP_SERVER")
+SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
+SMTP_USER = os.getenv("SMTP_USER")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+============================================================
+📁 File: .\app\core\exceptions.py
+============================================================
+
+
+============================================================
+📁 File: .\app\core\security.py
+============================================================
+
+import jwt
+from datetime import datetime, timedelta
+from passlib.context import CryptContext
+
+# 🌟 从中央配置库安全引入门禁密钥
+from app.core.config import SECRET_KEY
+
+
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 门禁卡有效期：7天 (方便销售出差不用天天登录)
+
+# 密码加密机 (使用工业级 bcrypt 算法)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """验证明文密码与数据库里的密文是否匹配"""
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password: str) -> str:
+    """将明文密码转化为不可逆的密文存入数据库"""
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
+    """签发包含多租户信息的 JWT 门禁卡"""
+    to_encode = data.copy()
+    
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+        
+    # 将过期时间写入 Token 载荷
+    to_encode.update({"exp": expire})
+    
+    # 使用私钥进行数字签名，防止前端伪造
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+============================================================
+📁 File: .\app\core\__init__.py
+============================================================
+
+
+============================================================
+📁 File: .\app\db\database.py
+============================================================
+
+# 文件路径: app/db/database.py
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base
+
+# 🌟 使用 SQLite 本地数据库，文件会直接生成在项目根目录的 pv_ess.db
+SQLALCHEMY_DATABASE_URL = "sqlite:///./pv_ess.db"
+
+# SQLite 专属配置：允许跨线程使用 (check_same_thread)
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+)
+
+# 创建一个工厂，用来给每个请求生成独立的数据库会话 (Session)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# 🌟 这就是你的 models.py 苦苦寻找的那个 Base 基类！
+Base = declarative_base()
+============================================================
+📁 File: .\app\db\models.py
+============================================================
+
+import uuid
+from sqlalchemy import Column, String, Boolean, Float, ForeignKey, JSON
+from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.types import Uuid
+
+# 创建 SQLAlchemy 的基类
+Base = declarative_base()
+
+# ==========================================
+# 1. 租户表 (Companies) - 隔离的源头
+# ==========================================
+class Company(Base):
+    __tablename__ = "companies"
+
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(100), nullable=False, index=True) # 企业名称，如 "隆基拉美分公司"
+    subscription_tier = Column(String(20), default="PRO")  # 订阅等级：FREE, PRO, ENTERPRISE
+    is_active = Column(Boolean, default=True)              # 账号状态：欠费一键停用
+
+    # 反向关联：一个公司下有多个用户、多个私有硬件价格、多个项目
+    users = relationship("User", back_populates="company", cascade="all, delete-orphan")
+    hardware_prices = relationship("HardwarePricing", back_populates="company", cascade="all, delete-orphan")
+    projects = relationship("Project", back_populates="company", cascade="all, delete-orphan")
+
+
+# ==========================================
+# 2. 用户表 (Users) - 老板与销售的账号池
+# ==========================================
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id = Column(Uuid(as_uuid=True), ForeignKey("companies.id"), nullable=False, index=True)
+    
+    email = Column(String(150), unique=True, nullable=False, index=True) # 登录账号
+    password_hash = Column(String(255), nullable=False)                  # 加密密码，绝不存明文
+    role = Column(String(20), nullable=False, default="SALES")           # 角色：ADMIN 或 SALES
+    is_active = Column(Boolean, default=True)
+
+    # 关联
+    company = relationship("Company", back_populates="users")
+    projects = relationship("Project", back_populates="owner")
+
+
+# ==========================================
+# 3. 企业私有硬件库 (HardwarePricing) - 利润控制台
+# ==========================================
+class HardwarePricing(Base):
+    __tablename__ = "hardware_pricing"
+
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id = Column(Uuid(as_uuid=True), ForeignKey("companies.id"), nullable=False, index=True)
+    
+    component_type = Column(String(50), nullable=False) # 硬件类型：如 "BATTERY", "PV_PANEL", "INVERTER"
+    base_cost = Column(Float, nullable=False)           # 真实拿货底价 (仅 Admin 可见/修改)
+    sales_markup = Column(Float, default=0.30)          # 溢价比例，默认加价 30% 卖给客户
+
+    # 关联
+    company = relationship("Company", back_populates="hardware_prices")
+
+
+# ==========================================
+# 4. 项目报价单表 (Projects) - 业务员的摇钱树
+# ==========================================
+class Project(Base):
+    __tablename__ = "projects"
+
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id = Column(Uuid(as_uuid=True), ForeignKey("companies.id"), nullable=False, index=True)
+    user_id = Column(Uuid(as_uuid=True), ForeignKey("users.id"), nullable=False) # 记录是谁谈的单子
+    
+    client_name = Column(String(150), nullable=False) # 客户名称，如 "圣保罗某冷链物流园"
+    
+    # 核心业务资产：将 Flutter 传来的几百个配置参数（光伏容量、真实坐标、日照数据等）直接压缩存入 JSON
+    simulation_data = Column(JSON, nullable=False) 
+
+    # 关联
+    company = relationship("Company", back_populates="projects")
+    owner = relationship("User", back_populates="projects")
+============================================================
+📁 File: .\app\engine\finance.py
+============================================================
+
+import math
+from typing import List, Dict, Optional
+from pydantic import BaseModel, Field
+
+class FinancialInput(BaseModel):
+    # 🟢 接收 API 层结算好的具体美元节省金额
+    first_year_tou_savings: float       
+    first_year_demand_savings: float    
+    first_year_backup_revenue: float    
+    
+    total_capex: float 
+    annual_opex: float 
+    battery_replacement_cost: float 
+    battery_replacement_year: int 
+    
+    current_electricity_price: float # 兼容老接口保留
+    electricity_inflation_rate: float 
+    voll_price: float 
+    system_degradation_rate: float 
+    
+    down_payment_pct: float 
+    loan_term_years: int 
+    loan_interest_rate: float 
+    discount_rate: float 
+    project_lifespan: int 
+
+class FinancialOutput(BaseModel):
+    npv: float
+    irr: float
+    payback_period_years: float
+    lcoe: float
+    cash_flow_statement: List[Dict[str, float]]
+
+def calculate_pmt(principal: float, annual_rate: float, years: int) -> float:
+    if annual_rate == 0:
+        return principal / years if years > 0 else 0
+    return principal * (annual_rate * (1 + annual_rate)**years) / ((1 + annual_rate)**years - 1)
+
+def calculate_irr(cash_flows: List[float], max_iterations=1000, tolerance=1e-6) -> float:
+    if all(cf >= 0 for cf in cash_flows) or all(cf <= 0 for cf in cash_flows):
+        return 0.0
+    def npv_func(rate):
+        return sum(cf / ((1 + rate) ** i) for i, cf in enumerate(cash_flows))
+
+    r0, r1 = 0.0, 0.1
+    for _ in range(max_iterations):
+        npv0 = npv_func(r0)
+        npv1 = npv_func(r1)
+        if abs(npv1) < tolerance: return r1
+        if npv1 == npv0: break
+        r_new = r1 - npv1 * (r1 - r0) / (npv1 - npv0)
+        r0, r1 = r1, r_new
+    return r1
+
+def run_financial_simulation(params: FinancialInput) -> FinancialOutput:
+    n_years = params.project_lifespan
+    
+    down_payment = params.total_capex * params.down_payment_pct
+    loan_principal = params.total_capex - down_payment
+    annual_loan_payment = calculate_pmt(loan_principal, params.loan_interest_rate, params.loan_term_years)
+
+    cash_flows = []
+    cumulative_cash_flow = -down_payment
+    payback_period = -1.0
+    
+    cash_flows.append({
+        "year": 0,
+        "energy_savings_revenue": 0.0,
+        "backup_power_value": 0.0,
+        "opex_and_replacement": 0.0,
+        "debt_service": 0.0,
+        "net_cash_flow": -down_payment,
+        "cumulative_cash_flow": cumulative_cash_flow
+    })
+    pure_cash_flow_array = [-down_payment]
+
+    for year in range(1, n_years + 1):
+        degradation_factor = (1 - params.system_degradation_rate) ** (year - 1)
+        inflation_factor = (1 + params.electricity_inflation_rate) ** (year - 1)
+        
+        # 🟢 计算衰减与通胀后的综合能源节省 (TOU + 削峰)
+        yearly_tou = params.first_year_tou_savings * degradation_factor
+        yearly_demand = params.first_year_demand_savings * degradation_factor
+        
+        # 前端 UI 图表仍然读取 energy_savings_revenue 字段，我们把两块收益合并给它
+        energy_revenue = (yearly_tou + yearly_demand) * inflation_factor
+        backup_value = params.first_year_backup_revenue * degradation_factor
+        total_revenue = energy_revenue + backup_value
+        
+        opex = params.annual_opex * inflation_factor 
+        if year == params.battery_replacement_year:
+            opex += params.battery_replacement_cost
+            
+        debt_service = annual_loan_payment if year <= params.loan_term_years else 0.0
+        
+        net_cf = total_revenue - opex - debt_service
+        cumulative_cash_flow += net_cf
+        
+        if payback_period < 0 and cumulative_cash_flow >= 0:
+            previous_cum = cash_flows[-1]["cumulative_cash_flow"]
+            payback_period = (year - 1) + abs(previous_cum) / net_cf
+
+        pure_cash_flow_array.append(net_cf)
+        cash_flows.append({
+            "year": year,
+            "energy_savings_revenue": round(energy_revenue, 2),
+            "backup_power_value": round(backup_value, 2),
+            "opex_and_replacement": round(opex, 2),
+            "debt_service": round(debt_service, 2),
+            "net_cash_flow": round(net_cf, 2),
+            "cumulative_cash_flow": round(cumulative_cash_flow, 2)
+        })
+
+    npv = sum(cf / ((1 + params.discount_rate) ** i) for i, cf in enumerate(pure_cash_flow_array))
+    irr = calculate_irr(pure_cash_flow_array)
+
+    return FinancialOutput(
+        npv=round(npv, 2),
+        irr=round(irr * 100, 2), 
+        payback_period_years=round(payback_period, 2) if payback_period > 0 else 20.0, 
+        lcoe=0.0, # TOU 场景下 LCOE 意义不大，设为 0
+        cash_flow_statement=cash_flows
+    )
+============================================================
+📁 File: .\app\engine\physics.py
+============================================================
+
+import math
+from app.engine.schemas import SimulationInput, SimulationOutput, HourlyResults, KPIResults
+
+def run_physics_simulation(params: SimulationInput) -> SimulationOutput:
+    env = params.env
+    pv = params.pv
+    ess = params.ess
+    grid = params.grid
+    tariff = params.tariff # 🟢 获取电价策略
+    
+    eff_charge = math.sqrt(ess.rte_efficiency)
+    eff_discharge = math.sqrt(ess.rte_efficiency)
+
+    out_pv_gen = [0.0] * 8760
+    out_pv_to_load = [0.0] * 8760
+    out_pv_to_batt = [0.0] * 8760
+    out_batt_to_load = [0.0] * 8760
+    out_grid_to_load = [0.0] * 8760
+    out_grid_to_batt = [0.0] * 8760 # 🟢 新增输出流向
+    out_pv_to_grid = [0.0] * 8760
+    out_curtailment = [0.0] * 8760
+    out_lost_load = [0.0] * 8760
+    out_batt_soc = [0.0] * 8760
+
+    current_soc = ess.initial_soc
+    total_batt_discharge_kwh = 0.0 
+
+    for t in range(8760):
+        # 获取当前时间所属的电价区间
+        hour_of_day = t % 24
+        is_valley = hour_of_day in tariff.valley_hours
+
+        pv_raw = pv.pv_dc_capacity_kwp * (env.irradiance_8760[t] / 1000.0) * (1 - pv.system_loss_factor)
+        pv_actual = min(pv_raw, pv.inverter_ac_capacity_kw)
+        out_pv_gen[t] = pv_actual
+
+        current_load = env.load_profile_8760[t]
+        is_grid_up = (env.grid_status_8760[t] == 1)
+
+        # B. 优先级 1：光伏直接满足负载
+        pv_to_load = min(pv_actual, current_load)
+        out_pv_to_load[t] = pv_to_load
+        
+        net_load = current_load - pv_to_load 
+        surplus_pv = pv_actual - pv_to_load 
+        max_energy_per_hour = ess.max_charge_discharge_kw * 1.0 
+
+        batt_charge, batt_discharge = 0.0, 0.0
+        grid_import_load, grid_import_batt, grid_export = 0.0, 0.0, 0.0
+        curtail, lost = 0.0, 0.0
+
+        # C. 优先级 2：光伏富余充电
+        if surplus_pv > 0:
+            space_kwh = (1.0 - current_soc) * ess.batt_nominal_capacity_kwh / eff_charge
+            batt_charge = min(surplus_pv, max_energy_per_hour, space_kwh)
+            current_soc += (batt_charge * eff_charge) / ess.batt_nominal_capacity_kwh
+            remaining_surplus = surplus_pv - batt_charge
+            if is_grid_up:
+                grid_export = min(remaining_surplus, grid.export_limit_kw)
+                curtail = remaining_surplus - grid_export
+            else:
+                curtail = remaining_surplus
+                
+        # D. 优先级 3：光伏不足，电池放电
+        elif net_load > 0:
+            available_kwh = (current_soc - ess.dod_limit) * ess.batt_nominal_capacity_kwh * eff_discharge
+            available_kwh = max(0.0, available_kwh)
+            batt_discharge = min(net_load, max_energy_per_hour, available_kwh)
+            current_soc -= (batt_discharge / eff_discharge) / ess.batt_nominal_capacity_kwh
+            total_batt_discharge_kwh += batt_discharge
+            
+            shortfall = net_load - batt_discharge
+            if is_grid_up:
+                grid_import_load = shortfall
+            else:
+                lost = shortfall 
+
+        # E. 🟢 优先级 4 (新 EMS 策略)：夜间谷电强制充电套利
+        # 条件：当前是谷电时段 + 政策允许充电 + 电网正常 + 电池没满
+        if is_valley and tariff.enable_grid_charging and is_grid_up and current_soc < 1.0:
+            space_kwh = (1.0 - current_soc) * ess.batt_nominal_capacity_kwh / eff_charge
+            # 减去这个小时已经用光伏充进去的功率，算出逆变器还能从电网拉多少功率
+            available_grid_charge_power = max_energy_per_hour - batt_charge 
+            
+            if space_kwh > 0 and available_grid_charge_power > 0:
+                grid_import_batt = min(space_kwh, available_grid_charge_power)
+                current_soc += (grid_import_batt * eff_charge) / ess.batt_nominal_capacity_kwh
+
+        # 写入寄存器
+        out_pv_to_batt[t] = batt_charge
+        out_batt_to_load[t] = batt_discharge
+        out_grid_to_load[t] = grid_import_load
+        out_grid_to_batt[t] = grid_import_batt # 🟢 记录套利买电
+        out_pv_to_grid[t] = grid_export
+        out_curtailment[t] = curtail
+        out_lost_load[t] = lost
+        out_batt_soc[t] = current_soc * 100.0
+
+    total_gen = sum(out_pv_gen)
+    total_load = sum(env.load_profile_8760)
+    
+    pv_used_by_sys = sum(out_pv_to_load) + sum(out_pv_to_batt)
+    self_consumption = (pv_used_by_sys / total_gen) if total_gen > 0 else 0.0
+    
+    sys_to_load = sum(out_pv_to_load) + sum(out_batt_to_load)
+    autarky = (sys_to_load / total_load) if total_load > 0 else 0.0
+
+    cycles = total_batt_discharge_kwh / ess.batt_nominal_capacity_kwh if ess.batt_nominal_capacity_kwh > 0 else 0.0
+
+    return SimulationOutput(
+        kpis=KPIResults(
+            total_generation_kwh=total_gen,
+            self_consumption_rate=self_consumption,
+            autarky_rate=autarky,
+            annual_cycles=cycles
+        ),
+        hourly_data=HourlyResults(
+            pv_generation=out_pv_gen,
+            pv_to_load=out_pv_to_load,
+            pv_to_batt=out_pv_to_batt,
+            batt_to_load=out_batt_to_load,
+            grid_to_load=out_grid_to_load,
+            grid_to_batt=out_grid_to_batt,
+            pv_to_grid=out_pv_to_grid,
+            curtailment=out_curtailment,
+            lost_load=out_lost_load,
+            batt_soc=out_batt_soc
+        )
+    )
+============================================================
+📁 File: .\app\engine\schemas.py
+============================================================
+
+from pydantic import BaseModel, Field
+from typing import List
+
+class EnvironmentAndLoad(BaseModel):
+    # 🟢 新增经纬度字段 (带默认值，兼容旧测试请求)
+    lat: float = Field(0.0, description="纬度")
+    lon: float = Field(0.0, description="经度")
+    
+    irradiance_8760: List[float]
+    load_profile_8760: List[float]
+    grid_status_8760: List[int]
+
+class PVSystemConfig(BaseModel):
+    pv_dc_capacity_kwp: float
+    inverter_ac_capacity_kw: float
+    system_loss_factor: float
+
+class ESSSystemConfig(BaseModel):
+    batt_nominal_capacity_kwh: float
+    dod_limit: float
+    max_charge_discharge_kw: float
+    rte_efficiency: float
+    initial_soc: float
+
+class GridPolicyConfig(BaseModel):
+    export_limit_kw: float
+
+# 🟢 新增：阶梯电价与需量电费模型
+class TariffConfig(BaseModel):
+    peak_price: float = Field(0.35, description="高峰电价 ($/kWh)")
+    mid_price: float = Field(0.15, description="平段电价 ($/kWh)")
+    valley_price: float = Field(0.05, description="谷段电价 ($/kWh) - 夜间套利成本")
+    
+    peak_hours: List[int] = Field([18, 19, 20, 21], description="高峰时段定义 (0-23)")
+    valley_hours: List[int] = Field([1, 2, 3, 4, 5], description="低谷时段定义 (0-23)")
+    
+    demand_charge_per_kw: float = Field(15.0, description="每月最大需量电费 ($/kW)")
+    enable_grid_charging: bool = Field(True, description="是否允许夜间从电网充电")
+
+class SimulationInput(BaseModel):
+    env: EnvironmentAndLoad
+    pv: PVSystemConfig
+    ess: ESSSystemConfig
+    grid: GridPolicyConfig
+    tariff: TariffConfig = TariffConfig() # 🟢 注入电价模型 (带有默认值)
+
+class KPIResults(BaseModel):
+    total_generation_kwh: float
+    self_consumption_rate: float
+    autarky_rate: float
+    annual_cycles: float
+
+class HourlyResults(BaseModel):
+    pv_generation: List[float]
+    pv_to_load: List[float]
+    pv_to_batt: List[float]
+    batt_to_load: List[float]
+    grid_to_load: List[float]
+    grid_to_batt: List[float] # 🟢 新增：记录半夜强行从电网充进电池的电
+    pv_to_grid: List[float]
+    curtailment: List[float]
+    lost_load: List[float]
+    batt_soc: List[float]
+
+class SimulationOutput(BaseModel):
+    kpis: KPIResults
+    hourly_data: HourlyResults
+============================================================
+📁 File: .\app\engine\__init__.py
+============================================================
+
+
+============================================================
+📁 File: .\app\models\user_settings.py
+============================================================
+
+# 文件路径: app/models/user_settings.py
+from sqlalchemy import Column, String, Float, ForeignKey
+from app.db.database import Base
+
+class UserSettings(Base):
+    __tablename__ = "user_settings"
+
+    # 🌟 核心：一对一绑定！将主键直接设为 iam_users 表的 ID
+    user_id = Column(String, ForeignKey("iam_users.id"), primary_key=True, index=True)
+    
+    # 🎨 企业品牌字段
+    company_name = Column(String, default="My Solar Company")
+    logo_url = Column(String, nullable=True)
+    
+    # 💰 采购成本与利润率字段
+    pv_cost_per_kw = Column(Float, default=800.0)
+    ess_cost_per_kwh = Column(Float, default=350.0)
+    margin_pct = Column(Float, default=20.0)
+============================================================
+📁 File: .\app\modules\iam\models.py
+============================================================
+
+import uuid
+from datetime import datetime
+from sqlalchemy import Column, String, Boolean, DateTime
+# 这里假设你的全局 Base 在 app.db.base，如果是别的路径请替换
+from app.db.database import Base 
+
+class User(Base):
+    __tablename__ = "iam_users" # 加上前缀，防止未来和其他模块表名冲突
+
+    # 基础身份
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    
+    # 🌟 SSO 兼容设计：允许密码为空！(因为第三方登录没有密码)
+    hashed_password = Column(String, nullable=True) 
+    
+    # 🌟 SSO 提供商标识：'local' (默认账号密码), 'google', 'apple', 'microsoft'
+    auth_provider = Column(String, default="local", nullable=False)
+    provider_id = Column(String, unique=True, nullable=True, index=True)
+
+    # 💰 SaaS 订阅权益模型
+    tier = Column(String, default="FREE", nullable=False) # 比如: FREE, PRO, ENTERPRISE
+    pro_expire_date = Column(DateTime, nullable=True)     # 订阅到期时间
+
+    # 🌟 新增：忘记密码的验证码及过期时间
+    reset_code = Column(String(6), nullable=True)
+    reset_code_expire = Column(DateTime, nullable=True)
+
+    # 系统字段
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+============================================================
+📁 File: .\app\modules\iam\router.py
+============================================================
+
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from app.utils.email_sender import send_otp_email # 🌟 引入咱们刚写的发件工具
+from sqlalchemy.orm import Session
+# 根据你的实际项目路径导入数据库依赖
+from app.api.deps import get_db 
+
+from .models import User
+from .security import get_password_hash
+
+import random
+from datetime import datetime, timedelta
+# 记得把刚写的 Schema 也引进来
+from .schemas import UserRegister, UserResponse, ForgotPasswordRequest, ResetPasswordRequest
+
+router = APIRouter(prefix="/auth", tags=["IAM - 身份与访问管理"])
+
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def register_user(user_in: UserRegister, db: Session = Depends(get_db)):
+    # 1. 查重：邮箱是否被注册过？
+    existing_user = db.query(User).filter(User.email == user_in.email).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="该邮箱已被注册。如果是您的账号，请直接登录。"
+        )
+
+    # 2. 密码加盐哈希
+    hashed_pw = get_password_hash(user_in.password)
+
+    # 3. 创建新用户，默认掉入 "FREE" 免费版漏斗
+    new_user = User(
+        email=user_in.email,
+        hashed_password=hashed_pw,
+        auth_provider="local",
+        tier="FREE"
+    )
+
+    # 4. 落库保存
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    print(f"🎉 [IAM 模块] 新用户注册成功: {new_user.email}, 初始权限: {new_user.tier}")
+    
+    return new_user
+
+# 注意：你原先写在 api/v1/auth.py 里的 login 接口，可以直接平移到这个文件里！
+
+@router.post("/forgot-password")
+async def request_password_reset(req: ForgotPasswordRequest, background_tasks: BackgroundTasks,db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == req.email).first()
+    if not user:
+        # 为了防黑客探测，即使邮箱不存在，也返回成功
+        return {"message": "如果该邮箱已注册，验证码已发送。"}
+
+    # 1. 生成 6 位纯数字验证码，15 分钟内有效
+    code = str(random.randint(100000, 999999))
+    user.reset_code = code
+    user.reset_code_expire = datetime.utcnow() + timedelta(minutes=15)
+    db.commit()
+
+    background_tasks.add_task(send_otp_email, user.email, code, req.language)
+
+    return {"message": "如果该邮箱已注册，验证码已发送。"}
+
+
+@router.post("/reset-password")
+async def reset_password(req: ResetPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == req.email).first()
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="验证码无效或已过期")
+
+    # 校验验证码及是否过期
+    if user.reset_code != req.reset_code or user.reset_code_expire < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="验证码无效或已过期")
+
+    # 验证通过，重置密码
+    user.hashed_password = get_password_hash(req.new_password)
+    # 🌟 销毁验证码，防止二次使用
+    user.reset_code = None
+    user.reset_code_expire = None
+    db.commit()
+
+    return {"message": "密码重置成功，请使用新密码登录。"}
+============================================================
+📁 File: .\app\modules\iam\schemas.py
+============================================================
+
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional
+from datetime import datetime
+
+# 前端传过来的注册表单
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=6, description="密码至少6位")
+
+# 返回给前端的用户信息卡片
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    tier: str
+    is_active: bool
+    auth_provider: str
+    pro_expire_date: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True # 允许兼容 SQLAlchemy 对象 (Pydantic V2 写法)
+
+# 请求发送验证码
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+    language: str = "en"
+
+# 提交验证码并重置密码
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    reset_code: str = Field(..., min_length=6, max_length=6)
+    new_password: str = Field(..., min_length=6, description="新密码至少6位")
+============================================================
+📁 File: .\app\modules\iam\security.py
+============================================================
+
+import bcrypt
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """验证密码是否正确"""
+    # bcrypt 要求必须是 bytes 类型，所以要 encode
+    password_bytes = plain_password.encode('utf-8')
+    hash_bytes = hashed_password.encode('utf-8')
+    return bcrypt.checkpw(password_bytes, hash_bytes)
+
+def get_password_hash(password: str) -> str:
+    """将明文密码进行加盐哈希"""
+    password_bytes = password.encode('utf-8')
+    # 生成随机盐并加密
+    salt = bcrypt.gensalt()
+    hashed_bytes = bcrypt.hashpw(password_bytes, salt)
+    # 存入数据库的是字符串，所以解码回 str
+    return hashed_bytes.decode('utf-8')
+============================================================
+📁 File: .\app\schemas\user_settings.py
+============================================================
+
+# 文件路径: app/schemas/user_settings.py
+from pydantic import BaseModel
+from typing import Optional
+
+# 前端更新配置时传过来的数据（全部设为可选，支持只改某一项）
+class UserSettingsUpdate(BaseModel):
+    company_name: Optional[str] = None
+    logo_url: Optional[str] = None
+    pv_cost_per_kw: Optional[float] = None
+    ess_cost_per_kwh: Optional[float] = None
+    margin_pct: Optional[float] = None
+
+# 返回给前端的完整配置数据
+class UserSettingsResponse(BaseModel):
+    user_id: str
+    company_name: str
+    logo_url: Optional[str]
+    pv_cost_per_kw: float
+    ess_cost_per_kwh: float
+    margin_pct: float
+
+    class Config:
+        from_attributes = True # 兼容 SQLAlchemy 的 ORM 模式
+============================================================
+📁 File: .\app\services\market_data.py
+============================================================
+
+
+============================================================
+📁 File: .\app\services\pvgis.py
+============================================================
+
+import httpx
+from typing import List
+from fastapi import HTTPException
+from datetime import datetime
+
+
+async def fetch_pvgis_hourly_irradiance(lat: float, lon: float, tilt: float = 30.0, azimuth: float = 0.0) -> List[float]:
+    
+    start = datetime.now()
+    
+    print("跨国连接欧盟 PVGIS 气象卫星获取真实光照：开始时间", start.strftime("%Y-%m-%d %H:%M:%S"))
+    
+    """
+    调用欧盟 PVGIS API，获取指定经纬度的 8760 小时真实光照辐射数据。
+    """
+    url = "https://re.jrc.ec.europa.eu/api/v5_2/seriescalc"
+    
+    # 我们固定使用 2019 年的数据（非闰年，刚好是 8760 个小时）
+    params = {
+        "lat": lat,
+        "lon": lon,
+        "startyear": 2019,
+        "endyear": 2019,
+        "angle": tilt,      # 光伏板倾角
+        "aspect": azimuth,  # 光伏板朝向 (0=正南)
+        "outputformat": "json"
+    }
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, params=params, timeout=20.0)
+            
+            if response.status_code != 200:
+                print(f"PVGIS 报错: {response.text}")
+                raise HTTPException(status_code=400, detail="获取气象数据失败，请检查经纬度。")
+                
+            data = response.json()
+            hourly_data = data["outputs"]["hourly"]
+            
+            # 提取 G(i): 倾斜面上的全局辐照度 (Global irradiance on an inclined plane)
+            irradiance_8760 = [float(hour["G(i)"]) for hour in hourly_data]
+            
+            end = datetime.now()
+            interval = end - start
+
+            print("跨国连接欧盟 PVGIS 气象卫星获取真实光照：结束时间", end.strftime("%Y-%m-%d %H:%M:%S"))
+            print("跨国连接欧盟 PVGIS 气象卫星获取真实光照：耗时时间(S)", interval.total_seconds())
+
+
+            # 严谨起见，确保数组长度绝对等于 8760，防止物理状态机越界崩溃
+            return irradiance_8760[:8760]
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"气象 API 连接异常: {str(e)}")
+============================================================
+📁 File: .\app\services\__init__.py
+============================================================
+
+
+============================================================
+📁 File: .\app\utils\email_sender.py
+============================================================
+
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from app.core.config import SMTP_SERVER, SMTP_PORT, SMTP_USER, SMTP_PASSWORD
+
+def send_otp_email(to_email: str, otp_code: str, lang: str = "en"):
+    """
+    发送带有高质感 HTML 样式的 6 位验证码邮件（支持多语言）
+    """
+    if not SMTP_USER or not SMTP_PASSWORD:
+        print("⚠️ 邮件发送失败：未配置 SMTP 环境变量。")
+        return
+
+    # 1. 准备多语言字典 (默认兜底为英文 en)
+    i18n = {
+        "en": {
+            "subject": "[Quote Master] Your Password Reset Code",
+            "title": "Reset Your Password",
+            "greeting": "Hello,",
+            "instruction": "We received a request to reset your password. Your verification code is:",
+            "validity": "This code is valid for <strong>15 minutes</strong>. If you did not request a password reset, please ignore this email.",
+            "team": "Quote Master PV+ESS Team"
+        },
+        "zh": {
+            "subject": "[Quote Master] 您的密码重置验证码",
+            "title": "重置您的密码",
+            "greeting": "您好，",
+            "instruction": "我们收到了您重置密码的请求。您的验证码是：",
+            "validity": "此验证码在 <strong>15 分钟</strong> 内有效。如果您没有请求重置密码，请忽略此邮件。",
+            "team": "Quote Master PV+ESS 团队"
+        },
+        "es": {
+            "subject": "[Quote Master] Tu código para restablecer la contraseña",
+            "title": "Restablece tu contraseña",
+            "greeting": "Hola,",
+            "instruction": "Hemos recibido una solicitud para restablecer tu contraseña. Tu código de verificación es:",
+            "validity": "Este código es válido por <strong>15 minutos</strong>. Si no solicitaste restablecer tu contraseña, puedes ignorar este correo de forma segura.",
+            "team": "El equipo de Quote Master PV+ESS"
+        },
+        # 🌟 新增：巴西葡萄牙语 (Português do Brasil)
+        "pt": {
+            "subject": "[Quote Master] Seu código de redefinição de senha",
+            "title": "Redefinir sua senha",
+            "greeting": "Olá,",
+            "instruction": "Recebemos uma solicitação para redefinir sua senha. Seu código de verificação é:",
+            "validity": "Este código é válido por <strong>15 minutos</strong>. Se você não solicitou a redefinição de senha, pode ignorar este e-mail com segurança.",
+            "team": "Equipe Quote Master PV+ESS"
+        }
+    }
+
+    # 获取当前语言的文案，如果前端传了不支持的语言，默认回退到英文
+    t = i18n.get(lang, i18n["en"])
+
+    # 2. 构造邮件对象
+    msg = MIMEMultipart()
+    msg['From'] = f"Quote Master <{SMTP_USER}>"
+    msg['To'] = to_email
+    msg['Subject'] = t["subject"]
+
+    # 3. 注入翻译文案的 HTML 模板
+    html_body = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; background-color: #f4f4f5; padding: 20px;">
+        <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+          <h2 style="color: #1E293B; text-align: center;">{t["title"]}</h2>
+          <p style="color: #475569; font-size: 16px;">{t["greeting"]}</p>
+          <p style="color: #475569; font-size: 16px;">{t["instruction"]}</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <span style="display: inline-block; font-size: 32px; font-weight: bold; color: #00E676; background-color: #1E293B; padding: 10px 30px; border-radius: 8px; letter-spacing: 5px;">
+              {otp_code}
+            </span>
+          </div>
+          <p style="color: #475569; font-size: 14px;">{t["validity"]}</p>
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
+          <p style="color: #94a3b8; font-size: 12px; text-align: center;">{t["team"]}</p>
+        </div>
+      </body>
+    </html>
+    """
+    
+    msg.attach(MIMEText(html_body, 'html', 'utf-8'))
+
+    # 4. 发送
+    try:
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.send_message(msg)
+            print(f"✅ 真实验证码 {otp_code} 已成功发送至 {to_email} ({lang})")
+    except Exception as e:
+        print(f"❌ 邮件发送失败: {e}")
+============================================================
+📁 File: .\app\utils\math_helpers.py
+============================================================
+
+
+============================================================
+📁 File: .\app\utils\__init__.py
+============================================================
+
+
+============================================================
+📁 File: .\tests\conftest.py
+============================================================
+
+
+============================================================
+📁 File: .\tests\test_finance.py
+============================================================
+
+
+============================================================
+📁 File: .\tests\test_physics.py
+============================================================
+
+import pytest
+from app.engine.schemas import SimulationInput, EnvironmentAndLoad, PVSystemConfig, ESSSystemConfig, GridPolicyConfig
+from app.engine.physics import run_physics_simulation
+
+def test_energy_conservation_under_extreme_blackout():
+    """
+    测试极端停电场景下的全局能量守恒
+    """
+    # 1. 构造一整年 (8760小时) 的全零基座数据
+    irradiance = [0.0] * 8760
+    load = [0.0] * 8760
+    grid_status = [1] * 8760  # 1代表电网正常，0代表停电
+    
+    # 💥 刁钻场景 A：中午 12 点，烈日当空 (1000W/m²)，负载很低 (2度电)，但电网突然停电 (0)
+    irradiance[12] = 1000.0
+    load[12] = 2.0
+    grid_status[12] = 0
+    
+    # 💥 刁钻场景 B：晚上 20 点，太阳下山 (0W/m²)，用电高峰 (5度电)，电网依然停电 (0)
+    irradiance[20] = 0.0
+    load[20] = 5.0
+    grid_status[20] = 0
+
+    # 2. 组装输入参数 (模拟一套常规的 10kW 光储系统)
+    mock_input = SimulationInput(
+        env=EnvironmentAndLoad(
+            irradiance_8760=irradiance,
+            load_profile_8760=load,
+            grid_status_8760=grid_status
+        ),
+        pv=PVSystemConfig(
+            pv_dc_capacity_kwp=10.0, 
+            inverter_ac_capacity_kw=8.0, 
+            system_loss_factor=0.1
+        ),
+        ess=ESSSystemConfig(
+            batt_nominal_capacity_kwh=10.0, 
+            dod_limit=0.1, 
+            max_charge_discharge_kw=5.0, 
+            rte_efficiency=0.9, 
+            initial_soc=0.5  # 假设期初电池有一半的电
+        ),
+        grid=GridPolicyConfig(
+            export_limit_kw=0.0  # 设置为 0，代表不允许向电网卖电 (防逆流)
+        )
+    )
+
+    # 3. 运行物理引擎，拿到 8760 小时的账本
+    result = run_physics_simulation(mock_input)
+    hourly = result.hourly_data
+
+    # 4. 终极断言 (Assertions)：逐小时查账
+    for t in range(8760):
+        # 供给侧：光伏实际发电 + 电池实际放电 + 向电网买电
+        actual_supply = hourly.pv_generation[t] + hourly.batt_to_load[t] + hourly.grid_to_load[t]
+        
+        # 消耗侧：实际满足的用电 + 充入电池的电 + 卖给电网的电 + 被迫丢弃的电
+        # 注意：实际满足的用电 = 客户理论用电需求 - 停电导致的损失
+        actual_consumption = (load[t] - hourly.lost_load[t]) + hourly.pv_to_batt[t] + hourly.pv_to_grid[t] + hourly.curtailment[t]
+        
+        # 检查左右两边是否完全相等 (保留4位小数以消除计算机浮点数误差)
+        assert round(actual_supply, 4) == round(actual_consumption, 4), \
+            f"系统出现财务漏洞！第 {t} 小时：总供给 {actual_supply} ≠ 总消耗 {actual_consumption}"
+
+    # 如果运行到这里没有报错，说明测试完美通过！
+    print("✅ 物理引擎测试通过：8760 小时能量绝对守恒！")
+============================================================
+📁 File: .\tests\__init__.py
+============================================================
+
