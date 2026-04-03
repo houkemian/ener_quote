@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/network/api_client.dart';
 import '../l10n/app_localizations.dart'; // 🌟 引入字典
 import '../main.dart'; // 👈 新增这行，为了拿到 globalNavigatorKey
+import '../theme/app_colors.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -95,69 +96,62 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.lock_reset, size: 80, color: Colors.amber),
+                const Icon(Icons.lock_reset, size: 80, color: AppColors.secondary),
                 const SizedBox(height: 32),
 
                 if (_step == 1) ...[
-                  Text(l10n.enterEmailPrompt, style: const TextStyle(color: Colors.white70, fontSize: 16), textAlign: TextAlign.center),
+                  Text(l10n.enterEmailPrompt, style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 16), textAlign: TextAlign.center),
                   const SizedBox(height: 24),
                   TextField(
                     controller: _emailController,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppColors.onSurface),
                     decoration: InputDecoration(
                       labelText: l10n.emailLabel, // 🌟
-                      labelStyle: const TextStyle(color: Colors.white54),
-                      prefixIcon: const Icon(Icons.email, color: Colors.white54),
-                      filled: true,
-                      fillColor: Colors.black26,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                      prefixIcon: const Icon(Icons.email, color: AppColors.onSurfaceVariant),
                     ),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _sendCode,
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00E676), padding: const EdgeInsets.symmetric(vertical: 16)),
-                    child: _isLoading ? const CircularProgressIndicator() : Text(l10n.sendCodeBtn, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                    child: _isLoading ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)) : Text(l10n.sendCodeBtn, style: const TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ] else ...[
-                  Text(l10n.codeSentMsg(_emailController.text), style: const TextStyle(color: Colors.white70, fontSize: 14), textAlign: TextAlign.center), // 🌟 带参数的翻译
+                  Text(l10n.codeSentMsg(_emailController.text), style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 14), textAlign: TextAlign.center), // 🌟 带参数的翻译
                   const SizedBox(height: 24),
                   TextField(
                     controller: _codeController,
                     keyboardType: TextInputType.number,
-                    style: const TextStyle(color: Colors.white, letterSpacing: 8, fontSize: 20),
+                    style: const TextStyle(color: AppColors.onSurface, letterSpacing: 8, fontSize: 20),
                     textAlign: TextAlign.center,
                     decoration: InputDecoration(
                       hintText: l10n.codeInputHint, // 🌟
-                      hintStyle: const TextStyle(color: Colors.white24, letterSpacing: 2, fontSize: 16),
-                      filled: true,
-                      fillColor: Colors.black26,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                      hintStyle: TextStyle(color: AppColors.onSurfaceVariant.withOpacity(0.7), letterSpacing: 2, fontSize: 16),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _newPasswordController,
                     obscureText: true,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppColors.onSurface),
                     decoration: InputDecoration(
                       labelText: l10n.newPasswordLabel, // 🌟
-                      labelStyle: const TextStyle(color: Colors.white54),
-                      prefixIcon: const Icon(Icons.lock, color: Colors.white54),
-                      filled: true,
-                      fillColor: Colors.black26,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                      prefixIcon: const Icon(Icons.lock, color: AppColors.onSurfaceVariant),
                     ),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _submitNewPassword,
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, padding: const EdgeInsets.symmetric(vertical: 16)),
-                    child: _isLoading ? const CircularProgressIndicator() : Text(l10n.confirmResetBtn, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.secondary,
+                      foregroundColor: AppColors.onSecondary,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: _isLoading ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)) : Text(l10n.confirmResetBtn, style: const TextStyle(fontWeight: FontWeight.bold)),
                   ),
                   TextButton(
                     onPressed: () => setState(() => _step = 1),
-                    child: Text(l10n.resendPrompt, style: const TextStyle(color: Colors.white54)), // 🌟
+                    child: Text(l10n.resendPrompt, style: const TextStyle(color: AppColors.onSurfaceVariant)), // 🌟
                   )
                 ]
               ],

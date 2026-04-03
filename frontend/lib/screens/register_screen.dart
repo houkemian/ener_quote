@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../core/network/api_client.dart';
 import '../l10n/app_localizations.dart'; // 🌟 引入多语言
+import '../theme/app_colors.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -54,7 +55,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.msgRegisterSuccess), // 🌟 动态成功提示
-          backgroundColor: const Color(0xFF00E676),
+          backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -81,11 +82,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white54),
+        iconTheme: const IconThemeData(color: AppColors.onSurfaceVariant),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -95,18 +95,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.person_add_alt_1, size: 64, color: Color(0xFF00E676)),
+                Icon(Icons.person_add_alt_1, size: 64, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(height: 20),
                 Text(
                   l10n.registerTitle, // 🌟 动态注册标题
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.onSurface),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   l10n.registerSubtitle, // 🌟 动态注册副标题
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 14, color: Colors.white54),
+                  style: const TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
                 ),
                 const SizedBox(height: 40),
 
@@ -124,15 +124,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _register,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00E676),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   child: _isLoading
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.black))
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                       : Text(
                     l10n.freeRegisterBtn, // 🌟 动态免费注册按钮
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -148,13 +147,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return TextField(
       controller: controller,
       obscureText: isPassword,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: AppColors.onSurface),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white54),
-        filled: true,
-        fillColor: Colors.white10,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
       ),
     );
   }

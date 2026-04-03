@@ -118,14 +118,14 @@ flutter_icons:
   ios: true
   image_path: "assets/images/logo.png"
   # 针对安卓高版本的自适应图标优化（可选，底色使用深色）
-  adaptive_icon_background: "#0F172A"
+  adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: "assets/images/logo.png"
 
 # ==========================================
 # 2. 启动屏配置 (Splash Screen)
 # ==========================================
 flutter_native_splash:
-  color: "#0F172A" # 🌟 你的 App 品牌底色
+  color: "#FFFFFF" # 亮色 SaaS 启动底
   image: "assets/images/logo.png"
   android: true
   ios: true
@@ -134,4 +134,4 @@ flutter_native_splash:
   # 适配 Android 12+ 的全新闪屏规范
   android_12:
     image: "assets/images/logo.png"
-    color: "#0F172A"
+    color: "#FFFFFF"

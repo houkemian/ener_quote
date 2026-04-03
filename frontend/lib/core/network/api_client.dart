@@ -82,17 +82,16 @@ class ApiClient {
     ));
   }
 
-  // 🌟 呼叫云端印钞机：获取 Stripe 专属支付链接
-  Future<String?> getStripeCheckoutUrl() async {
+  /// Paddle Billing：创建交易并返回托管结账页 URL（后端字段仍为 `checkout_url`）。
+  Future<String?> getPaddleCheckoutUrl() async {
     try {
-      // 这里的 dio 就是你代码里已经初始化的那个实例
       final response = await dio.post('/payment/checkout');
       if (response.statusCode == 200 && response.data != null) {
-        return response.data['checkout_url']; // 拿到那条神圣的 URL
+        return response.data['checkout_url'] as String?;
       }
       return null;
     } catch (e) {
-      print("❌ 获取支付链接失败: $e");
+      print("❌ 获取 Paddle 结账链接失败: $e");
       rethrow;
     }
   }

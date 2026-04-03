@@ -69,7 +69,7 @@ app.include_router(
 app.include_router(
     payment.router, 
     prefix="/api/v1/payment", 
-    tags=["Payment - Stripe 支付"])
+    tags=["Payment - Paddle Billing"])
 
 
 # 4. 健康检查探针 (Health Check)

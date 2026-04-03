@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'; // 👈 引入
 import 'l10n/app_localizations.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'screens/dashboard_screen.dart';
-import 'screens/login_screen.dart';
-import 'package:flutter/services.dart'; // 🌟 1. 引入系统服务包
 import 'screens/login_screen.dart';
 import 'package:flutter/services.dart';
+import 'theme/app_theme.dart';
 import 'package:sentry_flutter/sentry_flutter.dart'; // 🌟 新增：引入探针
 
 
@@ -65,20 +62,7 @@ class PvEssQuoteApp extends StatelessWidget {
         Locale('pt'), // 葡萄牙语 (巴西备用)
       ],
 
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        // 极客深藏青底色
-        scaffoldBackgroundColor: const Color(0xFF121826),
-        // 全局字体：使用 Google Fonts 的 Inter 字体，数字部分极其工整
-        textTheme: GoogleFonts.interTextTheme(
-          Theme.of(context).textTheme,
-        ).apply(bodyColor: Colors.white, displayColor: Colors.white),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF00E676), // 全局点缀色：代表收益与能量的荧光绿
-          surface: Color(0xFF1E293B), // 卡片底色
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light(),
       home: const LoginScreen(),
     );
   }

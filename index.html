@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ener Quote | PV + ESS Quoting &amp; Simulation</title>
+  <meta name="description" content="Ener Quote helps C&amp;I solar and storage teams run fast financial simulations, visualize cash flows, and deliver professional proposals." />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-soft: #1e293b;
+      --card: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --brand: #00e676;
+      --brand-dark: #00c853;
+      --warn: #f59e0b;
+      --line: #334155;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(180deg, var(--bg) 0%, #020617 100%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .container {
+      width: min(1120px, 92%);
+      margin: 0 auto;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+      background: rgba(2, 6, 23, 0.8);
+      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+    }
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .logo-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--brand), #84cc16);
+    }
+    .nav a {
+      color: var(--muted);
+      text-decoration: none;
+      margin-left: 18px;
+      font-size: 14px;
+    }
+    .btn {
+      display: inline-block;
+      border-radius: 10px;
+      padding: 11px 16px;
+      text-decoration: none;
+      font-weight: 600;
+      border: 1px solid transparent;
+      transition: 0.2s ease;
+    }
+    .btn-primary {
+      background: var(--brand);
+      color: #052e16;
+    }
+    .btn-primary:hover {
+      background: var(--brand-dark);
+    }
+    .btn-ghost {
+      border-color: var(--line);
+      color: var(--text);
+      margin-left: 10px;
+    }
+    .hero {
+      padding: 74px 0 52px;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 28px;
+      align-items: center;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #bbf7d0;
+      border: 1px solid #166534;
+      background: rgba(22, 101, 52, 0.2);
+      border-radius: 999px;
+      padding: 4px 10px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: clamp(30px, 5vw, 48px);
+      line-height: 1.18;
+      margin: 0 0 14px;
+      letter-spacing: 0.2px;
+    }
+    .hero p {
+      color: #cbd5e1;
+      margin-bottom: 20px;
+      max-width: 58ch;
+    }
+    .hero-card {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+    }
+    .kpi {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .kpi .item {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .item strong {
+      display: block;
+      color: var(--brand);
+      font-size: 22px;
+      margin-top: 4px;
+    }
+    section {
+      padding: 34px 0;
+    }
+    h2 {
+      margin: 0 0 14px;
+      font-size: 28px;
+    }
+    .muted { color: var(--muted); }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .card {
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .card h3 {
+      margin: 0 0 6px;
+      font-size: 18px;
+    }
+    .plans {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .plan-price {
+      font-size: 30px;
+      font-weight: 800;
+      margin: 4px 0 12px;
+    }
+    .pro {
+      border-color: #854d0e;
+      background: linear-gradient(180deg, rgba(120, 53, 15, 0.14), rgba(17, 24, 39, 0.95));
+    }
+    .list {
+      margin: 0;
+      padding-left: 18px;
+      color: #d1d5db;
+    }
+    .list li { margin: 6px 0; }
+    .cta {
+      margin-top: 24px;
+      padding: 18px;
+      border: 1px dashed #166534;
+      border-radius: 12px;
+      background: rgba(22, 101, 52, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    footer {
+      border-top: 1px solid rgba(51, 65, 85, 0.5);
+      color: var(--muted);
+      padding: 28px 0 40px;
+      font-size: 14px;
+    }
+    .footer-copy {
+      margin-bottom: 20px;
+    }
+    .footer-links {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .footer-links a {
+      color: var(--brand);
+      text-decoration: none;
+    }
+    .footer-links a:hover {
+      text-decoration: underline;
+    }
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; }
+      .grid-3, .plans { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <div class="logo">
+        <span class="logo-mark" aria-hidden="true"></span>
+        <span>Ener Quote</span>
+      </div>
+      <nav>
+        <a href="#features">Features</a>
+        <a href="#scenarios">Use cases</a>
+        <a href="#pricing">Plans</a>
+        <a href="https://dothings.one/docs">Docs</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div>
+        <div class="tag">C&amp;I solar + storage SaaS</div>
+        <h1>Turn PV + ESS quotes<br />from days into minutes</h1>
+        <p>
+          Ener Quote is built for sales and engineering teams: capture project inputs, run the simulation engine,
+          visualize cash flows, and export client-ready proposals. Enter the essentials once and ship a story your customer can sign.
+        </p>
+        <a class="btn btn-primary" href="https://dothings.one/docs">Start free</a>
+        <a class="btn btn-ghost" href="#pricing">See PRO benefits</a>
+      </div>
+      <aside class="hero-card" aria-label="Highlights">
+        <h3 style="margin-top:0;">Value at a glance</h3>
+        <div class="kpi">
+          <div class="item">Time to quote<strong>&lt; 3 min</strong></div>
+          <div class="item">Delivery<strong>Standardized</strong></div>
+          <div class="item">Team-ready<strong>Shared playbooks</strong></div>
+          <div class="item">Upgrade path<strong>FREE → PRO</strong></div>
+        </div>
+      </aside>
+    </section>
+
+    <section id="features">
+      <h2>Core capabilities</h2>
+      <p class="muted">Designed around real sales cycles—accurate enough for engineers, clear enough for executives.</p>
+      <div class="grid-3">
+        <article class="card">
+          <h3>Parametric modeling</h3>
+          <p>Combine site, load, hardware, and finance inputs to produce CAPEX, IRR, NPV, and payback in one flow.</p>
+        </article>
+        <article class="card">
+          <h3>Cash flow visualization</h3>
+          <p>Year-by-year charts and KPIs you can walk through live with prospects and internal stakeholders.</p>
+        </article>
+        <article class="card">
+          <h3>Branded proposals</h3>
+          <p>Export polished PDFs with your brand so every deal looks as professional as your engineering.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="scenarios">
+      <h2>Where teams use it</h2>
+      <div class="grid-3">
+        <article class="card">
+          <h3>Discovery &amp; qualification</h3>
+          <p>After the first call, show feasibility and a credible return range to keep momentum.</p>
+        </article>
+        <article class="card">
+          <h3>Option comparison</h3>
+          <p>Compare capacities and locations side by side so sales and technical leads decide faster together.</p>
+        </article>
+        <article class="card">
+          <h3>Closing the loop</h3>
+          <p>Structured metrics and consistent report templates reduce back-and-forth and build trust at signature.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="pricing">
+      <h2>Plans</h2>
+      <p class="muted">Start on FREE, scale to PRO when your pipeline does.</p>
+      <div class="plans">
+        <article class="card">
+          <h3>FREE</h3>
+          <div class="plan-price">$0</div>
+          <ul class="list">
+            <li>Core simulation workflow</li>
+            <li>Default scenarios</li>
+            <li>Fast individual onboarding</li>
+          </ul>
+        </article>
+        <article class="card pro">
+          <h3>PRO <span style="color:var(--warn);font-size:14px;">Popular</span></h3>
+          <div class="plan-price">Team pricing</div>
+          <ul class="list">
+            <li>Advanced cities and gated scenarios</li>
+            <li>Branded PDF proposal export</li>
+            <li>Richer commercial configuration</li>
+          </ul>
+        </article>
+      </div>
+      <div class="cta">
+        <div>
+          <strong>Ready to 10× quoting speed?</strong><br />
+          <span class="muted">Begin on FREE and upgrade to PRO when you are ready.</span>
+        </div>
+        <div>
+          <a class="btn btn-primary" href="https://dothings.one/docs">Open the app</a>
+          <a class="btn btn-ghost" href="mailto:support@dothings.one">Email us</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-copy">© 2026 Ener Quote. All rights reserved.</div>
+      <div class="footer-links">
+        <div>Contact Us: <a href="mailto:support@dothings.one">support@dothings.one</a></div>
+        <div>Terms &amp; Privacy: <a href="terms.html">terms.html</a></div>
+        <div>Refund Policy: <a href="refund.html">refund.html</a></div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

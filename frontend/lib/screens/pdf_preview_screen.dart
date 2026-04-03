@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 import 'dart:typed_data';
 import '../l10n/app_localizations.dart'; // 👈 新增这行
+import '../theme/app_colors.dart';
 
 class PdfPreviewScreen extends StatelessWidget {
   final Uint8List pdfBytes;
@@ -16,8 +17,8 @@ class PdfPreviewScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.pdfPreviewTitle, style: TextStyle(fontSize: 16)),
-        backgroundColor: const Color(0xFF0F172A),
+        title: Text(l10n.pdfPreviewTitle, style: const TextStyle(fontSize: 16, color: AppColors.onSurface)),
+        backgroundColor: AppColors.background,
         elevation: 0,
       ),
       // 🌟 核心：自带缩放、打印、分享功能的专业预览器！

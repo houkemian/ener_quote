@@ -5,7 +5,7 @@ import '../core/network/api_client.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert'; // 用于 Base64 转换
-import '../l10n/app_localizations.dart'; // 👈 新增这行
+import '../theme/app_colors.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -102,7 +102,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(l10n.saveSuccess),
-        backgroundColor: const Color(0xFF00E676),
+        backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -119,18 +119,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: Color(0xFF0F172A),
-        body: Center(child: CircularProgressIndicator(color: Color(0xFF00E676))),
+        body: Center(child: CircularProgressIndicator(strokeWidth: 2)),
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
-        title: Text(l10n.settingsTitle, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
+        title: Text(l10n.settingsTitle, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.onSurface)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white54),
+        iconTheme: const IconThemeData(color: AppColors.onSurfaceVariant),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -144,10 +142,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 margin: const EdgeInsets.only(bottom: 24),
                 decoration: BoxDecoration(
                   gradient: _userTier == "PRO"
-                      ? const LinearGradient(colors: [Color(0xFFB8860B), Color(0xFFFFD700)]) // PRO 用户土豪金渐变
-                      : const LinearGradient(colors: [Colors.black38, Colors.black12]),      // 免费用户低调灰黑
+                      ? const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFFDE68A)])
+                      : const LinearGradient(colors: [AppColors.surfaceMuted, AppColors.surface]),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _userTier == "PRO" ? Colors.amberAccent : Colors.white12),
+                  border: Border.all(
+                    color: _userTier == "PRO" ? AppColors.secondary : AppColors.border,
+                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -157,7 +157,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: _userTier == "PRO" ? Colors.black87 : Colors.white70
+                          color: _userTier == "PRO" ? AppColors.onSecondary : AppColors.onSurfaceVariant,
                       ),
                     ),
                     if (_userTier != "PRO")
@@ -170,12 +170,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                           try {
                             // 1. 向后端索要支付链接
-                            final urlStr = await ApiClient().getStripeCheckoutUrl();
+                            final urlStr = await ApiClient().getPaddleCheckoutUrl();
 
                             if (urlStr != null) {
                               final Uri url = Uri.parse(urlStr);
 
-                              // 2. 呼出手机原生浏览器打开 Stripe
+                              // 2. 呼出手机原生浏览器打开 Paddle 托管结账页
                               if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
                                 throw Exception('无法唤起浏览器');
                               }
@@ -185,7 +185,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(l10n.msgPayToUpgrade),
-                                  backgroundColor: Colors.green,
+                                  backgroundColor: AppColors.success,
                                   duration: Duration(seconds: 5),
                                 ),
                               );
@@ -204,7 +204,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber,
+                          backgroundColor: AppColors.secondary,
+                          foregroundColor: AppColors.onSecondary,
                           minimumSize: const Size(80, 36),
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                         ),
@@ -213,9 +214,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black)
+                            child: const CircularProgressIndicator(strokeWidth: 2)
                         )
-                            : Text(l10n.upgradeNow, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                            : Text(l10n.upgradeNow, style: const TextStyle(fontWeight: FontWeight.bold)),
                       ),
                   ],
                 ),
@@ -232,7 +233,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Icons.image,
             hintText: l10n.logoInputHint,
             suffixIcon: IconButton(
-              icon: const Icon(Icons.photo_library, color: Colors.amber),
+              icon: const Icon(Icons.photo_library, color: AppColors.secondary),
               onPressed: () async {
                 try {
                   final picker = ImagePicker();
@@ -251,7 +252,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     });
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.msgLogoConverted), backgroundColor: Colors.green),
+                      SnackBar(content: Text(l10n.msgLogoConverted), backgroundColor: AppColors.success),
                     );
                   }
                 } catch (e) {
@@ -281,13 +282,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ElevatedButton(
                 onPressed: _saveSettings,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00E676),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 child: Text(
                   l10n.saveSettingsBtn,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 40),
@@ -302,9 +302,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildSectionHeader(IconData icon, String title) {
     return Row(
       children: [
-        Icon(icon, color: Colors.amber, size: 20),
+        Icon(icon, color: AppColors.secondary, size: 20),
         const SizedBox(width: 8),
-        Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+        Text(title, style: const TextStyle(color: AppColors.onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -316,7 +316,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(children: children),
     );
@@ -327,17 +327,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return TextField(
       controller: controller,
       keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: AppColors.onSurface),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white54),
         hintText: hintText,
-        hintStyle: const TextStyle(color: Colors.white24),
-        prefixIcon: Icon(icon, color: Colors.white54, size: 20),
+        hintStyle: TextStyle(color: AppColors.onSurfaceVariant.withOpacity(0.75)),
+        prefixIcon: Icon(icon, color: AppColors.onSurfaceVariant, size: 20),
         suffixIcon: suffixIcon, // 🌟 挂载右侧的相册按钮
-        filled: true,
-        fillColor: Colors.black26,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
       ),
     );
   }

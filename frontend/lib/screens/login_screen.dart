@@ -11,6 +11,7 @@ import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 // 记得在文件顶部引入 Sentry (如果还没引的话)
 import 'package:sentry_flutter/sentry_flutter.dart';
+import '../theme/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -103,7 +104,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
       // 🌟 核心修复：在外层套上 SingleChildScrollView，解决横屏高度溢出问题！
       body: Center(
         child: SingleChildScrollView(
@@ -114,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.solar_power, size: 80, color: Color(0xFF00E676)),
+                Icon(Icons.solar_power, size: 80, color: Theme.of(context).colorScheme.primary),
                 // const SizedBox(height: 5),
                 // const Text(
                 //   '光储大师 V1.0',
@@ -123,32 +123,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 TextField(
                   controller: _emailController,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.onSurface),
                   decoration: InputDecoration(
                     labelText: l10n.emailLabel, // 🌟 动态多语言替换
-                    labelStyle: const TextStyle(color: Colors.white54),
-                    filled: true,
-                    fillColor: Colors.white10,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _passwordController,
                   obscureText: true,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.onSurface),
                   decoration: InputDecoration(
                     labelText: l10n.passwordLabel, // 🌟 动态多语言替换
-                    labelStyle: const TextStyle(color: Colors.white54),
-                    filled: true,
-                    fillColor: Colors.white10,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -163,7 +149,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _login,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00E676),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -173,14 +158,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(color: Colors.black),
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   )
                       : Text(
                     l10n.secureLoginBtn, // 🌟 动态多语言替换
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
                     ),
                   ),
                 ),
@@ -191,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: () {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()));
                   },
-                  child: Text(l10n.forgotPasswordTitle, style: const TextStyle(color: Colors.white54)),
+                  child: Text(l10n.forgotPasswordTitle, style: TextStyle(color: AppColors.onSurfaceVariant)),
 
                 ),
 
@@ -204,8 +188,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                   child: Text(
                     l10n.registerPrompt, // 🌟 动态多语言替换
-                    style: const TextStyle(
-                      color: Color(0xFF00E676),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
                       fontSize: 14,
                       decoration: TextDecoration.underline,
                     ),

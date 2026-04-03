@@ -12,6 +12,7 @@ import 'pdf_preview_screen.dart';
 import 'login_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sentry/sentry.dart';
+import '../theme/app_colors.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -271,16 +272,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: Text(
           l10n.dashboardTitle, // 🌟
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.onSurface),
         ),
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.background,
         elevation: 0,
         actions: [
 
 
           IconButton(
             tooltip: l10n.exportProposal, // 🌟
-            icon: const Icon(Icons.picture_as_pdf, color: Color(0xFF00E676)),
+            icon: Icon(Icons.picture_as_pdf, color: Theme.of(context).colorScheme.primary),
             onPressed: _isLoading
                 ? null
                 : () async {
@@ -327,7 +328,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           // 🌟 新增的设置齿轮按钮
           IconButton(
             tooltip: 'Settings',
-            icon: const Icon(Icons.settings, color: Colors.white54),
+            icon: const Icon(Icons.settings, color: AppColors.onSurfaceVariant),
             onPressed: () async {
               // 🌟 1. 加上 await，等待用户从设置页返回
               await Navigator.of(context).push(
@@ -349,13 +350,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               bool? confirm = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
-                  backgroundColor: const Color(0xFF1E293B),
-                  title: Text(l10n.logoutTitle, style: const TextStyle(color: Colors.white)), // 👈 替换标题
-                  content: Text(l10n.logoutMessage, style: const TextStyle(color: Colors.white70)), // 👈 替换内容
+                  title: Text(l10n.logoutTitle, style: const TextStyle(color: AppColors.onSurface)), // 👈 替换标题
+                  content: Text(l10n.logoutMessage, style: const TextStyle(color: AppColors.onSurfaceVariant)), // 👈 替换内容
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context, false),
-                      child: Text(l10n.cancel, style: const TextStyle(color: Colors.white54)), // 👈 替换取消
+                      child: Text(l10n.cancel, style: const TextStyle(color: AppColors.onSurfaceVariant)), // 👈 替换取消
                     ),
                     TextButton(
                       onPressed: () => Navigator.pop(context, true),
@@ -400,7 +400,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _buildKpiCard(
                   l10n.kpiIrr, // 🌟
                   '${_irr.toStringAsFixed(1)}%',
-                  const Color(0xFF00E676),
+                  AppColors.success,
                 ),
                 const SizedBox(width: 12),
                 _buildKpiCard(
@@ -412,7 +412,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _buildKpiCard(
                   l10n.kpiPayback, // 🌟
                   '${_payback.toStringAsFixed(1)} Yrs',
-                  Colors.white,
+                  AppColors.onSurface,
                 ),
               ],
             ),
@@ -436,22 +436,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           children: [
                             Text(
                               l10n.clientEnvProfile, // 🌟
-                              style: const TextStyle(color: Colors.white54, fontSize: 14),
+                              style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 14),
                             ),
                             const SizedBox(height: 12),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               decoration: BoxDecoration(
-                                color: Colors.black26,
+                                color: AppColors.surfaceMuted,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.white12),
+                                border: Border.all(color: AppColors.border),
                               ),
                               // 🌟 核心：极其安全的下拉菜单渲染逻辑
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<String>(
                                   value: _selectedCityId, // 内部永远用干净的 ID
                                   isExpanded: true,
-                                  dropdownColor: const Color(0xFF1E293B),
+                                  dropdownColor: AppColors.background,
                                   // 🌟 核心：依靠云端数据动态渲染！
                                   items: _cloudCities.map((cityObj) {
                                     // 自动识别当前手机语言，提取对应的多语言名字
@@ -463,7 +463,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       value: cityObj['id'],
                                       child: Row(
                                         children: [
-                                          Text(displayName, style: const TextStyle(fontSize: 14, color: Colors.white)),
+                                          Text(displayName, style: const TextStyle(fontSize: 14, color: AppColors.onSurface)),
                                           if (isProOnly) ...[
                                             const SizedBox(width: 8),
                                             const Icon(Icons.workspace_premium, color: Colors.amber, size: 14),
@@ -503,50 +503,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                             Text(
                               l10n.factoryPeakLoad(_factoryPeakLoad.toStringAsFixed(0)), // 🌟
-                              style: const TextStyle(fontSize: 14, color: Colors.lightBlueAccent),
+                              style: const TextStyle(fontSize: 14, color: Color(0xFF0EA5E9)),
                             ),
                             Slider(
                               value: _factoryPeakLoad,
                               min: 10.0,
                               max: 200.0,
                               divisions: 38,
-                              activeColor: Colors.lightBlueAccent,
-                              inactiveColor: Colors.white12,
+                              activeColor: const Color(0xFF0EA5E9),
+                              inactiveColor: AppColors.border,
                               onChanged: (v) => _onSliderChanged(() => _factoryPeakLoad = v),
                             ),
 
-                            const Divider(color: Colors.white12, height: 16),
+                            const Divider(color: AppColors.border, height: 16),
                             Text(
                               l10n.hardwareConfig, // 🌟
-                              style: const TextStyle(color: Colors.white54, fontSize: 14),
+                              style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 14),
                             ),
                             const SizedBox(height: 6),
 
                             Text(
                               l10n.pvCapacity(_pvCapacity.toStringAsFixed(0)), // 🌟
-                              style: const TextStyle(fontSize: 14, color: Colors.amber),
+                              style: const TextStyle(fontSize: 14, color: AppColors.secondary),
                             ),
                             Slider(
                               value: _pvCapacity,
                               min: 0.0,
                               max: 200.0,
                               divisions: 40,
-                              activeColor: Colors.amber,
-                              inactiveColor: Colors.white12,
+                              activeColor: AppColors.secondary,
+                              inactiveColor: AppColors.border,
                               onChanged: (v) => _onSliderChanged(() => _pvCapacity = v),
                             ),
 
                             Text(
                               l10n.essCapacity(_batteryCapacity.toStringAsFixed(0)), // 🌟
-                              style: const TextStyle(fontSize: 14, color: Color(0xFF00E676)),
+                              style: const TextStyle(fontSize: 14, color: AppColors.success),
                             ),
                             Slider(
                               value: _batteryCapacity,
                               min: 0.0,
                               max: 200.0,
                               divisions: 40,
-                              activeColor: const Color(0xFF00E676),
-                              inactiveColor: Colors.white12,
+                              activeColor: AppColors.success,
+                              inactiveColor: AppColors.border,
                               onChanged: (v) => _onSliderChanged(() => _batteryCapacity = v),
                             ),
                           ],
@@ -599,7 +599,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   alignment: BarChartAlignment.spaceAround,
                                   barTouchData: BarTouchData(
                                     touchTooltipData: BarTouchTooltipData(
-                                      getTooltipColor: (group) => Colors.black87,
+                                      getTooltipColor: (group) => AppColors.onSurface,
                                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                                         return BarTooltipItem(
                                           '\$${rod.toY.toStringAsFixed(0)}',
@@ -619,7 +619,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                               padding: const EdgeInsets.only(top: 8.0),
                                               child: Text(
                                                 l10n.yearFormat(value.toInt().toString()), // 🌟 动态年份
-                                                style: const TextStyle(color: Colors.white54, fontSize: 12),
+                                                style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
                                               ),
                                             );
                                           }
@@ -635,7 +635,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   gridData: FlGridData(
                                     show: true,
                                     drawVerticalLine: false,
-                                    getDrawingHorizontalLine: (value) => const FlLine(color: Colors.white10, strokeWidth: 1),
+                                    getDrawingHorizontalLine: (value) => const FlLine(color: AppColors.chartGrid, strokeWidth: 1),
                                   ),
                                   barGroups: _cashFlowData.asMap().entries.map((entry) {
                                     bool isPositive = entry.value >= 0;
@@ -645,7 +645,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         BarChartRodData(
                                           toY: entry.value,
                                           width: 14,
-                                          color: isPositive ? const Color(0xFF00E676) : const Color(0xFFFF3D00),
+                                          color: isPositive ? AppColors.success : AppColors.danger,
                                           borderRadius: BorderRadius.circular(4),
                                         ),
                                       ],
@@ -657,16 +657,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                               if (_isLoading)
                                 Container(
-                                  color: Colors.black45,
+                                  color: AppColors.overlayScrim,
                                   child: Center(
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const CircularProgressIndicator(color: Color(0xFF00E676)),
+                                        const CircularProgressIndicator(color: AppColors.primary),
                                         const SizedBox(height: 16),
                                         Text(
                                           l10n.connectingPvgis, // 🌟
-                                          style: const TextStyle(color: Color(0xFF00E676), fontSize: 12),
+                                          style: const TextStyle(color: AppColors.primary, fontSize: 12),
                                         ),
                                       ],
                                     ),
@@ -698,7 +698,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+            Text(title, style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
             const SizedBox(height: 6),
             Text(value, style: TextStyle(color: valueColor, fontSize: 18, fontWeight: FontWeight.bold)),
           ],
@@ -714,7 +714,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true, // 🌟 1. 突破默认半屏的高度限制！
-      backgroundColor: const Color(0xFF1E293B),
+      backgroundColor: AppColors.background,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -729,29 +729,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.workspace_premium, size: 64, color: Colors.amber),
+                  const Icon(Icons.workspace_premium, size: 64, color: AppColors.secondary),
                   const SizedBox(height: 16),
                   Text(
                     l10n.upgradeToProTitle, // 🌟 动态标题
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.onSurface),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     l10n.upgradeToProSubtitle, // 🌟 动态副标题
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 14, color: Colors.white54),
+                    style: const TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
                   ),
                   const SizedBox(height: 24),
 
                   // 🌟 动态权益列表
-                  _buildProFeatureRow(Icons.check_circle, l10n.proFeatureLogo, Colors.amber),
-                  _buildProFeatureRow(Icons.check_circle, l10n.proFeatureCost, Colors.amber),
+                  _buildProFeatureRow(Icons.check_circle, l10n.proFeatureLogo, AppColors.secondary),
+                  _buildProFeatureRow(Icons.check_circle, l10n.proFeatureCost, AppColors.secondary),
                   // _buildProFeatureRow(Icons.check_circle, l10n.proFeaturePvgis, Colors.amber),
 
                   const SizedBox(height: 32),
                   ElevatedButton(
-                    // 🌟 核心修复：注入真实的 Stripe 唤起逻辑
+                    // 🌟 核心修复：注入 Paddle 托管结账唤起逻辑
                     onPressed: () async {
                       // 1. 先关闭当前的付费墙弹窗
                       Navigator.pop(buildContext);
@@ -762,8 +762,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       );
 
                       try {
-                        // 3. 向云端索要专属的 Stripe 支付链接
-                        final urlStr = await ApiClient().getStripeCheckoutUrl();
+                        // 3. 向云端索要 Paddle 结账链接
+                        final urlStr = await ApiClient().getPaddleCheckoutUrl();
 
                         if (urlStr != null) {
                           final Uri url = Uri.parse(urlStr);
@@ -780,17 +780,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             context: context,
                             barrierDismissible: false, // 强制用户必须点按钮
                             builder: (dialogContext) => AlertDialog(
-                              backgroundColor: const Color(0xFF1E293B),
-                              title: Text(l10n.paymentConfirmTitle, style: TextStyle(color: Colors.white)),
-                              content: Text(l10n.paymentConfirmDesc, style: TextStyle(color: Colors.white70)),
+                              title: Text(l10n.paymentConfirmTitle, style: const TextStyle(color: AppColors.onSurface)),
+                              content: Text(l10n.paymentConfirmDesc, style: const TextStyle(color: AppColors.onSurfaceVariant)),
                               actions: [
                                 TextButton(
-                                  child: Text(l10n.verifyLater, style: TextStyle(color: Colors.white54)),
+                                  child: Text(l10n.verifyLater, style: const TextStyle(color: AppColors.onSurfaceVariant)),
                                   onPressed: () => Navigator.pop(dialogContext),
                                 ),
                                 ElevatedButton(
-                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
-                                  child: Text(l10n.paymentCompleted, style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary, foregroundColor: AppColors.onSecondary),
+                                  child: Text(l10n.paymentCompleted, style: const TextStyle(fontWeight: FontWeight.bold)),
                                   onPressed: () async {
                                     // 🌟 核心逻辑：用户点确认后，向后端请求最新的 Token
                                     final newTier = await ApiClient().refreshUserToken();
@@ -804,7 +803,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       setState(() {});
 
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text(l10n.paymentSuccessPro), backgroundColor: Colors.green),
+                                        SnackBar(content: Text(l10n.paymentSuccessPro), backgroundColor: AppColors.success),
                                       );
                                     } else {
                                       ScaffoldMessenger.of(context).showSnackBar(
@@ -825,13 +824,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber,
+                      backgroundColor: AppColors.secondary,
+                      foregroundColor: AppColors.onSecondary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     child: Text(
                       l10n.unlockProBtn, // 🌟 动态按钮文字
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -852,7 +852,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Icon(icon, color: iconColor, size: 20),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 14)),
+            child: Text(text, style: const TextStyle(color: AppColors.onSurface, fontSize: 14)),
           ),
         ],
       ),

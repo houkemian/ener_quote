@@ -62,7 +62,7 @@ async def refresh_token(
             "sub": user.id,
             "company_id": current_user.company_id,
             "role": current_user.role,
-            "tier": user.tier  # 🌟 这里会读取刚刚被 Stripe Webhook 改成 PRO 的最新状态！
+            "tier": user.tier  # 🌟 这里会读取刚刚被 Paddle Webhook 改成 PRO 的最新状态！
         },
         expires_delta=access_token_expires
     )

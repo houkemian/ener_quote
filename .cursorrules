@@ -1,39 +1,36 @@
-# 2000.exe 项目全局开发规约
+# EnerQuote (光储大师) - Fullstack AI Assistant Guide
 
-## 1. 项目背景与视觉灵魂 (Vibe)
-- **项目名称**：2000.exe (赛博树洞 / Cyber Dream Space)
-- **核心视觉**：Y2K (千禧年复古赛博风)。
-- **UI 规范**：使用高饱和度颜色（霓虹紫 #bc00ff, 赛博蓝 #00f0ff, 荧光绿 #39ff14）。
-- **组件风格**：Windows 95/98 立体边框、像素风图标、扫描线效果、发光（Glow）特效。
-- **动效**：打字机效果、闪烁光标、复古转场。
+## 1. Project Overview
+EnerQuote 是一款面向全球 2026 年市场的 B2B SaaS 系统。主要为光伏与储能 (PV+ESS) 集成商提供 8760 小时能量流闭环测算、拉美高息金融测算、Paddle Billing 支付墙以及企业级 PDF 建议书导出功能。
 
-## 2. 技术栈约束 (Tech Stack)
-- **Monorepo 结构**：
-  - `/frontend`: React + TypeScript + TailwindCSS + Vite.
-  - `/backend`: Python 3.10+ + FastAPI + Uvicorn + WebSockets.
-- **前端规范**：
-  - 优先使用 TailwindCSS 进行样式编写，严禁在组件内写长串 inline-style。
-  - 组件采用 函数式组件 (Functional Components) + Hooks。
-  - 状态管理：优先使用 React Context 或简单的 Zustand。
-- **后端规范 (FastAPI 核心)**：
-  - 路由与函数必须使用异步处理 (`async def`)，确保高并发下的非阻塞。
-  - 数据校验：强制使用 `Pydantic` 模型 (BaseModel) 定义请求体和响应体，严禁裸写字典传参。
-  - WebSocket：使用 FastAPI 自带的 `WebSocket` 类，必须建立专门的 `ConnectionManager` 来管理在线用户、广播消息和掉线清理。
-  - 依赖注入：使用 `Depends` 处理公共逻辑（如指纹校验、频率限制等）。
-  - 环境管理：使用 `requirements.txt` 或 `Pipfile`，代码中需使用 `python-dotenv` 加载环境变量（如 AI 模型的 API Key）。
+## 2. Monorepo Architecture
+这是一个前后端分离的 Monorepo 项目，分为 `/frontend` 和 `/backend` 两个核心目录。
 
-## 3. Cursor 行为准则 (AI Instructions)
-- **跨文件思考**：在修改前端请求代码时，请自动检查 `@backend/main.py` 或相关路由下的 Pydantic Schema 是否匹配。
-- **代码合并**：使用 `Ctrl+I` 生成代码时，请确保不破坏原有的 Y2K 样式类名。
-- **Terminal 操作**：涉及依赖安装或服务启动时，请明确区分目录（例如：`cd frontend && npm install` 或 `cd backend && pip install -r requirements.txt`）。如果是启动后端，请使用 `uvicorn main:app --reload`。
-- **自动纠错**：如果检测到我正在编写原生微信小程序语法，请提醒我当前项目是“React 跨端 H5”架构。
+### [Backend] Stack: Python + FastAPI + SQLite + SQLAlchemy
+* **Path:** `/backend`
+* **Core Engine:** * `app/engine/physics.py`: 8760小时物理能量流计算引擎（光伏发电、电池充放电、需量削峰、谷电套利）。
+  * `app/engine/finance.py`: 财务引擎（NPV、IRR、LCOE、投资回收期分析）。
+* **Database:** SQLite (`pv_ess.db`)。ORM 使用 SQLAlchemy。包含多租户架构 (`companies`)，IAM 身份系统 (`users`) 和动态硬件配置库。
+* **Third-Party APIs:**
+  * Paddle Billing API: 处理 PRO 会员结账及 Webhook 自动提权 (`app/api/v1/payment.py`)。
+  * PVGIS API: 跨国拉取真实经纬度的 8760 光照数据 (`app/services/pvgis.py`)。
+* **Auth:** 基于 JWT 的鉴权，Token 中携带有 `tier` (如 FREE/PRO) 以进行权限隔离。
+* **Run Command:** `cd backend && uvicorn app.main:app --reload`
 
-## 4. 业务逻辑要点
-- **匿名机制**：前端不存储真实用户信息，仅存储临时分配的 `cyber_name` 和随机生成的设备指纹 UUID。
-- **内容安全**：所有后端接口和消息广播前，必须在 FastAPI 路由中预留 `content_moderation` 拦截器/依赖。
-- **AI Agent 集成**：所有房间的“气氛组”AI 逻辑应独立封装在 `/backend/services/ai_agent.py` 中，保持主路由的清爽。
+### [Frontend] Stack: Flutter + Provider + Dio + fl_chart
+* **Path:** `/frontend`
+* **Network:** 使用 Dio 封装拦截器 (`lib/core/network/api_client.dart`)，支持 401 自动登出与 JWT Bearer 注入。
+* **UI/UX:** 横屏优先 (Landscape) 仪表盘，亮色 SaaS 主题，响应式 Slider 交互。
+* **I18n (Internationalization):** 严格遵守 `flutter_localizations`。语言包位于 `/lib/l10n/` (`app_zh.arb`, `app_en.arb`)。**绝对禁止在 UI 代码中硬编码中文字符，必须使用 `AppLocalizations.of(context)`。**
+* **Core Features:**
+  * Sentry: 崩溃监控与性能追踪。
+  * Printing/PDF: 纯 Dart 绘制多页商业级 PDF 报告 (`lib/utils/pdf_export.dart`)。
+  * Paddle Web Checkout: 使用 `url_launcher` 唤起外部浏览器打开托管结账页。
 
-## 5. 常用 UI 样式参考 (Tailwind Classes)
-- **发光文本**：`text-neon-purple shadow-[0_0_10px_#bc00ff]`
-- **复古容器**：`border-2 border-t-white border-l-white border-b-gray-800 border-r-gray-800 bg-gray-300`
-- **黑客背景**：`bg-[#050505] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]`
+## 3. Cursor AI Coding Rules (Must Follow)
+1. **Context Awareness:** 修改前后端交互逻辑时，必须同时考虑 `/backend/app/api/` 的接口定义与 `/frontend/lib/core/network/` 的调用。
+2. **Localization First:** 为 Frontend 生成新 UI 时，如果涉及文本，必须提示我更新 `.arb` 字典文件，并使用 `l10n.xxx` 调用。
+3. **Safe Database Migrations:** 修改 Backend SQLAlchemy Models 时，必须提供原生的 SQLite `ALTER TABLE` SQL 脚本或 Alembic 指导。
+4. **Code Generation:** 输出代码时，请明确指出该代码所属的文件路径（例如 `// Path: frontend/lib/screens/xxx.dart`）。
+5. **No Placeholders:** 尽量给出完整的代码替换逻辑，避免使用 `// ... existing code` 导致代码遗漏。
+6. **B2B Mindset:** 保持 B2B SaaS 的严谨性，特别是关于财务公式（IRR、现金流）和能量守恒的逻辑，必须绝对精确。
