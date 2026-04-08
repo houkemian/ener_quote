@@ -11,7 +11,6 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_FRONTEND: ener-quote-frontend
   IMAGE_BACKEND: ener-quote-backend
 
 jobs:
@@ -41,14 +40,6 @@ jobs:
           file: ./backend/Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/${{ steps.owner.outputs.owner_lc }}/${{ env.IMAGE_BACKEND }}:latest
-
-      - name: Build and push frontend image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./frontend
-          file: ./frontend/Dockerfile
-          push: true
-          tags: ${{ env.REGISTRY }}/${{ steps.owner.outputs.owner_lc }}/${{ env.IMAGE_FRONTEND }}:latest
 
   deploy:
     runs-on: ubuntu-latest

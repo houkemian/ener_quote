@@ -45,19 +45,8 @@ services:
     depends_on:
       - postgres
       - redis
-    expose:
-      - "${BACKEND_PORT}"
-    networks:
-      - ener-network
-
-  frontend:
-    image: ${FRONTEND_IMAGE}
-    container_name: ${FRONTEND_CONTAINER_NAME}
-    restart: ${RESTART_POLICY}
-    depends_on:
-      - backend
     ports:
-      - "${FRONTEND_HOST_PORT}:${FRONTEND_CONTAINER_PORT}"
+      - "8000:${BACKEND_PORT}"
     networks:
       - ener-network
 
