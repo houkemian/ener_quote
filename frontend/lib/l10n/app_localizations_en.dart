@@ -411,4 +411,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pdfPreviewTitle => 'Proposal Preview';
+
+  @override
+  String get appWindowTitle => 'Quote Master';
+
+  @override
+  String get termsOfServiceTitle => 'Terms of Service';
+
+  @override
+  String get privacyPolicyTitle => 'Privacy Policy';
+
+  @override
+  String get refundPolicyTitle => 'Refund Policy';
+
+  @override
+  String get settingsTooltip => 'Settings';
+
+  @override
+  String get emailPlaceholder => 'example@gmail.com';
+
+  @override
+  String get contactUs => 'Contact Us';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get legalLoadFailed =>
+      'Unable to load document right now. Please try again later.';
+
+  @override
+  String get footerCopyright => '© 2026 EnerQuote. All rights reserved.';
+
+  @override
+  String openInBrowserMessage(String title) {
+    return 'Open $title in your browser.';
+  }
+
+  @override
+  String get openInBrowser => 'Open in browser';
 }

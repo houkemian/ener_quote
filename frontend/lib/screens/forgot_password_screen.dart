@@ -3,6 +3,7 @@ import '../core/network/api_client.dart';
 import '../l10n/app_localizations.dart'; // 🌟 引入字典
 import '../main.dart'; // 👈 新增这行，为了拿到 globalNavigatorKey
 import '../theme/app_colors.dart';
+import '../widgets/marketing_footer.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -88,14 +89,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.forgotPasswordTitle), backgroundColor: Colors.transparent, elevation: 0),
-      body: Center(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+      body: Column(
+        children: [
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                 const Icon(Icons.lock_reset, size: 80, color: AppColors.secondary),
                 const SizedBox(height: 32),
 
@@ -152,12 +156,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   TextButton(
                     onPressed: () => setState(() => _step = 1),
                     child: Text(l10n.resendPrompt, style: const TextStyle(color: AppColors.onSurfaceVariant)), // 🌟
-                  )
-                ]
-              ],
+                  ),
+                ],
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
+          const MarketingFooter(),
+        ],
       ),
     );
   }

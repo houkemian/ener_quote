@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../utils/pdf_export.dart';
 import '../core/network/api_client.dart';
+import '../core/auth/token_manager.dart';
 import 'package:dio/dio.dart';
 // 🌟 引入刚生成的实体多语言文件
 import '../l10n/app_localizations.dart';
@@ -65,25 +66,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  Future<void> _onCityChanged(String? newCityId) async {
-    if (newCityId == null) return;
-
-    // 🌟 1. 从本地掏出他在登录时拿到的真实权限卡
-    final prefs = await SharedPreferences.getInstance();
-    String currentUserTier = prefs.getString('user_tier') ?? "FREE";
-
-    // 🌟 2. 核心逼单逻辑：如果他是免费用户，且想选择非默认城市 (比如慕尼黑)
-    if (currentUserTier != "PRO" && newCityId != 'sao_paulo') {
-      // 🚫 拒绝切换城市，并弹出我们刚写好的付费墙！
-      _showProPaywall();
-      return;
-    }
-
-    // ✅ 3. 权限校验通过（或者选的就是免费城市），放行并重新拉取测算数据
-    setState(() => _selectedCityId = newCityId);
-    _fetchRealData();
-  }
-
   void _onSliderChanged(VoidCallback stateUpdate) {
     setState(stateUpdate);
     if (_debounce?.isActive ?? false) _debounce!.cancel();
@@ -123,8 +105,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _errorMessage = '';
     });
 
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwt_token');
+    final token = await TokenManager.getAccessToken();
 
     if (token == null) {
       setState(() {
@@ -133,6 +114,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
       return;
     }
+
+    final prefs = await SharedPreferences.getInstance();
 
     // 🌟 1. 从本地缓存动态读取销售的专属成本与利润率
     // 如果缓存没有（第一次登录），则使用后备默认值
@@ -260,14 +243,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    // 🌟 动态映射字典：根据当前语言环境，把纯净 ID 映射成带国旗的超长显示名字
-    final Map<String, String> cityDisplayNames = {
-      'sao_paulo': l10n.citySaoPaulo,
-      'munich': l10n.cityMunich,
-      'haikou': l10n.cityHaikou,
-      'linfen': l10n.cityLinfen,
-    };
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -327,7 +302,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           // 🌟 新增的设置齿轮按钮
           IconButton(
-            tooltip: 'Settings',
+            tooltip: l10n.settingsTooltip,
             icon: const Icon(Icons.settings, color: AppColors.onSurfaceVariant),
             onPressed: () async {
               // 🌟 1. 加上 await，等待用户从设置页返回
@@ -367,8 +342,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               if (confirm == true) {
                 // 1. 撕毁本地门禁卡
+                await TokenManager.clearAccessToken();
                 final prefs = await SharedPreferences.getInstance();
-                await prefs.remove('jwt_token');
                 await prefs.remove('user_tier');
 
                 if (!mounted) return;

@@ -170,5 +170,22 @@
     "logoInputHint": "Enter URL or click right to pick from gallery ->",
     "msgLogoConverted": "✅ Logo converted to Base64! Please click save.",
     "errSaveFailed": "Save failed, please check your network!",
-    "pdfPreviewTitle": "Proposal Preview"
+    "pdfPreviewTitle": "Proposal Preview",
+    "appWindowTitle": "Quote Master",
+    "termsOfServiceTitle": "Terms of Service",
+    "privacyPolicyTitle": "Privacy Policy",
+    "refundPolicyTitle": "Refund Policy",
+    "settingsTooltip": "Settings",
+    "emailPlaceholder": "example@gmail.com",
+    "contactUs": "Contact Us",
+    "close": "Close",
+    "legalLoadFailed": "Unable to load document right now. Please try again later.",
+    "footerCopyright": "© 2026 EnerQuote. All rights reserved.",
+    "openInBrowserMessage": "Open {title} in your browser.",
+    "@openInBrowserMessage": {
+      "placeholders": {
+        "title": { "type": "String" }
+      }
+    },
+    "openInBrowser": "Open in browser"
 }

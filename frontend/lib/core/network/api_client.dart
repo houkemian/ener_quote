@@ -4,6 +4,7 @@ import 'package:flutter/material.dart'; // 🌟 引入 UI 库
 import '../../main.dart'; // 🌟 引入全局钥匙
 import '../../screens/login_screen.dart'; // 🌟 引入登录页
 import '../../l10n/app_localizations.dart'; // 👈 新增这行
+import '../auth/token_manager.dart';
 
 class ApiClient {
   // 1. 单例模式：确保全局只生成一个 ApiClient 实例
@@ -40,8 +41,7 @@ class ApiClient {
         }
 
         // ⚠️ 其他所有接口：自动去本地掏出 Token，悄悄塞进请求头！
-        final prefs = await SharedPreferences.getInstance();
-        final token = prefs.getString('jwt_token');
+        final token = await TokenManager.getAccessToken();
 
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
@@ -57,8 +57,8 @@ class ApiClient {
 
 
           // 1. 彻底撕毁本地所有缓存
+          await TokenManager.clearAccessToken();
           final prefs = await SharedPreferences.getInstance();
-          await prefs.remove('jwt_token');
           await prefs.remove('user_tier');
 
           // 2. 使用万能钥匙跨层级操作 UI
@@ -104,8 +104,8 @@ class ApiClient {
         final newTier = response.data['tier'];
 
         // 瞬间替换本地缓存，完成无感升级
+        await TokenManager.saveAccessToken(newToken);
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('jwt_token', newToken);
         await prefs.setString('user_tier', newTier);
 
         return newTier;

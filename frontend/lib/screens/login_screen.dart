@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../core/network/api_client.dart';
+import '../core/auth/token_manager.dart';
 import 'package:dio/dio.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,9 +9,8 @@ import '../l10n/app_localizations.dart';
 import 'dashboard_screen.dart'; // 引入你的测算主页
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
-// 记得在文件顶部引入 Sentry (如果还没引的话)
-import 'package:sentry_flutter/sentry_flutter.dart';
 import '../theme/app_colors.dart';
+import '../widgets/marketing_footer.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,10 +21,10 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController(
-    text: 'houkemian@outlook.com',
+    text: '',
   );
   final TextEditingController _passwordController = TextEditingController(
-    text: 'aaaaaa',
+    text: '',
   );
   bool _isLoading = false;
   String _errorMessage = '';
@@ -68,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
         print("🎉 登录成功！当前用户权限: ${payloadMap['tier']}");
       }
 
-      await prefs.setString('jwt_token', token);
+      await TokenManager.saveAccessToken(token);
 
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
@@ -104,28 +103,30 @@ class _LoginScreenState extends State<LoginScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      // 🌟 核心修复：在外层套上 SingleChildScrollView，解决横屏高度溢出问题！
-      body: Center(
-        child: SingleChildScrollView(
-          child: Padding(
-            // 稍微增加一点上下的 padding，让横屏滑动时更舒适
-            padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Icon(Icons.solar_power, size: 80, color: Theme.of(context).colorScheme.primary),
+      body: Column(
+        children: [
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                const _EnergyHeroIcon(),
                 // const SizedBox(height: 5),
                 // const Text(
                 //   '光储大师 V1.0',
                 // ... (保留你的注释)
-                const SizedBox(height: 40),
+                const SizedBox(height: 28),
 
                 TextField(
                   controller: _emailController,
                   style: const TextStyle(color: AppColors.onSurface),
                   decoration: InputDecoration(
                     labelText: l10n.emailLabel, // 🌟 动态多语言替换
+                    hintText: l10n.emailPlaceholder,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -195,11 +196,97 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-              ],
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
+          const MarketingFooter(),
+        ],
       ),
+    );
+  }
+}
+
+class _EnergyHeroIcon extends StatelessWidget {
+  const _EnergyHeroIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return SizedBox(
+      height: 96,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    primary.withValues(alpha: 0.14),
+                    primary.withValues(alpha: 0.03),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _IconPill(
+                icon: Icons.solar_power_rounded,
+                color: primary,
+              ),
+              Container(
+                width: 28,
+                height: 2,
+                margin: const EdgeInsets.symmetric(horizontal: 10),
+                color: primary.withValues(alpha: 0.6),
+              ),
+              _IconPill(
+                icon: Icons.battery_charging_full_rounded,
+                color: primary,
+              ),
+              Container(
+                width: 28,
+                height: 2,
+                margin: const EdgeInsets.symmetric(horizontal: 10),
+                color: primary.withValues(alpha: 0.6),
+              ),
+              _IconPill(
+                icon: Icons.analytics_rounded,
+                color: primary,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IconPill extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+
+  const _IconPill({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Icon(icon, size: 28, color: color),
     );
   }
 }

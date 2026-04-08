@@ -169,5 +169,22 @@
     "logoInputHint": "填链接或点击右侧从相册选择 ->",
     "msgLogoConverted": "✅ Logo 已成功转为 Base64！请点击保存",
     "errSaveFailed": "保存失败，请检查网络！",
-    "pdfPreviewTitle": "建议书预览"
+    "pdfPreviewTitle": "建议书预览",
+    "appWindowTitle": "报价大师",
+    "termsOfServiceTitle": "服务条款",
+    "privacyPolicyTitle": "隐私政策",
+    "refundPolicyTitle": "退款政策",
+    "settingsTooltip": "设置",
+    "emailPlaceholder": "example@gmail.com",
+    "contactUs": "联系我们",
+    "close": "关闭",
+    "legalLoadFailed": "当前无法加载文档，请稍后重试。",
+    "footerCopyright": "© 2026 EnerQuote. 保留所有权利。",
+    "openInBrowserMessage": "请在浏览器中打开 {title}。",
+    "@openInBrowserMessage": {
+      "placeholders": {
+        "title": { "type": "String" }
+      }
+    },
+    "openInBrowser": "在浏览器中打开"
 }

@@ -835,6 +835,78 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'建议书预览'**
   String get pdfPreviewTitle;
+
+  /// No description provided for @appWindowTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'报价大师'**
+  String get appWindowTitle;
+
+  /// No description provided for @termsOfServiceTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'服务条款'**
+  String get termsOfServiceTitle;
+
+  /// No description provided for @privacyPolicyTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'隐私政策'**
+  String get privacyPolicyTitle;
+
+  /// No description provided for @refundPolicyTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'退款政策'**
+  String get refundPolicyTitle;
+
+  /// No description provided for @settingsTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'设置'**
+  String get settingsTooltip;
+
+  /// No description provided for @emailPlaceholder.
+  ///
+  /// In zh, this message translates to:
+  /// **'example@gmail.com'**
+  String get emailPlaceholder;
+
+  /// No description provided for @contactUs.
+  ///
+  /// In zh, this message translates to:
+  /// **'联系我们'**
+  String get contactUs;
+
+  /// No description provided for @close.
+  ///
+  /// In zh, this message translates to:
+  /// **'关闭'**
+  String get close;
+
+  /// No description provided for @legalLoadFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前无法加载文档，请稍后重试。'**
+  String get legalLoadFailed;
+
+  /// No description provided for @footerCopyright.
+  ///
+  /// In zh, this message translates to:
+  /// **'© 2026 EnerQuote. 保留所有权利。'**
+  String get footerCopyright;
+
+  /// No description provided for @openInBrowserMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'请在浏览器中打开 {title}。'**
+  String openInBrowserMessage(String title);
+
+  /// No description provided for @openInBrowser.
+  ///
+  /// In zh, this message translates to:
+  /// **'在浏览器中打开'**
+  String get openInBrowser;
 }
 
 class _AppLocalizationsDelegate

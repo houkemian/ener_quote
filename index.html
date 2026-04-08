@@ -193,26 +193,53 @@
       gap: 14px;
       flex-wrap: wrap;
     }
-    footer {
-      border-top: 1px solid rgba(51, 65, 85, 0.5);
-      color: var(--muted);
-      padding: 28px 0 40px;
-      font-size: 14px;
+    footer.site-footer {
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      color: #475569;
+      padding: 20px 0 28px;
+      font-size: 13px;
+    }
+    .footer-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px 24px;
     }
     .footer-copy {
-      margin-bottom: 20px;
+      margin: 0;
+      color: #475569;
     }
-    .footer-links {
+    .footer-nav {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 8px;
     }
-    .footer-links a {
-      color: var(--brand);
+    .footer-nav a {
+      color: #475569;
       text-decoration: none;
+      font-weight: 500;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: color 0.15s ease, background 0.15s ease;
     }
-    .footer-links a:hover {
-      text-decoration: underline;
+    .footer-nav a:hover {
+      color: #1d4ed8;
+      background: rgba(29, 78, 216, 0.06);
+    }
+    .footer-sep {
+      color: #cbd5e1;
+      user-select: none;
+      padding: 0 2px;
+    }
+    @media (max-width: 720px) {
+      .footer-inner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
     @media (max-width: 900px) {
       .hero { grid-template-columns: 1fr; }
@@ -332,14 +359,18 @@
     </section>
   </main>
 
-  <footer>
-    <div class="container">
-      <div class="footer-copy">© 2026 Ener Quote. All rights reserved.</div>
-      <div class="footer-links">
-        <div>Contact Us: <a href="mailto:support@dothings.one">support@dothings.one</a></div>
-        <div>Terms &amp; Privacy: <a href="terms.html">terms.html</a></div>
-        <div>Refund Policy: <a href="refund.html">refund.html</a></div>
-      </div>
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p class="footer-copy">© 2026 EnerQuote. All rights reserved.</p>
+      <nav class="footer-nav" aria-label="Legal and contact">
+        <a href="mailto:support@dothings.one">Contact Us</a>
+        <span class="footer-sep" aria-hidden="true">|</span>
+        <a href="terms.html">Terms of Service</a>
+        <span class="footer-sep" aria-hidden="true">|</span>
+        <a href="privacy.html">Privacy Policy</a>
+        <span class="footer-sep" aria-hidden="true">|</span>
+        <a href="refund.html">Refund Policy</a>
+      </nav>
     </div>
   </footer>
 </body>

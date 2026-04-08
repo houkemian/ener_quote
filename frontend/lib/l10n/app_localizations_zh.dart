@@ -400,4 +400,42 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pdfPreviewTitle => '建议书预览';
+
+  @override
+  String get appWindowTitle => '报价大师';
+
+  @override
+  String get termsOfServiceTitle => '服务条款';
+
+  @override
+  String get privacyPolicyTitle => '隐私政策';
+
+  @override
+  String get refundPolicyTitle => '退款政策';
+
+  @override
+  String get settingsTooltip => '设置';
+
+  @override
+  String get emailPlaceholder => 'example@gmail.com';
+
+  @override
+  String get contactUs => '联系我们';
+
+  @override
+  String get close => '关闭';
+
+  @override
+  String get legalLoadFailed => '当前无法加载文档，请稍后重试。';
+
+  @override
+  String get footerCopyright => '© 2026 EnerQuote. 保留所有权利。';
+
+  @override
+  String openInBrowserMessage(String title) {
+    return '请在浏览器中打开 $title。';
+  }
+
+  @override
+  String get openInBrowser => '在浏览器中打开';
 }

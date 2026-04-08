@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'; // 👈 引入
 import 'l10n/app_localizations.dart';
 import 'screens/login_screen.dart';
+import 'screens/dashboard_screen.dart';
+import 'screens/legal_document_page.dart';
 import 'package:flutter/services.dart';
 import 'theme/app_theme.dart';
+import 'app_routes.dart';
 import 'package:sentry_flutter/sentry_flutter.dart'; // 🌟 新增：引入探针
+import 'core/auth/token_manager.dart';
 
 
 // 🌟 新增：打造一把全局路由的“万能钥匙”
@@ -20,6 +24,9 @@ void main() async {
     DeviceOrientation.landscapeRight,
   ]);
 
+  final token = await TokenManager.getAccessToken();
+  final isLoggedIn = token != null && token.isNotEmpty;
+
   // 🌟 启动 Sentry 监控探针
   await SentryFlutter.init(
         (options) {
@@ -32,19 +39,20 @@ void main() async {
       // 开启未捕获异常的自动记录
       options.enableAutoSessionTracking = true;
     },
-    appRunner: () => runApp(const PvEssQuoteApp()), // 你的主程序放这里
+    appRunner: () => runApp(PvEssQuoteApp(isLoggedIn: isLoggedIn)), // 你的主程序放这里
   );
 }
 
 
 class PvEssQuoteApp extends StatelessWidget {
-  const PvEssQuoteApp({super.key});
+  final bool isLoggedIn;
+
+  const PvEssQuoteApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: globalNavigatorKey, // 🌟 核心：把这把钥匙插进 App 的大门上！
-      title: 'Quote Master',
       debugShowCheckedModeBanner: false, // 隐藏右上角的 Debug 标签
 
       // 🌟 核心：挂载多语言引擎
@@ -62,8 +70,24 @@ class PvEssQuoteApp extends StatelessWidget {
         Locale('pt'), // 葡萄牙语 (巴西备用)
       ],
 
+      onGenerateTitle: (context) => AppLocalizations.of(context)!.appWindowTitle,
       theme: AppTheme.light(),
-      home: const LoginScreen(),
+      home: isLoggedIn ? const DashboardScreen() : const LoginScreen(),
+      routes: {
+        AppRoutes.login: (_) => const LoginScreen(),
+        AppRoutes.terms: (context) => LegalDocumentPage(
+              htmlFile: 'terms.html',
+              title: AppLocalizations.of(context)!.termsOfServiceTitle,
+            ),
+        AppRoutes.privacy: (context) => LegalDocumentPage(
+              htmlFile: 'privacy.html',
+              title: AppLocalizations.of(context)!.privacyPolicyTitle,
+            ),
+        AppRoutes.refund: (context) => LegalDocumentPage(
+              htmlFile: 'refund.html',
+              title: AppLocalizations.of(context)!.refundPolicyTitle,
+            ),
+      },
     );
   }
 }

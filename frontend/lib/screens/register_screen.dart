@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../core/network/api_client.dart';
 import '../l10n/app_localizations.dart'; // 🌟 引入多语言
 import '../theme/app_colors.dart';
+import '../widgets/marketing_footer.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -87,14 +88,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.onSurfaceVariant),
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+      body: Column(
+        children: [
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                 Icon(Icons.person_add_alt_1, size: 64, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(height: 20),
                 Text(
@@ -135,10 +139,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-              ],
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
+          const MarketingFooter(),
+        ],
       ),
     );
   }

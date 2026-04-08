@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 import jwt
 from pydantic import BaseModel
 
-from app.core.security import SECRET_KEY, ALGORITHM
+from app.core.security import decode_and_validate_access_token
 
 from typing import Generator
 from app.db.database import SessionLocal # 引入刚才写好的 Session 工厂
@@ -30,8 +30,8 @@ async def get_current_user_payload(token: str = Depends(oauth2_scheme)) -> Token
     )
     
     try:
-        # 1. 验证签名是否被篡改，并解码内容
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # 1. 验证签名、过期时间，并校验 Redis(DB2) 中会话是否仍有效
+        payload = decode_and_validate_access_token(token)
         
         # 2. 提取核心 SaaS 隔离数据
         user_id: str = payload.get("sub")
