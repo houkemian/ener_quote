@@ -66,5 +66,5 @@ jobs:
             cd ${{ secrets.DEPLOY_PATH }}
             
             export GITHUB_REPOSITORY_OWNER=${{ needs.build-and-push.outputs.owner_lc }}
-            docker-compose pull
-            docker-compose up -d
+            docker compose pull
+            docker compose up -d
