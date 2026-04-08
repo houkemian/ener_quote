@@ -64,52 +64,7 @@ jobs:
           script: |
             set -eu
             cd ${{ secrets.DEPLOY_PATH }}
-            if [ ! -f .env ]; then
-              echo "ERROR: ${PWD}/.env not found"
-              exit 1
-            fi
-
-            required_vars="
-            RESTART_POLICY
-            POSTGRES_IMAGE
-            POSTGRES_CONTAINER_NAME
-            POSTGRES_DB
-            POSTGRES_USER
-            POSTGRES_PASSWORD
-            POSTGRES_PORT
-            REDIS_IMAGE
-            REDIS_CONTAINER_NAME
-            REDIS_PORT
-            REDIS_DB
-            REDIS_APPENDONLY
-            BACKEND_IMAGE
-            BACKEND_CONTAINER_NAME
-            BACKEND_PORT
-            FRONTEND_IMAGE
-            FRONTEND_CONTAINER_NAME
-            FRONTEND_HOST_PORT
-            FRONTEND_CONTAINER_PORT
-            DB_HOST
-            DB_PORT
-            DB_NAME
-            DB_USER
-            DB_PASSWORD
-            REDIS_HOST
-            "
-
-            missing=0
-            for var in $required_vars; do
-              if ! rg -n "^${var}=.+" .env >/dev/null 2>&1; then
-                echo "ERROR: missing required env var in .env -> ${var}"
-                missing=1
-              fi
-            done
-
-            if [ "$missing" -ne 0 ]; then
-              echo "Deployment aborted due to missing .env variables."
-              exit 1
-            fi
-
+            
             export GITHUB_REPOSITORY_OWNER=${{ needs.build-and-push.outputs.owner_lc }}
             docker-compose pull
             docker-compose up -d
