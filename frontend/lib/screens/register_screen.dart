@@ -4,6 +4,7 @@ import '../core/network/api_client.dart';
 import '../l10n/app_localizations.dart'; // 🌟 引入多语言
 import '../theme/app_colors.dart';
 import '../widgets/marketing_footer.dart';
+import 'register_otp_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -13,18 +14,18 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  static const double _uiScale = 0.8;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
 
   bool _isLoading = false;
+  bool _isPasswordVisible = false;
   String _errorMessage = '';
 
-  Future<void> _register() async {
+  Future<void> _sendOtp() async {
     final l10n = AppLocalizations.of(context)!;
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    final confirmPassword = _confirmPasswordController.text;
 
     if (email.isEmpty || password.isEmpty) {
       setState(() => _errorMessage = l10n.errEmpty); // 🌟 动态错误提示
@@ -34,11 +35,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _errorMessage = l10n.errPasswordLength);
       return;
     }
-    if (password != confirmPassword) {
-      setState(() => _errorMessage = l10n.errPasswordMatch);
-      return;
-    }
-
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -46,26 +42,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
 
     try {
-      await ApiClient().dio.post(
-        '/auth/register',
-        data: {'email': email, 'password': password},
-      );
-
       if (!mounted) return;
+      final langCode = Localizations.localeOf(context).languageCode;
+      await ApiClient().sendRegisterOtp(email, langCode);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.msgRegisterSuccess), // 🌟 动态成功提示
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => RegisterOtpScreen(
+            email: email,
+            password: password,
+          ),
         ),
       );
-
-      Navigator.of(context).pop();
-
     } on DioException catch (e) {
       setState(() {
-        if (e.response?.statusCode == 400) {
+        if (e.response?.statusCode == 400 || e.response?.statusCode == 409) {
           _errorMessage = e.response?.data['detail'] ?? l10n.errRegisterFailedFallback;
         } else {
           _errorMessage = l10n.errNetwork(e.message ?? 'Unknown Error');
@@ -81,6 +72,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
+    final isKeyboardVisible = keyboardInset > 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -94,58 +87,100 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Center(
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8.0),
+                  padding: EdgeInsets.fromLTRB(
+                    32 * _uiScale,
+                    8 * _uiScale,
+                    32 * _uiScale,
+                    8 * _uiScale + keyboardInset,
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                Icon(Icons.person_add_alt_1, size: 64, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(height: 20),
-                Text(
-                  l10n.registerTitle, // 🌟 动态注册标题
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.person_add_alt_1,
+                      size: 64 * _uiScale,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    SizedBox(width: 12 * _uiScale),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.registerTitle, // 🌟 动态注册标题
+                            style: TextStyle(
+                              fontSize: 24 * _uiScale,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.onSurface,
+                            ),
+                          ),
+                          SizedBox(height: 8 * _uiScale),
+                          Text(
+                            l10n.registerSubtitle, // 🌟 动态注册副标题
+                            style: TextStyle(
+                              fontSize: 14 * _uiScale,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  l10n.registerSubtitle, // 🌟 动态注册副标题
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
-                ),
-                const SizedBox(height: 40),
+                SizedBox(height: 40 * _uiScale),
 
                 _buildTextField(_emailController, l10n.emailLabel, false),
-                const SizedBox(height: 16),
+                SizedBox(height: 16 * _uiScale),
                 _buildTextField(_passwordController, l10n.passwordLabel, true),
-                const SizedBox(height: 16),
-                _buildTextField(_confirmPasswordController, l10n.confirmPasswordLabel, true),
 
-                const SizedBox(height: 12),
+                SizedBox(height: 12 * _uiScale),
                 if (_errorMessage.isNotEmpty)
-                  Text(_errorMessage, style: const TextStyle(color: Colors.redAccent, fontSize: 14), textAlign: TextAlign.center),
-                const SizedBox(height: 24),
+                  Text(
+                    _errorMessage,
+                    style: TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 14 * _uiScale,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                SizedBox(height: 24 * _uiScale),
 
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _register,
+                  onPressed: _isLoading ? null : _sendOtp,
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: EdgeInsets.symmetric(vertical: 16 * _uiScale),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8 * _uiScale),
+                    ),
                   ),
                   child: _isLoading
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      ? SizedBox(
+                          height: 20 * _uiScale,
+                          width: 20 * _uiScale,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2 * _uiScale,
+                          ),
+                        )
                       : Text(
-                    l10n.freeRegisterBtn, // 🌟 动态免费注册按钮
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    "Get verification code",
+                    style: TextStyle(
+                      fontSize: 16 * _uiScale,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20 * _uiScale),
                     ],
                   ),
                 ),
               ),
             ),
           ),
-          const MarketingFooter(),
+          if (!isKeyboardVisible) const MarketingFooter(),
         ],
       ),
     );
@@ -154,10 +189,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildTextField(TextEditingController controller, String label, bool isPassword) {
     return TextField(
       controller: controller,
-      obscureText: isPassword,
-      style: const TextStyle(color: AppColors.onSurface),
+      obscureText: isPassword ? !_isPasswordVisible : false,
+      style: TextStyle(
+        color: AppColors.onSurface,
+        fontSize: 16 * _uiScale,
+      ),
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: TextStyle(fontSize: 14 * _uiScale),
+        suffixIcon: isPassword
+            ? IconButton(
+                onPressed: () {
+                  setState(() {
+                    _isPasswordVisible = !_isPasswordVisible;
+                  });
+                },
+                icon: Icon(
+                  _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                  size: 18 * _uiScale,
+                ),
+              )
+            : null,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 12 * _uiScale,
+          vertical: 14 * _uiScale,
+        ),
       ),
     );
   }

@@ -20,6 +20,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  static const double _uiScale = 0.8;
   final TextEditingController _emailController = TextEditingController(
     text: '',
   );
@@ -131,92 +132,125 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Center(
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 32.0 * _uiScale,
+                    vertical: 24.0 * _uiScale,
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                const _EnergyHeroIcon(),
+                const _EnergyHeroIcon(scale: _uiScale),
                 // const SizedBox(height: 5),
                 // const Text(
                 //   '光储大师 V1.0',
                 // ... (保留你的注释)
-                const SizedBox(height: 28),
+                SizedBox(height: 28 * _uiScale),
 
                 TextField(
                   controller: _emailController,
-                  style: const TextStyle(color: AppColors.onSurface),
+                  style: TextStyle(
+                    color: AppColors.onSurface,
+                    fontSize: 16 * _uiScale,
+                  ),
                   decoration: InputDecoration(
                     labelText: l10n.emailLabel, // 🌟 动态多语言替换
                     hintText: l10n.emailPlaceholder,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12 * _uiScale,
+                      vertical: 14 * _uiScale,
+                    ),
+                    labelStyle: TextStyle(fontSize: 14 * _uiScale),
+                    hintStyle: TextStyle(fontSize: 14 * _uiScale),
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16 * _uiScale),
                 TextField(
                   controller: _passwordController,
                   obscureText: true,
-                  style: const TextStyle(color: AppColors.onSurface),
+                  style: TextStyle(
+                    color: AppColors.onSurface,
+                    fontSize: 16 * _uiScale,
+                  ),
                   decoration: InputDecoration(
                     labelText: l10n.passwordLabel, // 🌟 动态多语言替换
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12 * _uiScale,
+                      vertical: 14 * _uiScale,
+                    ),
+                    labelStyle: TextStyle(fontSize: 14 * _uiScale),
                   ),
                 ),
-                const SizedBox(height: 12),
-                if (_errorMessage.isNotEmpty)
-                  Text(
-                    _errorMessage,
-                    style: const TextStyle(color: Colors.redAccent, fontSize: 14),
-                    textAlign: TextAlign.center,
-                  ),
-                const SizedBox(height: 24),
-
+                SizedBox(height: 12 * _uiScale),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _errorMessage.isNotEmpty
+                          ? Text(
+                              _errorMessage,
+                              style: TextStyle(
+                                color: Colors.redAccent,
+                                fontSize: 14 * _uiScale,
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                        );
+                      },
+                      child: Text(
+                        l10n.registerPrompt, // 🌟 动态多语言替换
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontSize: 14 * _uiScale,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8 * _uiScale),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _login,
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(vertical: 16 * _uiScale),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8 * _uiScale),
                     ),
                   ),
                   child: _isLoading
-                      ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                      ? SizedBox(
+                    height: 20 * _uiScale,
+                    width: 20 * _uiScale,
+                    child: CircularProgressIndicator(strokeWidth: 2 * _uiScale),
                   )
                       : Text(
                     l10n.secureLoginBtn, // 🌟 动态多语言替换
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: TextStyle(
+                      fontSize: 16 * _uiScale,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-                const SizedBox(height: 16), // 👈 原有按钮下面的间距
+                SizedBox(height: 16 * _uiScale), // 👈 原有按钮下面的间距
 
 
                 TextButton(
                   onPressed: () {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()));
                   },
-                  child: Text(l10n.forgotPasswordTitle, style: TextStyle(color: AppColors.onSurfaceVariant)),
-
-                ),
-
-                // 🌟 新增的注册入口按钮
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                    );
-                  },
                   child: Text(
-                    l10n.registerPrompt, // 🌟 动态多语言替换
+                    l10n.forgotPasswordTitle,
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontSize: 14,
-                      decoration: TextDecoration.underline,
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 14 * _uiScale,
                     ),
                   ),
+
                 ),
                     ],
                   ),
@@ -232,13 +266,15 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 class _EnergyHeroIcon extends StatelessWidget {
-  const _EnergyHeroIcon();
+  final double scale;
+
+  const _EnergyHeroIcon({this.scale = 1});
 
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     return SizedBox(
-      height: 96,
+      height: 80 * scale,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -263,26 +299,29 @@ class _EnergyHeroIcon extends StatelessWidget {
               _IconPill(
                 icon: Icons.solar_power_rounded,
                 color: primary,
+                scale: scale,
               ),
               Container(
-                width: 28,
+                width: 28 * scale,
                 height: 2,
-                margin: const EdgeInsets.symmetric(horizontal: 10),
+                margin: EdgeInsets.symmetric(horizontal: 10 * scale),
                 color: primary.withValues(alpha: 0.6),
               ),
               _IconPill(
                 icon: Icons.battery_charging_full_rounded,
                 color: primary,
+                scale: scale,
               ),
               Container(
-                width: 28,
+                width: 28 * scale,
                 height: 2,
-                margin: const EdgeInsets.symmetric(horizontal: 10),
+                margin: EdgeInsets.symmetric(horizontal: 10 * scale),
                 color: primary.withValues(alpha: 0.6),
               ),
               _IconPill(
                 icon: Icons.analytics_rounded,
                 color: primary,
+                scale: scale,
               ),
             ],
           ),
@@ -295,20 +334,21 @@ class _EnergyHeroIcon extends StatelessWidget {
 class _IconPill extends StatelessWidget {
   final IconData icon;
   final Color color;
+  final double scale;
 
-  const _IconPill({required this.icon, required this.color});
+  const _IconPill({required this.icon, required this.color, this.scale = 1});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 52,
-      height: 52,
+      width: 52 * scale,
+      height: 52 * scale,
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14 * scale),
         border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
-      child: Icon(icon, size: 28, color: color),
+      child: Icon(icon, size: 28 * scale, color: color),
     );
   }
 }

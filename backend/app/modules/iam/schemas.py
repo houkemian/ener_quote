@@ -29,3 +29,14 @@ class ResetPasswordRequest(BaseModel):
     email: EmailStr
     reset_code: str = Field(..., min_length=6, max_length=6)
     new_password: str = Field(..., min_length=6, description="新密码至少6位")
+
+
+class SendRegisterOtpRequest(BaseModel):
+    email: EmailStr
+    language: str = "en"
+
+
+class VerifyOtpAndRegisterRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=6, description="密码至少6位")
+    otp_code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")

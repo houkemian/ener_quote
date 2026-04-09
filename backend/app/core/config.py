@@ -31,7 +31,11 @@ def paddle_api_base_url() -> str:
 
 
 # --- 邮件配置 ---
-SMTP_SERVER = os.getenv("SMTP_SERVER")
+# 兼容历史变量 SMTP_SERVER，同时优先采用 SMTP_HOST
+SMTP_HOST = os.getenv("SMTP_HOST") or os.getenv("SMTP_SERVER")
+SMTP_SERVER = SMTP_HOST
 SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
 SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "EnerQuote")
+SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "false").strip().lower() == "true"

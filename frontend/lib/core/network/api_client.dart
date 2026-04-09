@@ -6,6 +6,17 @@ import '../../screens/login_screen.dart'; // 🌟 引入登录页
 import '../../l10n/app_localizations.dart'; // 👈 新增这行
 import '../auth/token_manager.dart';
 
+class SendOtpResponse {
+  final int ttlSeconds;
+  const SendOtpResponse({required this.ttlSeconds});
+}
+
+class VerifyOtpRegisterResponse {
+  final String accessToken;
+  final String? tier;
+  const VerifyOtpRegisterResponse({required this.accessToken, this.tier});
+}
+
 class ApiClient {
   // 1. 单例模式：确保全局只生成一个 ApiClient 实例
   static final ApiClient _instance = ApiClient._internal();
@@ -28,10 +39,8 @@ class ApiClient {
 
     dio = Dio(options);
     bool _isAuthEndpoint(String path) {
-      return path.contains('/auth/login') ||
-          path.contains('/auth/register') ||
-          path.contains('/auth/forgot-password') ||
-          path.contains('/auth/reset-password');
+      final normalized = path.toLowerCase();
+      return normalized.contains('/auth/') || normalized.startsWith('auth/');
     }
 
 
@@ -60,7 +69,12 @@ class ApiClient {
       onError: (DioException e, handler) async {
         // 🌟 全局 401 拦截：Token 过期或被篡改，自动踢回登录页！
         final path = e.requestOptions.path;
-        if (e.response?.statusCode == 401 && !_isAuthEndpoint(path)) {
+        final hasAuthHeader = e.requestOptions.headers.keys.any(
+          (key) => key.toString().toLowerCase() == 'authorization',
+        );
+        if (e.response?.statusCode == 401 &&
+            hasAuthHeader &&
+            !_isAuthEndpoint(path)) {
           print("🔒 [全局拦截] Token 无效或已过期！强制登出...");
 
 
@@ -161,6 +175,40 @@ class ApiClient {
       print("重置密码失败: $e");
       return false;
     }
+  }
+
+  Future<SendOtpResponse> sendRegisterOtp(String email, String langCode) async {
+    final response = await dio.post(
+      '/auth/send-otp',
+      data: {
+        "email": email,
+        "language": langCode,
+      },
+    );
+    final ttl = response.data is Map<String, dynamic>
+        ? (response.data['ttl_seconds'] as int? ?? 300)
+        : 300;
+    return SendOtpResponse(ttlSeconds: ttl);
+  }
+
+  Future<VerifyOtpRegisterResponse> verifyOtpAndRegister({
+    required String email,
+    required String password,
+    required String otpCode,
+  }) async {
+    final response = await dio.post(
+      '/auth/verify-otp-and-register',
+      data: {
+        "email": email,
+        "password": password,
+        "otp_code": otpCode,
+      },
+    );
+    final data = response.data as Map<String, dynamic>;
+    return VerifyOtpRegisterResponse(
+      accessToken: data['access_token'] as String,
+      tier: data['tier'] as String?,
+    );
   }
 
 }
