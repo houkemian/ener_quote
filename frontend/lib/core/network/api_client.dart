@@ -20,8 +20,8 @@ class ApiClient {
       // 模拟器用：http://10.0.2.2:8000/api/v1
       // 真机用：http://192.168.x.x:8000/api/v1 (你的电脑局域网 IP)
       // baseUrl: 'http://10.1.50.211:8000/api/v1',
-      // 🌟 核心修改：枪口一致对外，直连 AWS 生产服务器！
-      baseUrl: 'https://dothings.one/api/v1',
+      // 🌟 核心修改：枪口一致对外，直连 API 子域
+      baseUrl: 'https://api.dothings.one/api/v1',
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
     );
