@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n/app_localizations.dart';
 import '../core/network/api_client.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert'; // 用于 Base64 转换
 import '../theme/app_colors.dart';
+import 'paddle_checkout_webview.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -173,20 +173,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             final urlStr = await ApiClient().getPaddleCheckoutUrl();
 
                             if (urlStr != null) {
-                              final Uri url = Uri.parse(urlStr);
-
-                              // 2. 呼出手机原生浏览器打开 Paddle 托管结账页
-                              if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-                                throw Exception('无法唤起浏览器');
-                              }
+                              final ptxn = await Navigator.of(context).push<String>(
+                                MaterialPageRoute(
+                                  builder: (_) => PaddleCheckoutWebView(checkoutUrl: urlStr),
+                                ),
+                              );
 
                               if (!mounted) return;
-                              // 3. 温馨提示：MVP 阶段的最简状态同步方案
+                              if (ptxn == null || ptxn.isEmpty) {
+                                return;
+                              }
+
+                              final newTier = await ApiClient().refreshUserToken();
+                              if (newTier == "PRO") {
+                                setState(() {
+                                  _userTier = "PRO";
+                                });
+                              }
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(l10n.msgPayToUpgrade),
-                                  backgroundColor: AppColors.success,
-                                  duration: Duration(seconds: 5),
+                                  content: Text(
+                                    newTier == "PRO" ? l10n.paymentSuccessPro : l10n.paymentPending,
+                                  ),
+                                  backgroundColor: newTier == "PRO" ? AppColors.success : Colors.orange,
+                                  duration: const Duration(seconds: 5),
                                 ),
                               );
                             }

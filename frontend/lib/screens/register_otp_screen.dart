@@ -165,22 +165,44 @@ class _RegisterOtpScreenState extends State<RegisterOtpScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.mark_email_read_outlined, size: 56),
-                const SizedBox(height: 16),
-                Text(
-                  'Enter verification code',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.mark_email_read_outlined,
+                        size: 34,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'We sent a 6-digit code to ${widget.email}',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.onSurfaceVariant,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Enter verification code',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'We sent a 6-digit code to ${widget.email}',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                        ),
                       ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24),
                 Pinput(

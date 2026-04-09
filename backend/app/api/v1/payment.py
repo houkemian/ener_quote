@@ -47,6 +47,12 @@ def create_checkout_session(
         "collection_mode": "automatic",
         "custom_data": {"user_id": str(current_user.user_id)},
     }
+    logger.info(
+        "Paddle create transaction request: base=%s endpoint=%s payload=%s",
+        base,
+        "/transactions",
+        payload,
+    )
 
     try:
         with httpx.Client(timeout=30.0) as client:
@@ -60,18 +66,42 @@ def create_checkout_session(
         raise HTTPException(status_code=502, detail="Paddle API unreachable") from e
 
     if response.status_code not in (200, 201):
-        logger.warning(
-            "Paddle create transaction failed: %s %s",
-            response.status_code,
-            response.text[:2000],
-        )
-        detail: str
+        parsed_error: dict[str, Any] = {}
+        request_id: str | None = None
+        error_code: str | None = None
+        error_detail: str | None = None
         if "application/json" in response.headers.get("content-type", ""):
             try:
-                err = response.json().get("error") or {}
-                detail = str(err.get("detail") or err.get("message") or response.text[:800])
+                body = response.json()
+                parsed_error = body.get("error") or {}
+                request_id = (body.get("meta") or {}).get("request_id")
+                error_code = parsed_error.get("code")
+                error_detail = parsed_error.get("detail") or parsed_error.get("message")
             except Exception:
-                detail = response.text[:800]
+                pass
+
+        logger.warning(
+            "Paddle create transaction failed: status=%s request_id=%s error_code=%s detail=%s raw=%s",
+            response.status_code,
+            request_id,
+            error_code,
+            error_detail,
+            response.text[:2000],
+        )
+
+        if error_code == "transaction_default_checkout_url_not_set":
+            logger.error(
+                "Paddle dashboard missing Default Payment Link. Please set it in Checkout settings: "
+                "https://developer.paddle.com/v1/errors/transactions/transaction_default_checkout_url_not_set"
+            )
+
+        detail: str
+        if parsed_error:
+            detail = str(
+                parsed_error.get("detail")
+                or parsed_error.get("message")
+                or response.text[:800]
+            )
         else:
             detail = response.text[:800]
         raise HTTPException(status_code=400, detail=detail)
@@ -85,6 +115,22 @@ def create_checkout_session(
         raise HTTPException(
             status_code=502,
             detail="Paddle did not return checkout.url; check catalog price and default payment link in Paddle.",
+        )
+
+    # 防御性校验：如果返回的是你自己的回跳域名（仅带 _ptxn），说明 Paddle Default Payment Link 配错了，
+    # 当前 URL 不是托管收银台地址，前端会被立即拦截并关闭 WebView。
+    if url.startswith("https://api.dothings.one") and "_ptxn=" in url:
+        logger.error(
+            "Paddle checkout.url is misconfigured Default Payment Link, got callback-like url: %s",
+            url,
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Paddle Default Payment Link is misconfigured. "
+                "Please set it to a Paddle-hosted checkout link in Paddle Dashboard, "
+                "not the callback domain (https://api.dothings.one)."
+            ),
         )
 
     # 与前端约定字段名保持不变，降低改动面

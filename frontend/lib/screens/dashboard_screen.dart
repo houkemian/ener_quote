@@ -11,9 +11,9 @@ import '../l10n/app_localizations.dart';
 import 'settings_screen.dart';
 import 'pdf_preview_screen.dart';
 import 'login_screen.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:sentry/sentry.dart';
 import '../theme/app_colors.dart';
+import 'paddle_checkout_webview.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -737,60 +737,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       );
 
                       try {
-                        // 3. 向云端索要 Paddle 结账链接
                         final urlStr = await ApiClient().getPaddleCheckoutUrl();
+                        if (urlStr == null || !mounted) return;
 
-                        if (urlStr != null) {
-                          final Uri url = Uri.parse(urlStr);
+                        final ptxn = await Navigator.of(context).push<String>(
+                          MaterialPageRoute(
+                            builder: (_) => PaddleCheckoutWebView(checkoutUrl: urlStr),
+                          ),
+                        );
 
-                          // 4. 瞬间打破次元壁，唤起手机原生浏览器！
-                          if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-                            throw Exception('无法唤起原生浏览器');
-                          }
-
-                          if (!mounted) return;
-
-                          // 🌟 5. 商业级交互：弹出一个不可关闭的确认框，等待用户从浏览器切回来
-                          showDialog(
-                            context: context,
-                            barrierDismissible: false, // 强制用户必须点按钮
-                            builder: (dialogContext) => AlertDialog(
-                              title: Text(l10n.paymentConfirmTitle, style: const TextStyle(color: AppColors.onSurface)),
-                              content: Text(l10n.paymentConfirmDesc, style: const TextStyle(color: AppColors.onSurfaceVariant)),
-                              actions: [
-                                TextButton(
-                                  child: Text(l10n.verifyLater, style: const TextStyle(color: AppColors.onSurfaceVariant)),
-                                  onPressed: () => Navigator.pop(dialogContext),
-                                ),
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary, foregroundColor: AppColors.onSecondary),
-                                  child: Text(l10n.paymentCompleted, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  onPressed: () async {
-                                    // 🌟 核心逻辑：用户点确认后，向后端请求最新的 Token
-                                    final newTier = await ApiClient().refreshUserToken();
-
-                                    if (!mounted) return;
-
-                                    if (newTier == "PRO") {
-                                      Navigator.pop(dialogContext); // 关掉确认框
-
-                                      // 触发页面刷新，去掉所有付费墙限制
-                                      setState(() {});
-
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text(l10n.paymentSuccessPro), backgroundColor: AppColors.success),
-                                      );
-                                    } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text(l10n.paymentPending), backgroundColor: Colors.orange),
-                                      );
-                                    }
-                                  },
-                                )
-                              ],
-                            ),
-                          );
+                        if (!mounted) return;
+                        if (ptxn == null || ptxn.isEmpty) {
+                          return;
                         }
+
+                        await _showPaymentProcessingAndSync(ptxn);
                       } catch (e) {
                         if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -832,6 +793,112 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _showPaymentProcessingAndSync(String ptxn) async {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: Text(
+          l10n.paymentConfirmTitle,
+          style: const TextStyle(color: AppColors.onSurface),
+        ),
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '${l10n.paymentPending}\nPTXN: $ptxn',
+                style: const TextStyle(color: AppColors.onSurfaceVariant),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    String? newTier;
+    for (int i = 0; i < 5; i++) {
+      await Future.delayed(const Duration(seconds: 2));
+      newTier = await ApiClient().refreshUserToken();
+      if (newTier == "PRO") {
+        break;
+      }
+    }
+
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pop();
+
+    if (newTier == "PRO") {
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.paymentSuccessPro),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(
+            l10n.paymentConfirmTitle,
+            style: const TextStyle(color: AppColors.onSurface),
+          ),
+          content: Text(
+            l10n.paymentConfirmDesc,
+            style: const TextStyle(color: AppColors.onSurfaceVariant),
+          ),
+          actions: [
+            TextButton(
+              child: Text(
+                l10n.verifyLater,
+                style: const TextStyle(color: AppColors.onSurfaceVariant),
+              ),
+              onPressed: () => Navigator.pop(dialogContext),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.secondary,
+                foregroundColor: AppColors.onSecondary,
+              ),
+              child: Text(
+                l10n.paymentCompleted,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              onPressed: () async {
+                final refreshedTier = await ApiClient().refreshUserToken();
+                if (!mounted) return;
+                Navigator.pop(dialogContext);
+                if (refreshedTier == "PRO") {
+                  setState(() {});
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(l10n.paymentSuccessPro),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(l10n.paymentPending),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+      );
+    }
   }
 
 }
