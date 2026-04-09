@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
+from pydantic import EmailStr, TypeAdapter, ValidationError
 from app.api.deps import get_current_user_payload, TokenPayload # 🌟 引入安检门
 
 from app.core.security import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
@@ -11,6 +12,7 @@ from app.modules.iam.models import User as IAMUser
 from app.modules.iam.security import verify_password
 
 router = APIRouter()
+email_adapter = TypeAdapter(EmailStr)
 
 @router.post("/login")
 async def login_for_access_token(
@@ -18,6 +20,14 @@ async def login_for_access_token(
     db: Session = Depends(get_db)
 ):
     """真实查库登录，发放携带 tier (权限) 的 JWT"""
+    try:
+        email_adapter.validate_python(form_data.username)
+    except ValidationError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="邮箱格式不正确",
+        )
+
     # 1. 去数据库查这个邮箱
     user = db.query(IAMUser).filter(IAMUser.email == form_data.username).first()
     

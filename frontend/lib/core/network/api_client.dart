@@ -27,6 +27,13 @@ class ApiClient {
     );
 
     dio = Dio(options);
+    bool _isAuthEndpoint(String path) {
+      return path.contains('/auth/login') ||
+          path.contains('/auth/register') ||
+          path.contains('/auth/forgot-password') ||
+          path.contains('/auth/reset-password');
+    }
+
 
     final l10n = AppLocalizations.of(globalNavigatorKey.currentContext!)!;
 
@@ -52,7 +59,8 @@ class ApiClient {
       },
       onError: (DioException e, handler) async {
         // 🌟 全局 401 拦截：Token 过期或被篡改，自动踢回登录页！
-        if (e.response?.statusCode == 401) {
+        final path = e.requestOptions.path;
+        if (e.response?.statusCode == 401 && !_isAuthEndpoint(path)) {
           print("🔒 [全局拦截] Token 无效或已过期！强制登出...");
 
 

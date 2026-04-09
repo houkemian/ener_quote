@@ -29,13 +29,35 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   String _errorMessage = '';
 
+  bool _isValidEmail(String value) {
+    final email = value.trim();
+    final regex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+    return regex.hasMatch(email);
+  }
+
   Future<void> _login() async {
+    final l10n = AppLocalizations.of(context)!;
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() {
+        _errorMessage = l10n.errEmpty;
+      });
+      return;
+    }
+
+    if (!_isValidEmail(email)) {
+      setState(() {
+        _errorMessage = l10n.errInvalidEmail;
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
-
-    final l10n = AppLocalizations.of(context)!;
 
 
     try {
@@ -43,8 +65,8 @@ class _LoginScreenState extends State<LoginScreen> {
       final response = await ApiClient().dio.post(
         '/auth/login', // 直接写路由短地址即可
         data: {
-          'username': _emailController.text,
-          'password': _passwordController.text,
+          'username': email,
+          'password': password,
         },
         // 告诉 Dio 我们发的是表单格式 (FastAPI 登录强依赖这个)
         options: Options(contentType: Headers.formUrlEncodedContentType),
