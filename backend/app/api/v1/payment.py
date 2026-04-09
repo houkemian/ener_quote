@@ -42,6 +42,7 @@ def create_checkout_session(
         raise HTTPException(status_code=500, detail="PADDLE_PRICE_ID not configured")
 
     base = paddle_api_base_url()
+    request_url = f"{base}/transactions"
     payload: dict[str, Any] = {
         "items": [{"price_id": PADDLE_PRICE_ID, "quantity": 1}],
         "collection_mode": "automatic",
@@ -53,11 +54,12 @@ def create_checkout_session(
         "/transactions",
         payload,
     )
+    logger.info("Paddle final request URL: %s", request_url)
 
     try:
         with httpx.Client(timeout=30.0) as client:
             response = client.post(
-                f"{base}/transactions",
+                request_url,
                 headers=_paddle_headers(),
                 json=payload,
             )
@@ -66,6 +68,7 @@ def create_checkout_session(
         raise HTTPException(status_code=502, detail="Paddle API unreachable") from e
 
     if response.status_code not in (200, 201):
+        logger.warning("Paddle raw response text: %s", response.text)
         parsed_error: dict[str, Any] = {}
         request_id: str | None = None
         error_code: str | None = None
@@ -106,6 +109,7 @@ def create_checkout_session(
             detail = response.text[:800]
         raise HTTPException(status_code=400, detail=detail)
 
+    logger.info("Paddle success raw response text: %s", response.text)
     body = response.json()
     data = body.get("data") or {}
     checkout = data.get("checkout") or {}
