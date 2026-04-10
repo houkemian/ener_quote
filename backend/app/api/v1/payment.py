@@ -20,6 +20,7 @@ from app.core.config import (
     paddle_js_environment,
 )
 from app.modules.iam.models import User
+from app.modules.iam.models import PaymentOrder, PaddleWebhookEvent
 from app.services.paddle_signature import verify_paddle_signature
 from fastapi.responses import HTMLResponse
 
@@ -96,6 +97,78 @@ def _resolve_user_from_event(db: Session, data: dict[str, Any]) -> User | None:
         return db.query(User).filter(User.email == str(customer_email)).first()
 
     return None
+
+
+def _parse_event_datetime(raw_dt: Any) -> datetime | None:
+    if not raw_dt or not isinstance(raw_dt, str):
+        return None
+    try:
+        # Paddle 常见格式：2026-04-10T12:00:00Z
+        return datetime.fromisoformat(raw_dt.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _extract_money_fields(data: dict[str, Any]) -> tuple[str | None, str | None]:
+    details = data.get("details") or {}
+    totals = details.get("totals") or {}
+
+    currency = (
+        totals.get("currency_code")
+        or details.get("currency_code")
+        or data.get("currency_code")
+    )
+    amount = (
+        totals.get("grand_total")
+        or totals.get("total")
+        or details.get("amount")
+        or data.get("amount")
+    )
+    return (
+        str(currency) if currency is not None else None,
+        str(amount) if amount is not None else None,
+    )
+
+
+def _create_order_if_absent(
+    db: Session,
+    *,
+    user: User | None,
+    event_id: str | None,
+    event_type: str,
+    status: str,
+    data: dict[str, Any],
+) -> bool:
+    # 事件有 event_id 时，先做幂等去重
+    if event_id:
+        existed = (
+            db.query(PaymentOrder)
+            .filter(PaymentOrder.event_id == event_id)
+            .first()
+        )
+        if existed:
+            return False
+
+    customer = data.get("customer") or {}
+    occurred_at = _parse_event_datetime(data.get("occurred_at"))
+    currency_code, amount = _extract_money_fields(data)
+
+    order = PaymentOrder(
+        user_id=user.id if user else None,
+        event_id=event_id,
+        event_type=event_type,
+        status=status,
+        transaction_id=data.get("id"),
+        subscription_id=data.get("subscription_id") or data.get("subscription", {}).get("id"),
+        customer_id=customer.get("id"),
+        customer_email=customer.get("email"),
+        currency_code=currency_code,
+        amount=amount,
+        occurred_at=occurred_at,
+        raw_data=data,
+    )
+    db.add(order)
+    return True
 
 
 @router.post("/checkout")
@@ -214,21 +287,57 @@ async def paddle_webhook(request: Request, db: Session = Depends(get_db)):
     if not PADDLE_WEBHOOK_SECRET:
         raise HTTPException(status_code=500, detail="Webhook secret not configured")
 
-    if not verify_paddle_signature(raw, sig_header, PADDLE_WEBHOOK_SECRET):
-        logger.warning("Paddle webhook signature verification failed")
-        raise HTTPException(status_code=400, detail="Invalid signature")
+    raw_text = raw.decode("utf-8", errors="replace")
+    webhook_event = PaddleWebhookEvent(
+        signature_header=sig_header,
+        signature_valid=False,
+        process_status="received",
+        request_headers=dict(request.headers),
+        request_query=dict(request.query_params),
+        request_path=str(request.url.path),
+        raw_body=raw_text,
+    )
+    db.add(webhook_event)
+    db.commit()
+    db.refresh(webhook_event)
 
     try:
-        event = json.loads(raw.decode("utf-8"))
+        event = json.loads(raw_text)
     except (UnicodeDecodeError, json.JSONDecodeError) as e:
+        webhook_event.process_status = "invalid_json"
+        webhook_event.error_message = str(e)
+        db.commit()
         raise HTTPException(status_code=400, detail="Invalid JSON body") from e
 
     event_type = event.get("event_type")
     data = event.get("data") or {}
+    event_id = event.get("event_id")
+
+    webhook_event.event_id = str(event_id) if event_id else None
+    webhook_event.event_type = str(event_type) if event_type else None
+    webhook_event.signature_valid = verify_paddle_signature(raw, sig_header, PADDLE_WEBHOOK_SECRET)
+
+    if not webhook_event.signature_valid:
+        webhook_event.process_status = "invalid_signature"
+        webhook_event.error_message = "Paddle webhook signature verification failed"
+        db.commit()
+        logger.warning("Paddle webhook signature verification failed")
+        raise HTTPException(status_code=400, detail="Invalid signature")
 
     if event_type == "transaction.completed":
         user = _resolve_user_from_event(db, data)
+        _create_order_if_absent(
+            db,
+            user=user,
+            event_id=str(event_id) if event_id else None,
+            event_type=event_type,
+            status="PAID",
+            data=data,
+        )
         if not user:
+            webhook_event.process_status = "no_user"
+            webhook_event.error_message = "transaction.completed user not found"
+            db.commit()
             logger.warning(
                 "transaction.completed cannot resolve user: txn=%s custom_data=%s customer=%s",
                 data.get("id"),
@@ -239,6 +348,7 @@ async def paddle_webhook(request: Request, db: Session = Depends(get_db)):
 
         user.tier = "PRO"
         user.pro_expire_date = datetime.utcnow() + timedelta(days=30)
+        webhook_event.process_status = "processed"
         db.commit()
         logger.info(
             "User %s upgraded to PRO via Paddle transaction.completed, expire_at=%s",
@@ -247,9 +357,45 @@ async def paddle_webhook(request: Request, db: Session = Depends(get_db)):
         )
         return {"status": "success", "event_type": event_type}
 
-    if event_type in {"subscription.canceled", "subscription.past_due"}:
+    if event_type == "subscription.renewed":
+        user = _resolve_user_from_event(db, data)
+        _create_order_if_absent(
+            db,
+            user=user,
+            event_id=str(event_id) if event_id else None,
+            event_type=event_type,
+            status="PAID",
+            data=data,
+        )
+        if not user:
+            webhook_event.process_status = "no_user"
+            webhook_event.error_message = "subscription.renewed user not found"
+            db.commit()
+            logger.warning(
+                "subscription.renewed cannot resolve user: subscription=%s custom_data=%s customer=%s",
+                data.get("id"),
+                data.get("custom_data"),
+                data.get("customer"),
+            )
+            return {"status": "no_user", "event_type": event_type}
+
+        user.tier = "PRO"
+        user.pro_expire_date = datetime.utcnow() + timedelta(days=30)
+        webhook_event.process_status = "processed"
+        db.commit()
+        logger.info(
+            "User %s renewed PRO via Paddle subscription.renewed, expire_at=%s",
+            user.email,
+            user.pro_expire_date,
+        )
+        return {"status": "success", "event_type": event_type}
+
+    if event_type in {"subscription.canceled", "subscription.cancled", "subscription.past_due"}:
         user = _resolve_user_from_event(db, data)
         if not user:
+            webhook_event.process_status = "no_user"
+            webhook_event.error_message = f"{event_type} user not found"
+            db.commit()
             logger.warning(
                 "%s cannot resolve user: subscription=%s custom_data=%s customer=%s",
                 event_type,
@@ -261,6 +407,7 @@ async def paddle_webhook(request: Request, db: Session = Depends(get_db)):
 
         user.tier = "FREE"
         user.pro_expire_date = None
+        webhook_event.process_status = "processed"
         db.commit()
         logger.info(
             "User %s downgraded to FREE via Paddle %s",
@@ -269,6 +416,8 @@ async def paddle_webhook(request: Request, db: Session = Depends(get_db)):
         )
         return {"status": "success", "event_type": event_type}
 
+    webhook_event.process_status = "ignored"
+    db.commit()
     return {"status": "ignored", "event_type": event_type}
 
 

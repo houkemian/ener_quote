@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Boolean, DateTime
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, JSON, Text
 # 这里假设你的全局 Base 在 app.db.base，如果是别的路径请替换
 from app.db.database import Base 
 
@@ -29,3 +29,47 @@ class User(Base):
     # 系统字段
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class PaymentOrder(Base):
+    __tablename__ = "payment_orders"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    user_id = Column(String, ForeignKey("iam_users.id"), nullable=True, index=True)
+
+    # Webhook 侧的幂等主键：同一个 Paddle 事件只入库一次
+    event_id = Column(String, unique=True, nullable=True, index=True)
+    event_type = Column(String, nullable=False, index=True)
+    status = Column(String, nullable=False, default="PAID", index=True)
+
+    transaction_id = Column(String, nullable=True, index=True)
+    subscription_id = Column(String, nullable=True, index=True)
+    customer_id = Column(String, nullable=True, index=True)
+    customer_email = Column(String, nullable=True, index=True)
+
+    currency_code = Column(String, nullable=True)
+    amount = Column(String, nullable=True)
+    occurred_at = Column(DateTime, nullable=True)
+
+    raw_data = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class PaddleWebhookEvent(Base):
+    __tablename__ = "paddle_webhook_events"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    event_id = Column(String, nullable=True, index=True)
+    event_type = Column(String, nullable=True, index=True)
+    process_status = Column(String, nullable=False, default="received", index=True)
+
+    signature_valid = Column(Boolean, default=False, nullable=False)
+    signature_header = Column(Text, nullable=True)
+
+    request_headers = Column(JSON, nullable=True)
+    request_query = Column(JSON, nullable=True)
+    request_path = Column(String, nullable=True)
+    raw_body = Column(Text, nullable=True)
+
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
