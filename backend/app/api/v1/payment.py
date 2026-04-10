@@ -9,9 +9,13 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user_payload, TokenPayload
 from app.core.config import (
     PADDLE_API_KEY,
+    PADDLE_CHECKOUT_CLOSED_REDIRECT_URL,
+    PADDLE_CHECKOUT_SUCCESS_REDIRECT_URL,
+    PADDLE_CLIENT_TOKEN,
     PADDLE_PRICE_ID,
     PADDLE_WEBHOOK_SECRET,
     paddle_api_base_url,
+    paddle_js_environment,
 )
 from app.modules.iam.models import User
 from app.services.paddle_signature import verify_paddle_signature
@@ -196,7 +200,19 @@ def render_paddle_checkout_ui():
     专门为 Flutter WebView 提供的 HTML 宿主页面。
     Paddle API 只要跳转到这里，Paddle.js 就会接管并自动弹窗！
     """
-    html_content = """
+    if not PADDLE_CLIENT_TOKEN:
+        raise HTTPException(
+            status_code=500,
+            detail="PADDLE_CLIENT_TOKEN not configured (Paddle Dashboard client-side token)",
+        )
+
+    js_env = paddle_js_environment()
+    success_url = json.dumps(PADDLE_CHECKOUT_SUCCESS_REDIRECT_URL)
+    closed_url = json.dumps(PADDLE_CHECKOUT_CLOSED_REDIRECT_URL)
+    client_token = json.dumps(PADDLE_CLIENT_TOKEN)
+    js_env_literal = json.dumps(js_env)
+
+    html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -205,24 +221,18 @@ def render_paddle_checkout_ui():
         <title>Secure Checkout</title>
         <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
         <script>
-            // 核心初始化
-            Paddle.Environment.set('sandbox');
-            Paddle.Initialize({ 
-                // ⚠️ 注意：这里填的是 Client Token，不是 API Key！
-                token: 'test_7e403cae635ebf6705026c637ab', 
-                
-                // 🌟 架构师的魔法：打通 JS 与 Flutter 的桥梁
-                eventCallback: function(data) {
-                    // 如果支付成功，强行把网页跳到一个假地址，用来给 Flutter 拦截
-                    if (data.name === "checkout.completed") {
-                        window.location.href = "https://api.dothings.one/paddle-success";
-                    }
-                    // 如果用户主动点了 X 关掉收银台，也跳假地址通知 Flutter
-                    if (data.name === "checkout.closed") {
-                        window.location.href = "https://api.dothings.one/paddle-closed";
-                    }
-                }
-            });
+            Paddle.Environment.set({js_env_literal});
+            Paddle.Initialize({{
+                token: {client_token},
+                eventCallback: function(data) {{
+                    if (data.name === "checkout.completed") {{
+                        window.location.href = {success_url};
+                    }}
+                    if (data.name === "checkout.closed") {{
+                        window.location.href = {closed_url};
+                    }}
+                }}
+            }});
         </script>
     </head>
     <body style="background-color: #f4f5f7; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif;">

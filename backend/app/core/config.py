@@ -16,6 +16,17 @@ PADDLE_PRICE_ID = os.getenv("PADDLE_PRICE_ID")
 PADDLE_ENVIRONMENT = os.getenv("PADDLE_ENVIRONMENT", "sandbox").strip().lower()
 # Webhook：通知目标里的 endpoint secret（验签用）
 PADDLE_WEBHOOK_SECRET = os.getenv("PADDLE_WEBHOOK_SECRET")
+# Paddle.js（/payment/checkout-ui）：Dashboard → Developer tools → Authentication → Client-side token
+PADDLE_CLIENT_TOKEN = os.getenv("PADDLE_CLIENT_TOKEN")
+# 嵌入式收银台事件回调里跳转的 URL，需与 Flutter WebView 拦截规则一致（建议带 _ptxn=）
+PADDLE_CHECKOUT_SUCCESS_REDIRECT_URL = os.getenv(
+    "PADDLE_CHECKOUT_SUCCESS_REDIRECT_URL",
+    "https://api.dothings.one/?_ptxn=completed",
+)
+PADDLE_CHECKOUT_CLOSED_REDIRECT_URL = os.getenv(
+    "PADDLE_CHECKOUT_CLOSED_REDIRECT_URL",
+    "https://api.dothings.one/?_ptxn=cancelled",
+)
 
 if not PADDLE_API_KEY or not PADDLE_PRICE_ID or not PADDLE_WEBHOOK_SECRET:
     print(
@@ -28,6 +39,13 @@ def paddle_api_base_url() -> str:
     if PADDLE_ENVIRONMENT in ("production", "live", "prod"):
         return "https://api.paddle.com"
     return "https://sandbox-api.paddle.com"
+
+
+def paddle_js_environment() -> str:
+    """Paddle.js Paddle.Environment.set：'sandbox' 或 'production'。"""
+    if PADDLE_ENVIRONMENT in ("production", "live", "prod"):
+        return "production"
+    return "sandbox"
 
 
 # --- 邮件配置 ---
