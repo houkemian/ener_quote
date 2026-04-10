@@ -188,6 +188,11 @@ async def paddle_webhook(request: Request, db: Session = Depends(get_db)):
         "Paddle-Signature"
     )
 
+    logger.info("Paddle webhook path params: %s", request.path_params)
+    logger.info("Paddle webhook request body: %s", raw)
+    logger.info("Paddle webhook request headers: %s", request.headers)
+    logger.info("Paddle webhook request query params: %s", request.query_params)
+
     if not PADDLE_WEBHOOK_SECRET:
         raise HTTPException(status_code=500, detail="Webhook secret not configured")
 
