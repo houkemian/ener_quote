@@ -47,6 +47,11 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
     _isProUser = widget.isProUser;
   }
 
+  String _currency(dynamic value) {
+    final num amount = (value is num) ? value : 0;
+    return '\$${amount.toStringAsFixed(0)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -61,7 +66,7 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
         elevation: 0,
         actions: [
           TextButton.icon(
-            onPressed: _showExportOptions,
+            onPressed: _isProUser ? () => _exportPdf() : _showExportOptions,
             icon: const Icon(Icons.download_rounded, color: AppColors.secondary),
             label: Text(l10n.exportProposal, style: const TextStyle(color: AppColors.secondary)),
           ),
@@ -136,10 +141,7 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      '20-year rows: ${widget.fullCashFlowData.length}',
-                      style: const TextStyle(color: AppColors.onSurfaceVariant),
-                    ),
+                    _buildCashFlowPreviewTable(l10n),
                   ] else ...[
                     Container(
                       width: double.infinity,
@@ -182,6 +184,48 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
     );
   }
 
+  Widget _buildCashFlowPreviewTable(AppLocalizations l10n) {
+    if (widget.fullCashFlowData.isEmpty) {
+      return Text(
+        '${l10n.pdfCashFlowTitle}: 0',
+        style: const TextStyle(color: AppColors.onSurfaceVariant),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          headingRowColor: WidgetStateProperty.all(AppColors.surfaceMuted),
+          columns: [
+            DataColumn(label: Text(l10n.pdfCfYear)),
+            DataColumn(label: Text(l10n.pdfCfEnergySavings)),
+            DataColumn(label: Text(l10n.pdfCfBackupValue)),
+            DataColumn(label: Text(l10n.pdfCfOmBattery)),
+            DataColumn(label: Text(l10n.pdfCfDebtService)),
+            DataColumn(label: Text(l10n.pdfCfNetCashFlow)),
+            DataColumn(label: Text(l10n.pdfCfCumulative)),
+          ],
+          rows: widget.fullCashFlowData.map((row) {
+            return DataRow(cells: [
+              DataCell(Text('${row['year'] ?? '-'}')),
+              DataCell(Text(_currency(row['energy_savings_revenue']))),
+              DataCell(Text(_currency(row['backup_power_value']))),
+              DataCell(Text('-${_currency(row['opex_and_replacement'])}')),
+              DataCell(Text('-${_currency(row['debt_service'])}')),
+              DataCell(Text(_currency(row['net_cash_flow']))),
+              DataCell(Text(_currency(row['cumulative_cash_flow']))),
+            ]);
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
   Future<void> _showExportOptions() async {
     final l10n = AppLocalizations.of(context)!;
     await showModalBottomSheet(
@@ -203,7 +247,7 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
                   subtitle: Text(l10n.pdfExportFreeOptionSubtitle),
                   onTap: () async {
                     Navigator.pop(ctx);
-                    await _exportPdf(forcePro: false);
+                    await _exportPdf();
                   },
                 ),
                 const Divider(),
@@ -224,13 +268,13 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
     );
   }
 
-  Future<void> _exportPdf({required bool forcePro}) async {
+  Future<void> _exportPdf() async {
     final l10n = AppLocalizations.of(context)!;
     final bytes = await PdfExport.generateAndPrintProposal(
       l10n: l10n,
       companyName: widget.companyName,
       logoUrl: widget.logoUrl,
-      isProUser: forcePro ? _isProUser : false,
+      isProUser: _isProUser,
       pvCapacity: widget.pvCapacity,
       batteryCapacity: widget.batteryCapacity,
       totalCapex: widget.totalCapex,

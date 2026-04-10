@@ -53,15 +53,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
   double _annualGeneration = 0.0;
 
   bool _isLoading = false;
+  bool _isProUser = false;
   String _errorMessage = '';
   Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
+    _loadUserTier();
     // 页面初始化时延迟一帧执行，以确保能拿到安全的 context 用于多语言
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchRealData();
+    });
+  }
+
+  Future<void> _loadUserTier() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isPro = (prefs.getString('user_tier') ?? "FREE") == "PRO";
+    if (!mounted) return;
+    setState(() {
+      _isProUser = isPro;
     });
   }
 
@@ -251,21 +262,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         actions: [
-          TextButton.icon(
-            style: TextButton.styleFrom(
-              backgroundColor: const Color(0xFFFFF2CC),
-              foregroundColor: const Color(0xFF8A5B00),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          if (!_isProUser) ...[
+            TextButton.icon(
+              style: TextButton.styleFrom(
+                backgroundColor: const Color(0xFFFFF2CC),
+                foregroundColor: const Color(0xFF8A5B00),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+              ),
+              onPressed: _showProPaywall,
+              icon: const Icon(Icons.workspace_premium, size: 18),
+              label: Text(
+                l10n.upgradeToProTitle,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
             ),
-            onPressed: _showProPaywall,
-            icon: const Icon(Icons.workspace_premium, size: 18),
-            label: Text(
-              l10n.upgradeToProTitle,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-            ),
-          ),
-          const SizedBox(width: 8),
+            const SizedBox(width: 8),
+          ],
 
 
           IconButton(
@@ -856,7 +869,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Navigator.of(context, rootNavigator: true).pop();
 
     if (newTier == "PRO") {
-      setState(() {});
+      await _loadUserTier();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.paymentSuccessPro),
@@ -897,7 +910,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 if (!mounted) return;
                 Navigator.pop(dialogContext);
                 if (refreshedTier == "PRO") {
-                  setState(() {});
+                  await _loadUserTier();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(l10n.paymentSuccessPro),
