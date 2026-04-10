@@ -125,24 +125,10 @@ def create_checkout_session(
             status_code=502,
             detail="Paddle did not return checkout.url; check catalog price and default payment link in Paddle.",
         )
+   
+    # 与前端约定字段名保持不变，降低改动面asd
 
-    # 防御性校验：如果返回的是你自己的回跳域名（仅带 _ptxn），说明 Paddle Default Payment Link 配错了，
-    # 当前 URL 不是托管收银台地址，前端会被立即拦截并关闭 WebView。
-    if url.startswith("https://api.dothings.one") and "_ptxn=" in url:
-        logger.error(
-            "Paddle checkout.url is misconfigured Default Payment Link, got callback-like url: %s",
-            url,
-        )
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "Paddle Default Payment Link is misconfigured. "
-                "Please set it to a Paddle-hosted checkout link in Paddle Dashboard, "
-                "not the callback domain (https://api.dothings.one)."
-            ),
-        )
 
-    # 与前端约定字段名保持不变，降低改动面
     return {"checkout_url": url}
 
 
