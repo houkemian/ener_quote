@@ -207,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 return;
                               }
 
-                              final newTier = await ApiClient().refreshUserToken();
+                              final newTier = await ApiClient().refreshUserTierWithRetry();
                               if (newTier == "PRO") {
                                 setState(() {
                                   _userTier = "PRO";

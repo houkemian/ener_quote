@@ -139,6 +139,23 @@ class ApiClient {
     }
   }
 
+  /// 支付完成后短轮询刷新权限，避免 webhook 落库稍有延迟导致误判 pending。
+  Future<String?> refreshUserTierWithRetry({
+    int maxAttempts = 6,
+    Duration retryInterval = const Duration(seconds: 2),
+  }) async {
+    for (var i = 0; i < maxAttempts; i++) {
+      final tier = await refreshUserToken();
+      if (tier == "PRO") {
+        return tier;
+      }
+      if (i < maxAttempts - 1) {
+        await Future.delayed(retryInterval);
+      }
+    }
+    return "FREE";
+  }
+
   // 🌟 动态拉取云端城市列表
   Future<List<dynamic>> getSupportedCities() async {
     try {
