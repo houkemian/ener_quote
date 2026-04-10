@@ -1,9 +1,10 @@
+import html
 import json
 import logging
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_current_user_payload, TokenPayload
@@ -24,6 +25,50 @@ from fastapi.responses import HTMLResponse
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# /checkout-ui 页面文案（与 Flutter app 语言对齐：en / zh / es / pt）
+_CHECKOUT_UI_I18N: dict[str, dict[str, str]] = {
+    "en": {
+        "html_lang": "en",
+        "title": "Secure Checkout",
+        "heading": "Connecting to secure payment…",
+        "hint": "If the checkout does not open, check your network.",
+    },
+    "zh": {
+        "html_lang": "zh-Hans",
+        "title": "安全收银",
+        "heading": "正在连接安全支付网关…",
+        "hint": "若收银台未自动弹出，请检查网络连接。",
+    },
+    "es": {
+        "html_lang": "es",
+        "title": "Pago seguro",
+        "heading": "Conectando al pago seguro…",
+        "hint": "Si no aparece el checkout, comprueba tu conexión.",
+    },
+    "pt": {
+        "html_lang": "pt-BR",
+        "title": "Checkout seguro",
+        "heading": "Conectando ao pagamento seguro…",
+        "hint": "Se o checkout não abrir, verifique sua rede.",
+    },
+}
+
+
+def _resolve_checkout_ui_lang(request: Request, lang: str | None) -> str:
+    if lang:
+        code = lang.strip().split("-")[0].lower()
+        if code in _CHECKOUT_UI_I18N:
+            return code
+    accept = request.headers.get("accept-language") or ""
+    for segment in accept.split(","):
+        token = segment.strip().split(";")[0].strip()
+        if not token:
+            continue
+        code = token.split("-")[0].lower()
+        if code in _CHECKOUT_UI_I18N:
+            return code
+    return "en"
 
 
 def _paddle_headers() -> dict[str, str]:
@@ -181,16 +226,31 @@ async def paddle_webhook(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/checkout-ui")
-def render_paddle_checkout_ui():
+def render_paddle_checkout_ui(
+    request: Request,
+    lang: str | None = Query(
+        default=None,
+        description="UI language: en, zh, es, pt (falls back to Accept-Language, then English)",
+    ),
+):
     """
     专门为 Flutter WebView 提供的 HTML 宿主页面。
     Paddle API 只要跳转到这里，Paddle.js 就会接管并自动弹窗！
+
+    国际化：优先使用查询参数 ``lang``（如 ``?lang=zh``），否则根据 ``Accept-Language``，默认英文。
     """
     if not PADDLE_CLIENT_TOKEN:
         raise HTTPException(
             status_code=500,
             detail="PADDLE_CLIENT_TOKEN not configured (Paddle Dashboard client-side token)",
         )
+
+    ui_lang = _resolve_checkout_ui_lang(request, lang)
+    ui = _CHECKOUT_UI_I18N[ui_lang]
+    html_lang = html.escape(ui["html_lang"])
+    page_title = html.escape(ui["title"])
+    heading = html.escape(ui["heading"])
+    hint = html.escape(ui["hint"])
 
     js_env = paddle_js_environment()
     success_url = json.dumps(PADDLE_CHECKOUT_SUCCESS_REDIRECT_URL)
@@ -200,11 +260,11 @@ def render_paddle_checkout_ui():
 
     html_content = f"""
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="{html_lang}">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Secure Checkout</title>
+        <title>{page_title}</title>
         <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
         <script>
             Paddle.Environment.set({js_env_literal});
@@ -223,8 +283,8 @@ def render_paddle_checkout_ui():
     </head>
     <body style="background-color: #f4f5f7; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif;">
         <div style="text-align: center; color: #666;">
-            <h2>正在安全连接支付网关...</h2>
-            <p>如果收银台没有自动弹出，请检查网络。</p>
+            <h2>{heading}</h2>
+            <p>{hint}</p>
         </div>
     </body>
     </html>
