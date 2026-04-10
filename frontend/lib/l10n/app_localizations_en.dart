@@ -319,6 +319,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tierPro => '👑 PRO Subscription Member';
 
   @override
+  String get accountEmailLabel => 'Account Email: ';
+
+  @override
   String get upgradeNow => 'Upgrade Now';
 
   @override

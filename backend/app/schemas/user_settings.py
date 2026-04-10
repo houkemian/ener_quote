@@ -13,6 +13,7 @@ class UserSettingsUpdate(BaseModel):
 # 返回给前端的完整配置数据
 class UserSettingsResponse(BaseModel):
     user_id: str
+    account_email: Optional[str] = None
     company_name: str
     logo_url: Optional[str]
     pv_cost_per_kw: float

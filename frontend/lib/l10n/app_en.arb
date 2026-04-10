@@ -136,6 +136,7 @@
     "confirmLogout": "Logout",
     "tierFree": "Current Plan: FREE Edition",
     "tierPro": "👑 PRO Subscription Member",
+    "accountEmailLabel": "Account Email: ",
     "upgradeNow": "Upgrade Now",
     "forgotPasswordTitle": "Reset Password",
     "enterEmailPrompt": "Enter your registered email address",

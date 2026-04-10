@@ -4,7 +4,6 @@ import os
 from fastapi import FastAPI, Depends
 from fastapi.responses import FileResponse
 
-logging.getLogger("app").setLevel(logging.INFO)
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import simulation, auth # 引入 auth
 from app.api.deps import get_current_user_payload
@@ -21,6 +20,32 @@ from app.models.user_settings import UserSettings
 # 🌟 2. 导入我们刚刚写好的 settings 路由
 from app.api.v1.settings import router as settings_router
 from app.api.v1 import payment  # 🌟 新增：引入咱们写好的支付模块
+
+
+def _setup_logging() -> logging.Logger:
+    """Ensure app logger prints under uvicorn and direct runs."""
+    app_logger = logging.getLogger("app")
+    app_logger.setLevel(logging.INFO)
+
+    uvicorn_logger = logging.getLogger("uvicorn.error")
+    if uvicorn_logger.handlers:
+        app_logger.handlers = uvicorn_logger.handlers
+        app_logger.propagate = False
+    elif not app_logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(
+            logging.Formatter(
+                "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+            )
+        )
+        app_logger.addHandler(handler)
+        app_logger.propagate = False
+
+    return app_logger
+
+
+logger = _setup_logging()
+logger.info("App logger initialized.")
 
 
 # 1. 初始化 FastAPI 应用，并配置专业的 Swagger 文档信息

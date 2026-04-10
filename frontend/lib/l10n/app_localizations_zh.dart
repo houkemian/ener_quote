@@ -314,6 +314,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tierPro => '👑 尊贵的 PRO 订阅会员';
 
   @override
+  String get accountEmailLabel => '账号邮箱：';
+
+  @override
   String get upgradeNow => '立即升级';
 
   @override

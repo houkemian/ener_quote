@@ -668,6 +668,12 @@ abstract class AppLocalizations {
   /// **'👑 尊贵的 PRO 订阅会员'**
   String get tierPro;
 
+  /// No description provided for @accountEmailLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'账号邮箱：'**
+  String get accountEmailLabel;
+
   /// No description provided for @upgradeNow.
   ///
   /// In zh, this message translates to:

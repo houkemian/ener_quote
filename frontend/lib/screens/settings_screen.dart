@@ -17,6 +17,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
 
   String _userTier = "FREE"; // 🌟 新增身份变量
+  String _currentAccount = '-';
   bool _isUpgrading = false; // 🌟 新增：是否正在呼叫收银台
 
   // 控制器
@@ -41,10 +42,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final response = await ApiClient().dio.get('/settings/me');
       final data = response.data;
       final prefs = await SharedPreferences.getInstance();
+      final account = (data['account_email'] ?? '-').toString().trim();
 
 
       setState(() {
         _userTier = prefs.getString('user_tier') ?? "FREE"; // 🌟 捞出身价
+        _currentAccount = account.isEmpty ? '-' : account;
         _companyNameController.text = data['company_name'] ?? '';
         _logoUrlController.text = data['logo_url'] ?? '';
         _pvCostController.text = data['pv_cost_per_kw']?.toString() ?? '800.0';
@@ -64,6 +67,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // 如果断网或失败，降级使用本地缓存 (保持你原有的逻辑不变)
       final prefs = await SharedPreferences.getInstance();
       setState(() {
+        _userTier = prefs.getString('user_tier') ?? "FREE";
+        _currentAccount = '-';
         _companyNameController.text = prefs.getString('company_name') ?? '';
         _pvCostController.text = prefs.getDouble('pv_cost')?.toString() ?? '800.0';
         _logoUrlController.text = prefs.getString('logo_url') ?? '';
@@ -151,13 +156,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      _userTier == "PRO" ? l10n.tierPro : l10n.tierFree,
-                      style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: _userTier == "PRO" ? AppColors.onSecondary : AppColors.onSurfaceVariant,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _userTier == "PRO" ? l10n.tierPro : l10n.tierFree,
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: _userTier == "PRO" ? AppColors.onSecondary : AppColors.onSurfaceVariant,
+                            ),
+                      ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${l10n.accountEmailLabel}$_currentAccount',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: _userTier == "PRO" ? AppColors.onSecondary : AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     if (_userTier != "PRO")

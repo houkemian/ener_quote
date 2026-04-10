@@ -11,6 +11,7 @@ from app.api.deps import get_current_user_payload
 
 from app.models.user_settings import UserSettings
 from app.schemas.user_settings import UserSettingsUpdate, UserSettingsResponse
+from app.modules.iam.models import User
 
 router = APIRouter(prefix="/settings", tags=["业务配置 - Settings"])
 
@@ -32,7 +33,16 @@ def get_my_settings(
     """获取当前登录用户的专属配置"""
     user_id = current_user.user_id # 根据你 JWT 里的实际主键字段名来定
     settings = get_or_create_settings(db, user_id)
-    return settings
+    user = db.query(User).filter(User.id == user_id).first()
+    return {
+        "user_id": settings.user_id,
+        "account_email": user.email if user else None,
+        "company_name": settings.company_name,
+        "logo_url": settings.logo_url,
+        "pv_cost_per_kw": settings.pv_cost_per_kw,
+        "ess_cost_per_kwh": settings.ess_cost_per_kwh,
+        "margin_pct": settings.margin_pct,
+    }
 
 @router.put("/me", response_model=UserSettingsResponse)
 def update_my_settings(
@@ -52,6 +62,15 @@ def update_my_settings(
 
     db.commit()
     db.refresh(settings)
+    user = db.query(User).filter(User.id == user_id).first()
     
     print(f"✅ 用户 {user_id} 的业务配置已更新。")
-    return settings
+    return {
+        "user_id": settings.user_id,
+        "account_email": user.email if user else None,
+        "company_name": settings.company_name,
+        "logo_url": settings.logo_url,
+        "pv_cost_per_kw": settings.pv_cost_per_kw,
+        "ess_cost_per_kwh": settings.ess_cost_per_kwh,
+        "margin_pct": settings.margin_pct,
+    }
