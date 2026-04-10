@@ -86,6 +86,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportProposal => 'Export Proposal';
 
   @override
+  String get pdfExportFreeOptionTitle => '[Free Export]';
+
+  @override
+  String get pdfExportFreeOptionSubtitle =>
+      'Includes a large EnerQuote watermark and excludes ROI financial analysis';
+
+  @override
+  String get pdfExportProOptionTitle =>
+      '[⭐ Upgrade to Pro for clean professional export]';
+
+  @override
+  String get pdfExportProOptionSubtitle =>
+      'Unlock watermark-free export and full financial report in one tap';
+
+  @override
   String get kpiTotalCapex => 'Total CAPEX';
 
   @override
@@ -146,25 +161,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get upgradeToProSubtitle =>
-      'Generate enterprise-grade PDF proposals with your exclusive logo, custom margins, and no watermarks to close deals instantly!';
+      'Unlock custom branding, editable cost & margin settings, full 25-year ROI cash flow charts, and watermark-free professional PDFs.';
 
   @override
-  String get proFeatureLogo => 'Custom company logo and name';
+  String get proFeatureLogo => 'Custom company logo and branding';
 
   @override
   String get proFeatureCost => 'Custom base procurement costs and margins';
 
   @override
+  String get proFeatureROI => 'Unlock 25-year ROI & cash flow charts';
+
+  @override
+  String get proFeatureNoWatermark =>
+      'Remove all watermarks for pure professional PDFs';
+
+  @override
   String get proFeaturePvgis => 'Unlock 8760-hour PVGIS satellite weather data';
 
   @override
-  String get redirectingToPayment => 'Redirecting to payment gateway...';
+  String get redirectingToPayment =>
+      'Preparing secure checkout... Please complete payment in the next screen.';
 
   @override
   String get unlockProBtn => 'Unlock Now (\$19.9/mo)';
 
   @override
   String get settingsTitle => 'Workspace Settings';
+
+  @override
+  String get advancedCostCalculatorTitle => 'Advanced Cost & Margin Calculator';
+
+  @override
+  String get tapToExpandCostSettings =>
+      'Tap to expand cost and margin settings';
+
+  @override
+  String get proBrandingPaywallSubtitle =>
+      'Upgrade to Pro and turn every proposal into your own branded asset.';
+
+  @override
+  String get proProfitPaywallSubtitle =>
+      'Upgrade to Pro and precisely control hidden profit margins on every deal.';
 
   @override
   String get brandingSection => 'Branding & Logo';
@@ -191,7 +229,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveSettingsBtn => 'Save Configuration';
 
   @override
-  String get saveSuccess => '✅ Settings saved locally!';
+  String get saveSuccess => '✅ Workspace settings saved successfully.';
 
   @override
   String get pdfProposalTitle =>
@@ -320,6 +358,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountEmailLabel => 'Account Email: ';
+
+  @override
+  String get proExpireDateLabel => 'Expires on: ';
 
   @override
   String get upgradeNow => 'Upgrade Now';

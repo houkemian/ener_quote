@@ -1,5 +1,5 @@
 # 文件路径: app/api/v1/settings.py
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.api.deps import get_db
 from app.api.deps import get_current_user_payload, TokenPayload
@@ -94,9 +94,15 @@ def update_my_settings(
     """修改当前用户的专属配置"""
     user_id = current_user.user_id
     settings = get_or_create_settings(db, user_id)
+    user = db.query(User).filter(User.id == user_id).first()
+    effective_tier = _resolve_effective_tier(user)
 
     # 动态更新前端传过来的非空字段
     update_data = settings_in.dict(exclude_unset=True)
+    restricted_cost_keys = {"pv_cost_per_kw", "ess_cost_per_kwh", "margin_pct"}
+    if effective_tier != "PRO" and any(key in update_data for key in restricted_cost_keys):
+        raise HTTPException(status_code=403, detail="PRO required for cost settings")
+
     for key, value in update_data.items():
         setattr(settings, key, value)
 

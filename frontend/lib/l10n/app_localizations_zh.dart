@@ -84,6 +84,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get exportProposal => '导出建议书 (Export Proposal)';
 
   @override
+  String get pdfExportFreeOptionTitle => '[免费导出]';
+
+  @override
+  String get pdfExportFreeOptionSubtitle => '带有巨大的 EnerQuote 水印，且不包含 ROI 财务分析';
+
+  @override
+  String get pdfExportProOptionTitle => '[⭐ 升级 Pro 导出纯净专业版]';
+
+  @override
+  String get pdfExportProOptionSubtitle => '一键解锁无水印与完整财报';
+
+  @override
   String get kpiTotalCapex => '系统总造价 (CAPEX)';
 
   @override
@@ -144,25 +156,43 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get upgradeToProSubtitle =>
-      '生成带有贵司专属 Logo、自定义利润率和隐藏水印的商业级 PDF 建议书，立刻促成交易！';
+      '解锁品牌白标、自定义成本与利润率、25 年 ROI 现金流图表，以及无水印的专业级 PDF 建议书。';
 
   @override
-  String get proFeatureLogo => '自定义企业 Logo 与公司名称';
+  String get proFeatureLogo => '自定义企业 Logo 与品牌专属色';
 
   @override
-  String get proFeatureCost => '自定义底层采购成本与利润率';
+  String get proFeatureCost => '自定义底层采购成本与隐形利润率';
+
+  @override
+  String get proFeatureROI => '解锁 25 年投资回报率 (ROI) 与现金流图表';
+
+  @override
+  String get proFeatureNoWatermark => '移除所有平台水印，生成纯净专业 PDF';
 
   @override
   String get proFeaturePvgis => '解锁 8760 小时 PVGIS 卫星气候数据';
 
   @override
-  String get redirectingToPayment => '即将跳转支付网关...';
+  String get redirectingToPayment => '正在为您准备安全收银台，请在下一页完成支付。';
 
   @override
   String get unlockProBtn => '立刻解锁 (\$19.9/月)';
 
   @override
   String get settingsTitle => '工作台设置';
+
+  @override
+  String get advancedCostCalculatorTitle => '高级成本与利润率计算器';
+
+  @override
+  String get tapToExpandCostSettings => '点击展开成本与利润率设置';
+
+  @override
+  String get proBrandingPaywallSubtitle => '升级 Pro，让每一份报价单都成为您的专属品牌资产';
+
+  @override
+  String get proProfitPaywallSubtitle => '升级 Pro，精准掌控每一单的隐性利润空间';
 
   @override
   String get brandingSection => '企业品牌与 Logo';
@@ -189,7 +219,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get saveSettingsBtn => '保存配置';
 
   @override
-  String get saveSuccess => '✅ 设置已保存在本地！';
+  String get saveSuccess => '✅ 工作台设置已成功保存。';
 
   @override
   String get pdfProposalTitle => '工商业光储投资收益建议书';
@@ -315,6 +345,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get accountEmailLabel => '账号邮箱：';
+
+  @override
+  String get proExpireDateLabel => '到期时间：';
 
   @override
   String get upgradeNow => '立即升级';

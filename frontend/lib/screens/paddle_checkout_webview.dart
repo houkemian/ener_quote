@@ -50,7 +50,13 @@ class _PaddleCheckoutWebViewState extends State<PaddleCheckoutWebView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Secure Checkout'),
+        title: const Row(
+          children: [
+            Icon(Icons.lock, size: 18),
+            SizedBox(width: 8),
+            Text('Secure Checkout'),
+          ],
+        ),
       ),
       body: WebViewWidget(controller: _controller),
     );

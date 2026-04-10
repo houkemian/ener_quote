@@ -236,6 +236,30 @@ abstract class AppLocalizations {
   /// **'导出建议书 (Export Proposal)'**
   String get exportProposal;
 
+  /// No description provided for @pdfExportFreeOptionTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'[免费导出]'**
+  String get pdfExportFreeOptionTitle;
+
+  /// No description provided for @pdfExportFreeOptionSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'带有巨大的 EnerQuote 水印，且不包含 ROI 财务分析'**
+  String get pdfExportFreeOptionSubtitle;
+
+  /// No description provided for @pdfExportProOptionTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'[⭐ 升级 Pro 导出纯净专业版]'**
+  String get pdfExportProOptionTitle;
+
+  /// No description provided for @pdfExportProOptionSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'一键解锁无水印与完整财报'**
+  String get pdfExportProOptionSubtitle;
+
   /// No description provided for @kpiTotalCapex.
   ///
   /// In zh, this message translates to:
@@ -341,20 +365,32 @@ abstract class AppLocalizations {
   /// No description provided for @upgradeToProSubtitle.
   ///
   /// In zh, this message translates to:
-  /// **'生成带有贵司专属 Logo、自定义利润率和隐藏水印的商业级 PDF 建议书，立刻促成交易！'**
+  /// **'解锁品牌白标、自定义成本与利润率、25 年 ROI 现金流图表，以及无水印的专业级 PDF 建议书。'**
   String get upgradeToProSubtitle;
 
   /// No description provided for @proFeatureLogo.
   ///
   /// In zh, this message translates to:
-  /// **'自定义企业 Logo 与公司名称'**
+  /// **'自定义企业 Logo 与品牌专属色'**
   String get proFeatureLogo;
 
   /// No description provided for @proFeatureCost.
   ///
   /// In zh, this message translates to:
-  /// **'自定义底层采购成本与利润率'**
+  /// **'自定义底层采购成本与隐形利润率'**
   String get proFeatureCost;
+
+  /// No description provided for @proFeatureROI.
+  ///
+  /// In zh, this message translates to:
+  /// **'解锁 25 年投资回报率 (ROI) 与现金流图表'**
+  String get proFeatureROI;
+
+  /// No description provided for @proFeatureNoWatermark.
+  ///
+  /// In zh, this message translates to:
+  /// **'移除所有平台水印，生成纯净专业 PDF'**
+  String get proFeatureNoWatermark;
 
   /// No description provided for @proFeaturePvgis.
   ///
@@ -365,7 +401,7 @@ abstract class AppLocalizations {
   /// No description provided for @redirectingToPayment.
   ///
   /// In zh, this message translates to:
-  /// **'即将跳转支付网关...'**
+  /// **'正在为您准备安全收银台，请在下一页完成支付。'**
   String get redirectingToPayment;
 
   /// No description provided for @unlockProBtn.
@@ -379,6 +415,30 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'工作台设置'**
   String get settingsTitle;
+
+  /// No description provided for @advancedCostCalculatorTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'高级成本与利润率计算器'**
+  String get advancedCostCalculatorTitle;
+
+  /// No description provided for @tapToExpandCostSettings.
+  ///
+  /// In zh, this message translates to:
+  /// **'点击展开成本与利润率设置'**
+  String get tapToExpandCostSettings;
+
+  /// No description provided for @proBrandingPaywallSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'升级 Pro，让每一份报价单都成为您的专属品牌资产'**
+  String get proBrandingPaywallSubtitle;
+
+  /// No description provided for @proProfitPaywallSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'升级 Pro，精准掌控每一单的隐性利润空间'**
+  String get proProfitPaywallSubtitle;
 
   /// No description provided for @brandingSection.
   ///
@@ -431,7 +491,7 @@ abstract class AppLocalizations {
   /// No description provided for @saveSuccess.
   ///
   /// In zh, this message translates to:
-  /// **'✅ 设置已保存在本地！'**
+  /// **'✅ 工作台设置已成功保存。'**
   String get saveSuccess;
 
   /// No description provided for @pdfProposalTitle.
@@ -673,6 +733,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'账号邮箱：'**
   String get accountEmailLabel;
+
+  /// No description provided for @proExpireDateLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'到期时间：'**
+  String get proExpireDateLabel;
 
   /// No description provided for @upgradeNow.
   ///

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
-import '../utils/pdf_export.dart';
 import '../core/network/api_client.dart';
 import '../core/auth/token_manager.dart';
 import 'package:dio/dio.dart';
@@ -252,6 +251,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         actions: [
+          TextButton.icon(
+            style: TextButton.styleFrom(
+              backgroundColor: const Color(0xFFFFF2CC),
+              foregroundColor: const Color(0xFF8A5B00),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+            ),
+            onPressed: _showProPaywall,
+            icon: const Icon(Icons.workspace_premium, size: 18),
+            label: Text(
+              l10n.upgradeToProTitle,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+          ),
+          const SizedBox(width: 8),
 
 
           IconButton(
@@ -266,38 +280,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
               String currentUserTier = prefs.getString('user_tier') ?? "FREE";
               String customCompanyName = prefs.getString('company_name') ?? "PV+ESS QUOTE MASTER";
               String customLogoUrl = prefs.getString('logo_url') ?? ""; // 👈 获取 Logo 链接
+              final bool isPro = currentUserTier == "PRO";
               print("👉 [2. 主页读取] 导出 PDF 前，从本地拿到的 Logo 长度: ${customLogoUrl.length}");
 
-              // 🌟 2. 终极付费墙拦截！
-              if (currentUserTier != "PRO") {
-                _showProPaywall();
-              } else {
-                // ✅ PRO 用户：直接放行！把他的定制公司名传给 PDF 引擎
-
-                // 1. 拿到生成的 PDF 字节流
-                final bytes = await PdfExport.generateAndPrintProposal(
-                  l10n: l10n,
-                  companyName: customCompanyName,
-                  logoUrl: customLogoUrl,        // 👈 传入 Logo
-                  pvCapacity: _pvCapacity,
-                  batteryCapacity: _batteryCapacity,
-                  totalCapex: _totalCapex,
-                  npv: _npv,
-                  irr: _irr,
-                  payback: _payback,
-                  fullCashFlowData: _fullCashFlowData,
-                );
-
-                if (!mounted) return;
-
-                // 🌟 2. 跳转到高大上的预览页！
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => PdfPreviewScreen(pdfBytes: bytes),
+              // 1. 先进入类 PDF 的预览页，再由预览页导出真实 PDF 文件
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => PdfPreviewScreen(
+                    isProUser: isPro,
+                    companyName: customCompanyName,
+                    logoUrl: customLogoUrl,
+                    pvCapacity: _pvCapacity,
+                    batteryCapacity: _batteryCapacity,
+                    totalCapex: _totalCapex,
+                    npv: _npv,
+                    irr: _irr,
+                    payback: _payback,
+                    fullCashFlowData: _fullCashFlowData,
                   ),
-                );
-
-              }
+                ),
+              );
             },
           ),
           // 🌟 新增的设置齿轮按钮
@@ -704,12 +706,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.workspace_premium, size: 64, color: AppColors.secondary),
-                  const SizedBox(height: 16),
-                  Text(
-                    l10n.upgradeToProTitle, // 🌟 动态标题
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.workspace_premium, size: 28, color: AppColors.secondary),
+                      const SizedBox(width: 10),
+                      Text(
+                        l10n.upgradeToProTitle, // 🌟 动态标题
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -720,8 +726,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: 24),
 
                   // 🌟 动态权益列表
-                  _buildProFeatureRow(Icons.check_circle, l10n.proFeatureLogo, AppColors.secondary),
-                  _buildProFeatureRow(Icons.check_circle, l10n.proFeatureCost, AppColors.secondary),
+                  _buildProFeatureRow(Icons.check_circle, l10n.proFeatureLogo, AppColors.success),
+                  _buildProFeatureRow(Icons.check_circle, l10n.proFeatureCost, AppColors.success),
+                  _buildProFeatureRow(Icons.check_circle, l10n.proFeatureROI, AppColors.success),
+                  _buildProFeatureRow(Icons.check_circle, l10n.proFeatureNoWatermark, AppColors.success),
                   // _buildProFeatureRow(Icons.check_circle, l10n.proFeaturePvgis, Colors.amber),
 
                   const SizedBox(height: 32),
@@ -733,7 +741,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                       // 2. 告诉用户稍等
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(l10n.redirectingToPayment)),
+                        SnackBar(
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: const Color(0xFF1F6FEB),
+                          duration: const Duration(seconds: 3),
+                          content: Row(
+                            children: [
+                              const Icon(Icons.lock_outline, color: Colors.white, size: 18),
+                              const SizedBox(width: 10),
+                              Expanded(child: Text(l10n.redirectingToPayment)),
+                            ],
+                          ),
+                        ),
                       );
 
                       try {

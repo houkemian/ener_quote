@@ -3,17 +3,21 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 // 🌟 引入刚生成的实体多语言文件
 import '../l10n/app_localizations.dart';
-import 'package:dio/dio.dart'; // 🌟 新增引入
 import 'package:http/http.dart' as http; // 🌟 引入 http 库
 
 class PdfExport {
+  static const double _revDirectSolar = 2150.00;
+  static const double _revTou = 1840.00;
+  static const double _revPeakShaving = 1069.16;
+  static const double _revBackup = 4500.00;
+
   static Future<Uint8List> generateAndPrintProposal({
     required AppLocalizations l10n,
     required String companyName,
     required String logoUrl,
+    required bool isProUser,
     required double pvCapacity,
     required double batteryCapacity,
     required double totalCapex,
@@ -22,7 +26,9 @@ class PdfExport {
     required double payback,
     required List<dynamic> fullCashFlowData,
   }) async {
-    print("👉 [3. PDF 引擎] 最终传进 PDF 引擎的 Logo 长度: ${logoUrl.length}");
+    final effectiveCompanyName = isProUser ? companyName : "EnerQuote System";
+    final effectiveLogoUrl = isProUser ? logoUrl : "";
+    print("👉 [3. PDF 引擎] 最终传进 PDF 引擎的 Logo 长度: ${effectiveLogoUrl.length}");
     final font = pw.Font.ttf(await rootBundle.load('assets/fonts/NotoSansSC-VariableFont_wght.ttf'));
     final pdf = pw.Document(
       theme: pw.ThemeData.withFont(
@@ -37,11 +43,11 @@ class PdfExport {
     pw.ImageProvider? logoImage;
     String logoErrorMessage = "";
 
-    if (logoUrl.isNotEmpty) {
+    if (effectiveLogoUrl.isNotEmpty) {
       try {
-        if (logoUrl.startsWith('http')) {
+        if (effectiveLogoUrl.startsWith('http')) {
           final response = await http.get(
-            Uri.parse(logoUrl),
+            Uri.parse(effectiveLogoUrl),
             headers: {
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
               'Accept': 'image/png,image/jpeg,image/*;q=0.8',
@@ -55,7 +61,7 @@ class PdfExport {
           }
         } else {
           // 🌟 Base64 终极净化：剔除空白，并自动补齐末尾缺失的等号！
-          String base64String = logoUrl.contains(',') ? logoUrl.split(',').last : logoUrl;
+          String base64String = effectiveLogoUrl.contains(',') ? effectiveLogoUrl.split(',').last : effectiveLogoUrl;
           base64String = base64String.replaceAll(RegExp(r'\s+'), '');
 
           int padding = base64String.length % 4;
@@ -74,8 +80,13 @@ class PdfExport {
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(32),
+        pageTheme: pw.PageTheme(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(32),
+          // FREE 用户：每一页都覆盖全局浅色对角水印
+          buildBackground: (context) =>
+              isProUser ? pw.SizedBox() : _buildFreeWatermark(),
+        ),
         header: (pw.Context context) {
           return pw.Column(
             children: [
@@ -99,7 +110,7 @@ class PdfExport {
                         pw.SizedBox(width: 12),
                       ],
                       pw.Text(
-                        companyName,
+                        effectiveCompanyName,
                         style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.teal800),
                       ),
                     ],
@@ -115,7 +126,7 @@ class PdfExport {
             ],
           );
         },
-        // 🌟 页脚：多语言免责与页码
+        // 🌟 页脚：按订阅等级切换品牌与声明
         footer: (pw.Context context) {
           return pw.Column(
             children: [
@@ -124,7 +135,10 @@ class PdfExport {
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text(l10n.pdfConfidential, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+                  pw.Text(
+                    isProUser ? l10n.pdfConfidential : "EnerQuote System",
+                    style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey),
+                  ),
                   pw.Text(
                     l10n.pdfPageOf(context.pageNumber.toString(), context.pagesCount.toString()),
                     style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey),
@@ -134,78 +148,23 @@ class PdfExport {
             ],
           );
         },
-        build: (pw.Context context) => [
-          // 1. 报告主标题
-          pw.SizedBox(height: 20),
-          pw.Text(l10n.pdfProposalTitle, style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
-          pw.SizedBox(height: 20),
-
-          // 2. 核心系统配置
-          pw.Text(l10n.pdfSystemConfig, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.teal800)),
-          pw.SizedBox(height: 10),
-          pw.Bullet(text: '${l10n.pdfPvArray}: ${pvCapacity.toStringAsFixed(1)} kWp'),
-          pw.Bullet(text: '${l10n.pdfEssBattery}: ${batteryCapacity.toStringAsFixed(1)} kWh'),
-          pw.Bullet(text: l10n.pdfGridPolicy),
-          pw.SizedBox(height: 8),
-          pw.Text(
-            '${l10n.pdfTotalCapex}: \$${totalCapex.toStringAsFixed(0)}',
-            style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.red800),
-          ),
-          pw.SizedBox(height: 20),
-
-          // 3. 高级财务指标 (KPI)
-          pw.Text(l10n.pdfFinancialHighlights, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.teal800)),
-          pw.SizedBox(height: 10),
-          pw.Container(
-            padding: const pw.EdgeInsets.all(12),
-            decoration: pw.BoxDecoration(
-              color: PdfColors.grey100,
-              border: pw.Border.all(color: PdfColors.grey300),
-              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
-            ),
-            child: pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-              children: [
-                _buildKpiItem(l10n.pdfNpv, '\$${npv.toStringAsFixed(0)}'),
-                _buildKpiItem(l10n.pdfIrr, '${irr.toStringAsFixed(1)}%'),
-                _buildKpiItem(l10n.pdfPayback, '${payback.toStringAsFixed(1)} ${l10n.pdfYears}'),
-              ],
-            ),
-          ),
-          pw.SizedBox(height: 30),
-
-          // 4. EMS 策略拆解
-          pw.Text(l10n.pdfEmsStrategyTitle, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.teal800)),
-          pw.SizedBox(height: 10),
-          pw.Container(
-            padding: const pw.EdgeInsets.all(12),
-            decoration: pw.BoxDecoration(
-              color: PdfColors.white,
-              border: pw.Border.all(color: PdfColors.teal200, width: 1),
-              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
-            ),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text(l10n.pdfEmsStrategyDesc, style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic, color: PdfColors.grey700)),
-                pw.SizedBox(height: 12),
-                _buildRevenueStackItem(l10n.pdfRevDirectSolar, l10n.pdfRevDirectSolarDesc, '\$2,150.00'),
-                pw.Divider(color: PdfColors.grey200),
-                _buildRevenueStackItem(l10n.pdfRevTou, l10n.pdfRevTouDesc, '\$1,840.00', isHighlight: true),
-                pw.Divider(color: PdfColors.grey200),
-                _buildRevenueStackItem(l10n.pdfRevPeakShaving, l10n.pdfRevPeakShavingDesc, '\$1,069.16', isHighlight: true),
-                pw.Divider(color: PdfColors.grey200),
-                _buildRevenueStackItem(l10n.pdfRevBackup, l10n.pdfRevBackupDesc, '\$4,500.00'),
-              ],
-            ),
-          ),
-          pw.SizedBox(height: 30),
-
-          // 5. 现金流表
-          pw.Text(l10n.pdfCashFlowTitle, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.teal800)),
-          pw.SizedBox(height: 10),
-          _buildCashFlowTable(fullCashFlowData, l10n),
-        ],
+        build: (pw.Context context) => isProUser
+            ? _buildProSections(
+                l10n: l10n,
+                pvCapacity: pvCapacity,
+                batteryCapacity: batteryCapacity,
+                totalCapex: totalCapex,
+                npv: npv,
+                irr: irr,
+                payback: payback,
+                fullCashFlowData: fullCashFlowData,
+              )
+            : _buildFreeSections(
+                l10n: l10n,
+                pvCapacity: pvCapacity,
+                batteryCapacity: batteryCapacity,
+                totalCapex: totalCapex,
+              ),
       ),
     );
 
@@ -220,6 +179,182 @@ class PdfExport {
         pw.SizedBox(height: 4),
         pw.Text(value, style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.teal900)),
       ],
+    );
+  }
+
+  // SaaS 付费墙：FREE 版只展示基础物理方案，并用占位内容提示升级。
+  static List<pw.Widget> _buildFreeSections({
+    required AppLocalizations l10n,
+    required double pvCapacity,
+    required double batteryCapacity,
+    required double totalCapex,
+  }) {
+    return [
+      pw.SizedBox(height: 20),
+      pw.Text(l10n.pdfProposalTitle, style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+      pw.SizedBox(height: 20),
+      _buildSystemConfigurationSection(
+        l10n: l10n,
+        pvCapacity: pvCapacity,
+        batteryCapacity: batteryCapacity,
+        totalCapex: totalCapex,
+      ),
+      pw.SizedBox(height: 20),
+      _buildFinancialPaywallPlaceholder(),
+      pw.SizedBox(height: 20),
+      _buildEmsBlurPlaceholder(_year1EstimatedSavings()),
+    ];
+  }
+
+  // PRO 版完整渲染所有财务与现金流内容。
+  static List<pw.Widget> _buildProSections({
+    required AppLocalizations l10n,
+    required double pvCapacity,
+    required double batteryCapacity,
+    required double totalCapex,
+    required double npv,
+    required double irr,
+    required double payback,
+    required List<dynamic> fullCashFlowData,
+  }) {
+    return [
+      pw.SizedBox(height: 20),
+      pw.Text(l10n.pdfProposalTitle, style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+      pw.SizedBox(height: 20),
+      _buildSystemConfigurationSection(
+        l10n: l10n,
+        pvCapacity: pvCapacity,
+        batteryCapacity: batteryCapacity,
+        totalCapex: totalCapex,
+      ),
+      pw.SizedBox(height: 20),
+      pw.Text(l10n.pdfFinancialHighlights, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.teal800)),
+      pw.SizedBox(height: 10),
+      pw.Container(
+        padding: const pw.EdgeInsets.all(12),
+        decoration: pw.BoxDecoration(
+          color: PdfColors.grey100,
+          border: pw.Border.all(color: PdfColors.grey300),
+          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+        ),
+        child: pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+          children: [
+            _buildKpiItem(l10n.pdfNpv, '\$${npv.toStringAsFixed(0)}'),
+            _buildKpiItem(l10n.pdfIrr, '${irr.toStringAsFixed(1)}%'),
+            _buildKpiItem(l10n.pdfPayback, '${payback.toStringAsFixed(1)} ${l10n.pdfYears}'),
+          ],
+        ),
+      ),
+      pw.SizedBox(height: 30),
+      pw.Text(l10n.pdfEmsStrategyTitle, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.teal800)),
+      pw.SizedBox(height: 10),
+      pw.Container(
+        padding: const pw.EdgeInsets.all(12),
+        decoration: pw.BoxDecoration(
+          color: PdfColors.white,
+          border: pw.Border.all(color: PdfColors.teal200, width: 1),
+          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+        ),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text(l10n.pdfEmsStrategyDesc, style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic, color: PdfColors.grey700)),
+            pw.SizedBox(height: 12),
+            _buildRevenueStackItem(l10n.pdfRevDirectSolar, l10n.pdfRevDirectSolarDesc, '\$${_revDirectSolar.toStringAsFixed(2)}'),
+            pw.Divider(color: PdfColors.grey200),
+            _buildRevenueStackItem(l10n.pdfRevTou, l10n.pdfRevTouDesc, '\$${_revTou.toStringAsFixed(2)}', isHighlight: true),
+            pw.Divider(color: PdfColors.grey200),
+            _buildRevenueStackItem(l10n.pdfRevPeakShaving, l10n.pdfRevPeakShavingDesc, '\$${_revPeakShaving.toStringAsFixed(2)}', isHighlight: true),
+            pw.Divider(color: PdfColors.grey200),
+            _buildRevenueStackItem(l10n.pdfRevBackup, l10n.pdfRevBackupDesc, '\$${_revBackup.toStringAsFixed(2)}'),
+          ],
+        ),
+      ),
+      pw.SizedBox(height: 30),
+      pw.Text(l10n.pdfCashFlowTitle, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.teal800)),
+      pw.SizedBox(height: 10),
+      _buildCashFlowTable(fullCashFlowData, l10n),
+    ];
+  }
+
+  static pw.Widget _buildSystemConfigurationSection({
+    required AppLocalizations l10n,
+    required double pvCapacity,
+    required double batteryCapacity,
+    required double totalCapex,
+  }) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(l10n.pdfSystemConfig, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.teal800)),
+        pw.SizedBox(height: 10),
+        pw.Bullet(text: '${l10n.pdfPvArray}: ${pvCapacity.toStringAsFixed(1)} kWp'),
+        pw.Bullet(text: '${l10n.pdfEssBattery}: ${batteryCapacity.toStringAsFixed(1)} kWh'),
+        pw.Bullet(text: l10n.pdfGridPolicy),
+        pw.SizedBox(height: 8),
+        pw.Text(
+          '${l10n.pdfTotalCapex}: \$${totalCapex.toStringAsFixed(0)}',
+          style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.red800),
+        ),
+      ],
+    );
+  }
+
+  static pw.Widget _buildFinancialPaywallPlaceholder() {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(14),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.amber50,
+        border: pw.Border.all(color: PdfColors.amber700, width: 1.2),
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+      ),
+      child: pw.Text(
+        "🔒 Upgrade to PRO to unlock Payback Period & IRR analysis",
+        style: pw.TextStyle(
+          fontSize: 12,
+          fontWeight: pw.FontWeight.bold,
+          color: PdfColors.amber900,
+        ),
+      ),
+    );
+  }
+
+  static pw.Widget _buildEmsBlurPlaceholder(double totalSavings) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.grey200,
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+      ),
+      child: pw.Text(
+        "Estimated Year 1 Total Savings: \$${totalSavings.toStringAsFixed(2)}",
+        style: pw.TextStyle(
+          fontSize: 12,
+          color: PdfColors.grey700,
+        ),
+      ),
+    );
+  }
+
+  static double _year1EstimatedSavings() {
+    return _revDirectSolar + _revTou + _revPeakShaving + _revBackup;
+  }
+
+  static pw.Widget _buildFreeWatermark() {
+    return pw.Center(
+      child: pw.Transform.rotate(
+        angle: -0.6,
+        child: pw.Text(
+          "Generated by EnerQuote - Upgrade to PRO for detailed financials",
+          textAlign: pw.TextAlign.center,
+          style: pw.TextStyle(
+            fontSize: 38,
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.grey300,
+          ),
+        ),
+      ),
     );
   }
 

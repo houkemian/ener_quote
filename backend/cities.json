@@ -21,11 +21,46 @@
     "name": { "zh": "🇨🇱 圣地亚哥 (智利)", "en": "🇨🇱 Santiago (Chile)" }
   },
   {
-    "id": "munich",
-    "lat": 48.1351,
-    "lon": 11.5820,
+    "id": "belo_horizonte",
+    "lat": -19.9167,
+    "lon": -43.9345,
+    "is_pro_only": true,
+    "name": { "zh": "🇧🇷 贝洛奥里藏特 (巴西, 米纳斯吉拉斯)", "en": "🇧🇷 Belo Horizonte (Brazil, MG)" }
+  },
+  {
+    "id": "fortaleza",
+    "lat": -3.7319,
+    "lon": -38.5267,
     "is_pro_only": false,
-    "name": { "zh": "🇩🇪 慕尼黑 (德国)", "en": "🇩🇪 Munich (Germany)" }
+    "name": { "zh": "🇧🇷 福塔莱萨 (巴西, 塞阿腊)", "en": "🇧🇷 Fortaleza (Brazil, CE)" }
+  },
+  {
+    "id": "bogota",
+    "lat": 4.7110,
+    "lon": -74.0721,
+    "is_pro_only": false,
+    "name": { "zh": "🇨🇴 波哥大 (哥伦比亚)", "en": "🇨🇴 Bogotá (Colombia)" }
+  },
+  {
+    "id": "lima",
+    "lat": -12.0464,
+    "lon": -77.0428,
+    "is_pro_only": false,
+    "name": { "zh": "🇵🇪 利马 (秘鲁)", "en": "🇵🇪 Lima (Peru)" }
+  },
+  {
+    "id": "buenos_aires",
+    "lat": -34.6037,
+    "lon": -58.3816,
+    "is_pro_only": true,
+    "name": { "zh": "🇦🇷 布宜诺斯艾利斯 (阿根廷)", "en": "🇦🇷 Buenos Aires (Argentina)" }
+  },
+  {
+    "id": "antofagasta",
+    "lat": -23.6509,
+    "lon": -70.3975,
+    "is_pro_only": true,
+    "name": { "zh": "🇨🇱 安托法加斯塔 (智利, 阿塔卡马)", "en": "🇨🇱 Antofagasta (Chile, Atacama)" }
   },
   {
     "id": "madrid",
@@ -47,5 +82,47 @@
     "lon": 151.2093,
     "is_pro_only": false,
     "name": { "zh": "🇦🇺 悉尼 (澳大利亚)", "en": "🇦🇺 Sydney (Australia)" }
+  },
+  {
+    "id": "manila",
+    "lat": 14.5995,
+    "lon": 120.9842,
+    "is_pro_only": false,
+    "name": { "zh": "🇵🇭 马尼拉 (菲律宾)", "en": "🇵🇭 Manila (Philippines)" }
+  },
+  {
+    "id": "los_angeles",
+    "lat": 34.0522,
+    "lon": -118.2437,
+    "is_pro_only": true,
+    "name": { "zh": "🇺🇸 洛杉矶 (加州, 美国)", "en": "🇺🇸 Los Angeles (CA, USA)" }
+  },
+  {
+    "id": "houston",
+    "lat": 29.7604,
+    "lon": -95.3698,
+    "is_pro_only": true,
+    "name": { "zh": "🇺🇸 休斯顿 (德州, 美国)", "en": "🇺🇸 Houston (TX, USA)" }
+  },
+  {
+    "id": "munich",
+    "lat": 48.1351,
+    "lon": 11.5820,
+    "is_pro_only": true,
+    "name": { "zh": "🇩🇪 慕尼黑 (德国)", "en": "🇩🇪 Munich (Germany)" }
+  },
+  {
+    "id": "dubai",
+    "lat": 25.2048,
+    "lon": 55.2708,
+    "is_pro_only": true,
+    "name": { "zh": "🇦🇪 迪拜 (阿联酋)", "en": "🇦🇪 Dubai (UAE)" }
+  },
+  {
+    "id": "tokyo",
+    "lat": 35.6762,
+    "lon": 139.6503,
+    "is_pro_only": true,
+    "name": { "zh": "🇯🇵 东京 (日本)", "en": "🇯🇵 Tokyo (Japan)" }
   }
 ]

@@ -15,6 +15,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  static const String _defaultCompanyName = 'EnerQuote';
 
   String _userTier = "FREE"; // 🌟 新增身份变量
   String _currentAccount = '-';
@@ -29,6 +30,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _marginController = TextEditingController();
 
   bool _isLoading = true;
+  bool get _canEditCosts => _userTier == "PRO";
+  bool _costPanelExpanded = false;
 
   @override
   void initState() {
@@ -52,7 +55,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _userTier = tierFromApi; // 🌟 以服务端综合判断结果为准
         _currentAccount = account.isEmpty ? '-' : account;
         _proExpireDateText = tierFromApi == "PRO" ? proExpireText : null;
-        _companyNameController.text = data['company_name'] ?? '';
+        _companyNameController.text = (data['company_name'] ?? _defaultCompanyName).toString();
         _logoUrlController.text = data['logo_url'] ?? '';
         _pvCostController.text = data['pv_cost_per_kw']?.toString() ?? '800.0';
         _essCostController.text = data['ess_cost_per_kwh']?.toString() ?? '350.0';
@@ -75,7 +78,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _userTier = prefs.getString('user_tier') ?? "FREE";
         _currentAccount = '-';
         _proExpireDateText = null;
-        _companyNameController.text = prefs.getString('company_name') ?? '';
+        _companyNameController.text = prefs.getString('company_name') ?? _defaultCompanyName;
         _pvCostController.text = prefs.getDouble('pv_cost')?.toString() ?? '800.0';
         _logoUrlController.text = prefs.getString('logo_url') ?? '';
         _essCostController.text = prefs.getDouble('ess_cost')?.toString() ?? '350.0'; // 默认 350
@@ -91,14 +94,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   FocusScope.of(context).unfocus();
 
   try {
-    // 1. 推送到云端
-    await ApiClient().dio.put('/settings/me', data: {
+    final Map<String, dynamic> payload = {
       "company_name": _companyNameController.text.trim(),
       "logo_url": _logoUrlController.text.trim(),
-      "pv_cost_per_kw": double.tryParse(_pvCostController.text) ?? 800.0,
-      "ess_cost_per_kwh": double.tryParse(_essCostController.text) ?? 350.0,
-      "margin_pct": double.tryParse(_marginController.text) ?? 20.0,
-    });
+    };
+    if (_canEditCosts) {
+      payload["pv_cost_per_kw"] = double.tryParse(_pvCostController.text) ?? 800.0;
+      payload["ess_cost_per_kwh"] = double.tryParse(_essCostController.text) ?? 350.0;
+      payload["margin_pct"] = double.tryParse(_marginController.text) ?? 20.0;
+    }
+
+    // 1. 推送到云端
+    await ApiClient().dio.put('/settings/me', data: payload);
 
     // 2. 备份到本地 (主页需要用到)
     final prefs = await SharedPreferences.getInstance();
@@ -189,7 +196,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           if (_userTier == "PRO" && _proExpireDateText != null) ...[
                             const SizedBox(height: 2),
                             Text(
-                              '到期时间：$_proExpireDateText',
+                              '${l10n.proExpireDateLabel}$_proExpireDateText',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: _userTier == "PRO" ? AppColors.onSecondary : AppColors.onSurfaceVariant,
@@ -201,57 +208,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     if (_userTier != "PRO")
                       ElevatedButton(
-                        // 🌟 防连点：正在加载时按钮变灰并禁用
-                        onPressed: _isUpgrading ? null : () async {
-                          setState(() {
-                            _isUpgrading = true;
-                          });
-
-                          try {
-                            // 1. 向后端索要支付链接
-                            final urlStr = await ApiClient().getPaddleCheckoutUrl();
-
-                            if (urlStr != null) {
-                              final ptxn = await Navigator.of(context).push<String>(
-                                MaterialPageRoute(
-                                  builder: (_) => PaddleCheckoutWebView(checkoutUrl: urlStr),
-                                ),
-                              );
-
-                              if (!mounted) return;
-                              if (ptxn == null || ptxn.isEmpty) {
-                                return;
-                              }
-
-                              final newTier = await ApiClient().refreshUserTierWithRetry();
-                              if (newTier == "PRO") {
-                                setState(() {
-                                  _userTier = "PRO";
-                                });
-                              }
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    newTier == "PRO" ? l10n.paymentSuccessPro : l10n.paymentPending,
-                                  ),
-                                  backgroundColor: newTier == "PRO" ? AppColors.success : Colors.orange,
-                                  duration: const Duration(seconds: 5),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(l10n.paymentError(e.toString())), backgroundColor: Colors.redAccent),
-                            );
-                          } finally {
-                            if (mounted) {
-                              setState(() {
-                                _isUpgrading = false;
-                              });
-                            }
-                          }
-                        },
+                        // 先打开付费墙，再由弹窗按钮进入支付
+                        onPressed: _isUpgrading ? null : _showProPaywall,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.secondary,
                           foregroundColor: AppColors.onSecondary,
@@ -270,20 +228,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
-              // 🎨 品牌设置卡片
-              _buildSectionHeader(Icons.branding_watermark, l10n.brandingSection),
+              // 🎨 品牌设置卡片（FREE 锁定）
+              _buildSectionHeader(
+                Icons.branding_watermark,
+                l10n.brandingSection,
+                showProBadge: true,
+              ),
               const SizedBox(height: 12),
               _buildSettingsCard([
-                _buildTextField(_companyNameController, l10n.companyNameLabel, Icons.business),
+                _buildTextField(
+                  _companyNameController,
+                  l10n.companyNameLabel,
+                  Icons.business,
+                  enabled: _userTier == "PRO",
+                ),
                 const SizedBox(height: 16),
           _buildTextField(
             _logoUrlController,
             l10n.logoUrlLabel,
             Icons.image,
+            enabled: _userTier == "PRO",
             hintText: l10n.logoInputHint,
             suffixIcon: IconButton(
               icon: const Icon(Icons.photo_library, color: AppColors.secondary),
               onPressed: () async {
+                if (_userTier != "PRO") {
+                  _showProPaywall(customSubtitle: l10n.proBrandingPaywallSubtitle);
+                  return;
+                }
                 try {
                   final picker = ImagePicker();
                   // 🌟 核心：从相册选图，并强制压缩宽度以防 Base64 太长撑爆数据库！
@@ -314,15 +286,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               const SizedBox(height: 32),
 
-              // 💰 成本设置卡片
-              _buildSectionHeader(Icons.attach_money, l10n.costSection),
+              // 💰 高级成本设置（PRO 折叠面板）
+              _buildSectionHeader(
+                Icons.attach_money,
+                '⚙️ ${l10n.advancedCostCalculatorTitle}',
+                showProBadge: true,
+              ),
               const SizedBox(height: 12),
               _buildSettingsCard([
-                _buildTextField(_pvCostController, l10n.pvCostLabel, Icons.solar_power, isNumber: true),
-                const SizedBox(height: 16),
-                _buildTextField(_essCostController, l10n.essCostLabel, Icons.battery_charging_full, isNumber: true),
-                const SizedBox(height: 16),
-                _buildTextField(_marginController, l10n.marginLabel, Icons.percent, isNumber: true),
+                InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () {
+                    if (!_canEditCosts) {
+                      _showProPaywall(customSubtitle: l10n.proProfitPaywallSubtitle);
+                      return;
+                    }
+                    setState(() {
+                      _costPanelExpanded = !_costPanelExpanded;
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l10n.tapToExpandCostSettings,
+                            style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
+                          ),
+                        ),
+                        Icon(
+                          _costPanelExpanded ? Icons.expand_less : Icons.expand_more,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (_costPanelExpanded) ...[
+                  const SizedBox(height: 12),
+                  _buildTextField(_pvCostController, l10n.pvCostLabel, Icons.solar_power, isNumber: true, enabled: _canEditCosts),
+                  const SizedBox(height: 16),
+                  _buildTextField(_essCostController, l10n.essCostLabel, Icons.battery_charging_full, isNumber: true, enabled: _canEditCosts),
+                  const SizedBox(height: 16),
+                  _buildTextField(_marginController, l10n.marginLabel, Icons.percent, isNumber: true, enabled: _canEditCosts),
+                ],
               ]),
 
               const SizedBox(height: 40),
@@ -348,12 +356,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // UI 辅助方法：段落标题
-  Widget _buildSectionHeader(IconData icon, String title) {
+  Widget _buildSectionHeader(IconData icon, String title, {bool showProBadge = false}) {
     return Row(
       children: [
         Icon(icon, color: AppColors.secondary, size: 20),
         const SizedBox(width: 8),
-        Text(title, style: const TextStyle(color: AppColors.onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
+        Expanded(
+          child: Text(title, style: const TextStyle(color: AppColors.onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
+        ),
+        if (showProBadge)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFD66B),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: const Text(
+              '[PRO]',
+              style: TextStyle(
+                color: Color(0xFF5B3A00),
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -372,9 +398,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // UI 辅助方法：输入框
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {bool isNumber = false, String? hintText, Widget? suffixIcon}) {
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {bool isNumber = false, String? hintText, Widget? suffixIcon, bool enabled = true}) {
     return TextField(
       controller: controller,
+      enabled: enabled,
       keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
       style: const TextStyle(color: AppColors.onSurface),
       decoration: InputDecoration(
@@ -403,5 +430,131 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final mm = local.month.toString().padLeft(2, '0');
     final dd = local.day.toString().padLeft(2, '0');
     return '${local.year}-$mm-$dd';
+  }
+
+  void _showProPaywall({String? customSubtitle}) {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (buildContext) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.workspace_premium, size: 28, color: AppColors.secondary),
+                      const SizedBox(width: 10),
+                      Text(
+                        l10n.upgradeToProTitle,
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    customSubtitle ?? l10n.upgradeToProSubtitle,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildProFeatureRow(l10n.proFeatureLogo),
+                  _buildProFeatureRow(l10n.proFeatureCost),
+                  _buildProFeatureRow(l10n.proFeatureROI),
+                  _buildProFeatureRow(l10n.proFeatureNoWatermark),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: () => _startCheckoutFromPaywall(buildContext),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.secondary,
+                      foregroundColor: AppColors.onSecondary,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text(
+                      l10n.unlockProBtn,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProFeatureRow(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle, color: AppColors.success, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(text, style: const TextStyle(color: AppColors.onSurface, fontSize: 14)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _startCheckoutFromPaywall(BuildContext bottomSheetContext) async {
+    final l10n = AppLocalizations.of(context)!;
+    Navigator.pop(bottomSheetContext);
+    setState(() {
+      _isUpgrading = true;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.redirectingToPayment)),
+    );
+
+    try {
+      final urlStr = await ApiClient().getPaddleCheckoutUrl();
+      if (urlStr == null || !mounted) return;
+      final ptxn = await Navigator.of(context).push<String>(
+        MaterialPageRoute(
+          builder: (_) => PaddleCheckoutWebView(checkoutUrl: urlStr),
+        ),
+      );
+      if (!mounted || ptxn == null || ptxn.isEmpty) return;
+
+      final newTier = await ApiClient().refreshUserTierWithRetry();
+      if (!mounted) return;
+      if (newTier == "PRO") {
+        await _loadSettings();
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(newTier == "PRO" ? l10n.paymentSuccessPro : l10n.paymentPending),
+          backgroundColor: newTier == "PRO" ? AppColors.success : Colors.orange,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.paymentError(e.toString())), backgroundColor: Colors.redAccent),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpgrading = false;
+        });
+      }
+    }
   }
 }
