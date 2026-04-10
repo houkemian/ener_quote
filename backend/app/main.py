@@ -1,7 +1,10 @@
-from fastapi.responses import FileResponse
+import logging
 import os
 
 from fastapi import FastAPI, Depends
+from fastapi.responses import FileResponse
+
+logging.getLogger("app").setLevel(logging.INFO)
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import simulation, auth # 引入 auth
 from app.api.deps import get_current_user_payload
