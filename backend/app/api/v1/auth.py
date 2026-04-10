@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pydantic import EmailStr, TypeAdapter, ValidationError
 from app.api.deps import get_current_user_payload, TokenPayload # 🌟 引入安检门
 
@@ -13,6 +13,15 @@ from app.modules.iam.security import verify_password
 
 router = APIRouter()
 email_adapter = TypeAdapter(EmailStr)
+
+
+def _resolve_effective_tier(user: IAMUser) -> str:
+    """权益判断：PRO 必须未过期，否则按 FREE。"""
+    if user.tier == "PRO":
+        if user.pro_expire_date and user.pro_expire_date > datetime.utcnow():
+            return "PRO"
+        return "FREE"
+    return user.tier
 
 @router.post("/login")
 async def login_for_access_token(
@@ -40,13 +49,18 @@ async def login_for_access_token(
         )
     
     # 3. 制作 Token 载荷 (Payload)，把真实的主键和权限塞进去！
+    effective_tier = _resolve_effective_tier(user)
+    if user.tier != effective_tier:
+        user.tier = effective_tier
+        db.commit()
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={
             "sub": user.id,              # 真实的 UUID
             "company_id": "solo-tenant", # MVP 阶段单人单企
             "role": "SALES",
-            "tier": user.tier            # 🌟 核心：把 FREE 或 PRO 写进通行证！
+            "tier": effective_tier       # 🌟 核心：把 FREE 或 PRO 写进通行证！
         },
         expires_delta=access_token_expires
     )
@@ -66,13 +80,18 @@ async def refresh_token(
         raise HTTPException(status_code=401, detail="用户不存在或已被禁用")
 
     # 2. 重新签发一张全新的 Token，把最新的 tier 写进去
+    effective_tier = _resolve_effective_tier(user)
+    if user.tier != effective_tier:
+        user.tier = effective_tier
+        db.commit()
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     new_token = create_access_token(
         data={
             "sub": user.id,
             "company_id": current_user.company_id,
             "role": current_user.role,
-            "tier": user.tier  # 🌟 这里会读取刚刚被 Paddle Webhook 改成 PRO 的最新状态！
+            "tier": effective_tier  # 🌟 tier + pro_expire_date 综合判断后的结果
         },
         expires_delta=access_token_expires
     )
@@ -80,5 +99,5 @@ async def refresh_token(
     return {
         "access_token": new_token, 
         "token_type": "bearer",
-        "tier": user.tier # 顺便把状态明文返回给前端更新 UI
+        "tier": effective_tier # 顺便把状态明文返回给前端更新 UI
     }

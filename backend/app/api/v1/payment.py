@@ -1,6 +1,7 @@
 import html
 import json
 import logging
+from datetime import datetime, timedelta
 from typing import Any
 
 import httpx
@@ -78,6 +79,23 @@ def _paddle_headers() -> dict[str, str]:
         "Authorization": f"Bearer {PADDLE_API_KEY}",
         "Content-Type": "application/json",
     }
+
+
+def _resolve_user_from_event(db: Session, data: dict[str, Any]) -> User | None:
+    """Try resolve user by custom_data.user_id first, then customer email."""
+    custom = data.get("custom_data") or {}
+    user_id = custom.get("user_id")
+    if user_id:
+        user = db.query(User).filter(User.id == str(user_id)).first()
+        if user:
+            return user
+
+    customer = data.get("customer") or {}
+    customer_email = customer.get("email")
+    if customer_email:
+        return db.query(User).filter(User.email == str(customer_email)).first()
+
+    return None
 
 
 @router.post("/checkout")
@@ -206,28 +224,52 @@ async def paddle_webhook(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Invalid JSON body") from e
 
     event_type = event.get("event_type")
-    if event_type != "transaction.completed":
-        return {"status": "ignored", "event_type": event_type}
-
     data = event.get("data") or {}
-    custom = data.get("custom_data") or {}
-    user_id_str = custom.get("user_id")
-    if not user_id_str:
-        logger.warning(
-            "transaction.completed without custom_data.user_id: txn=%s",
-            data.get("id"),
-        )
-        return {"status": "no_user_id"}
 
-    user = db.query(User).filter(User.id == user_id_str).first()
-    if user:
+    if event_type == "transaction.completed":
+        user = _resolve_user_from_event(db, data)
+        if not user:
+            logger.warning(
+                "transaction.completed cannot resolve user: txn=%s custom_data=%s customer=%s",
+                data.get("id"),
+                data.get("custom_data"),
+                data.get("customer"),
+            )
+            return {"status": "no_user"}
+
         user.tier = "PRO"
+        user.pro_expire_date = datetime.utcnow() + timedelta(days=30)
         db.commit()
-        logger.info("User %s upgraded to PRO via Paddle transaction.completed", user.email)
-    else:
-        logger.warning("Paddle webhook: user_id not found: %s", user_id_str)
+        logger.info(
+            "User %s upgraded to PRO via Paddle transaction.completed, expire_at=%s",
+            user.email,
+            user.pro_expire_date,
+        )
+        return {"status": "success", "event_type": event_type}
 
-    return {"status": "success"}
+    if event_type in {"subscription.canceled", "subscription.past_due"}:
+        user = _resolve_user_from_event(db, data)
+        if not user:
+            logger.warning(
+                "%s cannot resolve user: subscription=%s custom_data=%s customer=%s",
+                event_type,
+                data.get("id"),
+                data.get("custom_data"),
+                data.get("customer"),
+            )
+            return {"status": "no_user", "event_type": event_type}
+
+        user.tier = "FREE"
+        user.pro_expire_date = None
+        db.commit()
+        logger.info(
+            "User %s downgraded to FREE via Paddle %s",
+            user.email,
+            event_type,
+        )
+        return {"status": "success", "event_type": event_type}
+
+    return {"status": "ignored", "event_type": event_type}
 
 
 @router.get("/checkout-ui")

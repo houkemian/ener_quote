@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.api.deps import get_db
 from app.api.deps import get_current_user_payload, TokenPayload
+from datetime import datetime
 import re
 
 # 假设你之前在 deps.py 里写过 JWT 验证，名叫 get_current_user_payload
@@ -46,6 +47,16 @@ def _resolve_account_email(db: Session, user_id: str) -> str | None:
 
     return None
 
+
+def _resolve_effective_tier(user: User | None) -> str:
+    if not user:
+        return "FREE"
+    if user.tier == "PRO":
+        if user.pro_expire_date and user.pro_expire_date > datetime.utcnow():
+            return "PRO"
+        return "FREE"
+    return user.tier
+
 @router.get("/me", response_model=UserSettingsResponse)
 def get_my_settings(
     db: Session = Depends(get_db),
@@ -54,10 +65,18 @@ def get_my_settings(
     """获取当前登录用户的专属配置"""
     user_id = current_user.user_id # 根据你 JWT 里的实际主键字段名来定
     settings = get_or_create_settings(db, user_id)
+    user = db.query(User).filter(User.id == user_id).first()
     account_email = _resolve_account_email(db, user_id)
+    effective_tier = _resolve_effective_tier(user)
+    pro_expire_date = user.pro_expire_date if (user and effective_tier == "PRO") else None
+    if user and user.tier != effective_tier:
+        user.tier = effective_tier
+        db.commit()
     return {
         "user_id": settings.user_id,
         "account_email": account_email,
+        "tier": effective_tier,
+        "pro_expire_date": pro_expire_date,
         "company_name": settings.company_name,
         "logo_url": settings.logo_url,
         "pv_cost_per_kw": settings.pv_cost_per_kw,
@@ -83,12 +102,20 @@ def update_my_settings(
 
     db.commit()
     db.refresh(settings)
+    user = db.query(User).filter(User.id == user_id).first()
     account_email = _resolve_account_email(db, user_id)
+    effective_tier = _resolve_effective_tier(user)
+    pro_expire_date = user.pro_expire_date if (user and effective_tier == "PRO") else None
+    if user and user.tier != effective_tier:
+        user.tier = effective_tier
+        db.commit()
     
     print(f"✅ 用户 {user_id} 的业务配置已更新。")
     return {
         "user_id": settings.user_id,
         "account_email": account_email,
+        "tier": effective_tier,
+        "pro_expire_date": pro_expire_date,
         "company_name": settings.company_name,
         "logo_url": settings.logo_url,
         "pv_cost_per_kw": settings.pv_cost_per_kw,

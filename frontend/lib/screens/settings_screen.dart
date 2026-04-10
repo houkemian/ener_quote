@@ -18,6 +18,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   String _userTier = "FREE"; // 🌟 新增身份变量
   String _currentAccount = '-';
+  String? _proExpireDateText;
   bool _isUpgrading = false; // 🌟 新增：是否正在呼叫收银台
 
   // 控制器
@@ -43,11 +44,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final data = response.data;
       final prefs = await SharedPreferences.getInstance();
       final account = (data['account_email'] ?? '-').toString().trim();
+      final tierFromApi = (data['tier'] ?? "FREE").toString();
+      final proExpireText = _formatExpireDate(data['pro_expire_date']);
 
 
       setState(() {
-        _userTier = prefs.getString('user_tier') ?? "FREE"; // 🌟 捞出身价
+        _userTier = tierFromApi; // 🌟 以服务端综合判断结果为准
         _currentAccount = account.isEmpty ? '-' : account;
+        _proExpireDateText = tierFromApi == "PRO" ? proExpireText : null;
         _companyNameController.text = data['company_name'] ?? '';
         _logoUrlController.text = data['logo_url'] ?? '';
         _pvCostController.text = data['pv_cost_per_kw']?.toString() ?? '800.0';
@@ -57,6 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
 
       // 顺手备份到本地，给主页测算用
+      await prefs.setString('user_tier', tierFromApi);
       await prefs.setString('company_name', _companyNameController.text);
       await prefs.setDouble('pv_cost', double.tryParse(_pvCostController.text) ?? 800.0);
       await prefs.setDouble('ess_cost', double.tryParse(_essCostController.text) ?? 350.0);
@@ -69,6 +74,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _userTier = prefs.getString('user_tier') ?? "FREE";
         _currentAccount = '-';
+        _proExpireDateText = null;
         _companyNameController.text = prefs.getString('company_name') ?? '';
         _pvCostController.text = prefs.getDouble('pv_cost')?.toString() ?? '800.0';
         _logoUrlController.text = prefs.getString('logo_url') ?? '';
@@ -180,6 +186,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               color: _userTier == "PRO" ? AppColors.onSecondary : AppColors.onSurfaceVariant,
                             ),
                           ),
+                          if (_userTier == "PRO" && _proExpireDateText != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              '到期时间：$_proExpireDateText',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: _userTier == "PRO" ? AppColors.onSecondary : AppColors.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -369,5 +385,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
         suffixIcon: suffixIcon, // 🌟 挂载右侧的相册按钮
       ),
     );
+  }
+
+  String? _formatExpireDate(dynamic raw) {
+    if (raw == null) {
+      return null;
+    }
+    final value = raw.toString().trim();
+    if (value.isEmpty) {
+      return null;
+    }
+    final dt = DateTime.tryParse(value);
+    if (dt == null) {
+      return value;
+    }
+    final local = dt.toLocal();
+    final mm = local.month.toString().padLeft(2, '0');
+    final dd = local.day.toString().padLeft(2, '0');
+    return '${local.year}-$mm-$dd';
   }
 }

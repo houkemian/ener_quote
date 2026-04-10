@@ -1,5 +1,6 @@
 # 文件路径: app/schemas/user_settings.py
 from pydantic import BaseModel
+from datetime import datetime
 from typing import Optional
 
 # 前端更新配置时传过来的数据（全部设为可选，支持只改某一项）
@@ -14,6 +15,8 @@ class UserSettingsUpdate(BaseModel):
 class UserSettingsResponse(BaseModel):
     user_id: str
     account_email: Optional[str] = None
+    tier: str = "FREE"
+    pro_expire_date: Optional[datetime] = None
     company_name: str
     logo_url: Optional[str]
     pv_cost_per_kw: float
