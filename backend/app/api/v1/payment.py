@@ -15,6 +15,7 @@ from app.core.config import (
 )
 from app.modules.iam.models import User
 from app.services.paddle_signature import verify_paddle_signature
+from fastapi.responses import HTMLResponse
 
 logger = logging.getLogger(__name__)
 
@@ -187,3 +188,49 @@ async def paddle_webhook(request: Request, db: Session = Depends(get_db)):
         logger.warning("Paddle webhook: user_id not found: %s", user_id_str)
 
     return {"status": "success"}
+
+
+@router.get("/checkout-ui")
+def render_paddle_checkout_ui():
+    """
+    专门为 Flutter WebView 提供的 HTML 宿主页面。
+    Paddle API 只要跳转到这里，Paddle.js 就会接管并自动弹窗！
+    """
+    html_content = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Secure Checkout</title>
+        <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+        <script>
+            // 核心初始化
+            Paddle.Environment.set('sandbox');
+            Paddle.Initialize({ 
+                // ⚠️ 注意：这里填的是 Client Token，不是 API Key！
+                token: 'test_7e403cae635ebf6705026c637ab', 
+                
+                // 🌟 架构师的魔法：打通 JS 与 Flutter 的桥梁
+                eventCallback: function(data) {
+                    // 如果支付成功，强行把网页跳到一个假地址，用来给 Flutter 拦截
+                    if (data.name === "checkout.completed") {
+                        window.location.href = "https://api.dothings.one/paddle-success";
+                    }
+                    // 如果用户主动点了 X 关掉收银台，也跳假地址通知 Flutter
+                    if (data.name === "checkout.closed") {
+                        window.location.href = "https://api.dothings.one/paddle-closed";
+                    }
+                }
+            });
+        </script>
+    </head>
+    <body style="background-color: #f4f5f7; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif;">
+        <div style="text-align: center; color: #666;">
+            <h2>正在安全连接支付网关...</h2>
+            <p>如果收银台没有自动弹出，请检查网络。</p>
+        </div>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
