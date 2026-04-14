@@ -134,6 +134,30 @@ abstract class AppLocalizations {
   /// **'安全登录'**
   String get secureLoginBtn;
 
+  /// No description provided for @dividerOr.
+  ///
+  /// In zh, this message translates to:
+  /// **'或'**
+  String get dividerOr;
+
+  /// No description provided for @loginWithGoogle.
+  ///
+  /// In zh, this message translates to:
+  /// **'使用 Google 登录'**
+  String get loginWithGoogle;
+
+  /// No description provided for @loginWithMicrosoft.
+  ///
+  /// In zh, this message translates to:
+  /// **'使用 Microsoft 登录'**
+  String get loginWithMicrosoft;
+
+  /// No description provided for @errOAuthNotConfigured.
+  ///
+  /// In zh, this message translates to:
+  /// **'未配置第三方登录。请使用编译参数 GOOGLE_SERVER_CLIENT_ID 与 MICROSOFT_OAUTH_CLIENT_ID。'**
+  String get errOAuthNotConfigured;
+
   /// No description provided for @registerPrompt.
   ///
   /// In zh, this message translates to:

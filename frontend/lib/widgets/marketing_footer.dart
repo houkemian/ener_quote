@@ -140,9 +140,10 @@ class MarketingFooter extends StatelessWidget {
         );
 
     final linksRow = Wrap(
-      alignment: WrapAlignment.end,
+      alignment: WrapAlignment.center,
       crossAxisAlignment: WrapCrossAlignment.center,
       spacing: 0,
+      runSpacing: 4,
       children: [
         link(l10n.contactUs, () => _showContactDialog(context)),
         sep(),
@@ -194,19 +195,23 @@ class MarketingFooter extends StatelessWidget {
                         style: const TextStyle(color: textMuted, fontSize: 13),
                       ),
                     ),
-                    linksRow,
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: linksRow,
+                    ),
                   ],
                 );
               }
               return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     l10n.footerCopyright,
                     style: const TextStyle(color: textMuted, fontSize: 13),
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 10),
-                  linksRow,
+                  Center(child: linksRow),
                 ],
               );
             },

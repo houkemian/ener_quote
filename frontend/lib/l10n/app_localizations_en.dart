@@ -27,6 +27,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get secureLoginBtn => 'Secure Login';
 
   @override
+  String get dividerOr => 'or';
+
+  @override
+  String get loginWithGoogle => 'Continue with Google';
+
+  @override
+  String get loginWithMicrosoft => 'Continue with Microsoft';
+
+  @override
+  String get errOAuthNotConfigured =>
+      'Social sign-in is not configured. Build with --dart-define=GOOGLE_SERVER_CLIENT_ID=... and MICROSOFT_OAUTH_CLIENT_ID=...';
+
+  @override
   String get registerPrompt => 'Don\'t have an account? Sign up free';
 
   @override

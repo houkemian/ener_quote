@@ -50,9 +50,9 @@ class ApiClient {
     // 3. 🌟 核心魔法：全局拦截器 (Interceptor)
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        // 如果是登录接口，不需要 Token，直接放行
-        if (options.path.contains('/auth/login')) {
-          print("/auth/login");
+        // 登录与 OAuth 换票接口不需要 Token
+        final p = options.path.toLowerCase();
+        if (p.contains('/auth/login') || p.contains('/auth/oauth/')) {
           return handler.next(options);
         }
 
@@ -226,6 +226,28 @@ class ApiClient {
       accessToken: data['access_token'] as String,
       tier: data['tier'] as String?,
     );
+  }
+
+  /// Google / Microsoft：用 IdP 的 `id_token` 换取 EnerQuote JWT。
+  Future<Map<String, dynamic>> exchangeOAuthIdToken({
+    required String provider,
+    required String idToken,
+  }) async {
+    final path = provider == 'google'
+        ? '/auth/oauth/google'
+        : '/auth/oauth/microsoft';
+    final response = await dio.post<Map<String, dynamic>>(
+      path,
+      data: {'id_token': idToken},
+    );
+    final data = response.data;
+    if (data == null) {
+      throw DioException(
+        requestOptions: response.requestOptions,
+        error: 'Empty OAuth response',
+      );
+    }
+    return data;
   }
 
 }

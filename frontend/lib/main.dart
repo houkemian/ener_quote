@@ -18,14 +18,20 @@ void main() async {
   // 🌟 1. 必须加这一行：确保 Flutter 引擎准备就绪
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 🌟 2. 强制锁死为横屏！
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
-  ]);
-
   final token = await TokenManager.getAccessToken();
   final isLoggedIn = token != null && token.isNotEmpty;
+
+  // 未登录时展示登录页，强制竖屏；登录后业务页保持横屏。
+  await SystemChrome.setPreferredOrientations(
+    isLoggedIn
+        ? const [
+            DeviceOrientation.landscapeLeft,
+            DeviceOrientation.landscapeRight,
+          ]
+        : const [
+            DeviceOrientation.portraitUp,
+          ],
+  );
 
   // 🌟 启动 Sentry 监控探针
   await SentryFlutter.init(

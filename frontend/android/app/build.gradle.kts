@@ -5,8 +5,18 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+/**
+ * Google 登录（与 Google Cloud Console 中「OAuth 2.0 客户端 ID」一致）：
+ * - 在 [android/gradle.properties] 中设置 `GOOGLE_SERVER_CLIENT_ID=xxx.apps.googleusercontent.com`
+ *   （通常为 **Web 应用** 类型客户端，与 Flutter `--dart-define=GOOGLE_SERVER_CLIENT_ID` 相同）。
+ * - 同时在 Google Cloud 为该包名 [one.dothings.enerquote] 创建 **Android** 类型客户端并配置 SHA-1。
+ * 若未配置，构建仍可成功；登录依赖 Dart 侧 `serverClientId`，本处 `default_web_client_id` 为可选增强。
+ */
+val googleServerClientId: String =
+    (project.findProperty("GOOGLE_SERVER_CLIENT_ID") as String?)?.trim().orEmpty()
+
 android {
-    namespace = "com.example.pv_ess_quote_frontend"
+    namespace = "one.dothings.enerquote"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,14 +30,16 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.pv_ess_quote_frontend"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        applicationId = "one.dothings.enerquote"
+        manifestPlaceholders["appAuthRedirectScheme"] = "one.dothings.enerquote"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        if (googleServerClientId.isNotEmpty()) {
+            resValue("string", "default_web_client_id", googleServerClientId)
+        }
     }
 
     buildTypes {

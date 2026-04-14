@@ -40,3 +40,9 @@ class VerifyOtpAndRegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=6, description="密码至少6位")
     otp_code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
+class OAuthIdTokenRequest(BaseModel):
+    """Mobile / web client exchanges provider ID token for EnerQuote JWT."""
+
+    id_token: str = Field(..., min_length=20, description="OIDC ID token from Google or Microsoft")

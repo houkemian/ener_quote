@@ -27,6 +27,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get secureLoginBtn => '安全登录';
 
   @override
+  String get dividerOr => '或';
+
+  @override
+  String get loginWithGoogle => '使用 Google 登录';
+
+  @override
+  String get loginWithMicrosoft => '使用 Microsoft 登录';
+
+  @override
+  String get errOAuthNotConfigured =>
+      '未配置第三方登录。请使用编译参数 GOOGLE_SERVER_CLIENT_ID 与 MICROSOFT_OAUTH_CLIENT_ID。';
+
+  @override
   String get registerPrompt => '还没有账号？点击这里免费注册';
 
   @override
