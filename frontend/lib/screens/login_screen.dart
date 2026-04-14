@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
@@ -57,6 +59,23 @@ class _LoginScreenState extends State<LoginScreen> {
 
   String get _googleClientId => _kGoogleServerClientId.trim();
   String get _microsoftClientId => _kMicrosoftClientId.trim();
+
+  /// Android: [android/app/build.gradle.kts] injects `default_web_client_id` from
+  /// `GOOGLE_SERVER_CLIENT_ID` in [android/gradle.properties]; `serverClientId` may be null so
+  /// the plugin uses that string. Other platforms need `--dart-define=GOOGLE_SERVER_CLIENT_ID`.
+  bool get _googleServerClientIdFromGradle =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+  bool get _hasGoogleSignInClientId {
+    if (_googleClientId.isNotEmpty) {
+      return _googleClientId.endsWith('.apps.googleusercontent.com');
+    }
+    return _googleServerClientIdFromGradle;
+  }
+
+  /// Web client ID for [GoogleSignIn]; null on Android when using Gradle `resValue` only.
+  String? get _googleServerClientIdForPlugin =>
+      _googleClientId.isNotEmpty ? _googleClientId : null;
 
   @override
   void initState() {
@@ -189,13 +208,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   String _oauthConfigHint() {
     return 'OAuth config error. '
-        'Make sure GOOGLE_SERVER_CLIENT_ID and MICROSOFT_OAUTH_CLIENT_ID are passed via --dart-define.';
+        'Set GOOGLE_SERVER_CLIENT_ID (Web client *.apps.googleusercontent.com) via --dart-define, '
+        'or on Android set GOOGLE_SERVER_CLIENT_ID in android/gradle.properties (see android/app/build.gradle.kts). '
+        'Also set MICROSOFT_OAUTH_CLIENT_ID via --dart-define for Microsoft login.';
   }
 
   Future<void> _signInWithGoogle() async {
     final l10n = AppLocalizations.of(context)!;
-    if (_googleClientId.isEmpty ||
-        !_googleClientId.endsWith('.apps.googleusercontent.com')) {
+    if (!_hasGoogleSignInClientId) {
       setState(() => _errorMessage = _oauthConfigHint());
       return;
     }
@@ -206,9 +226,16 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final google = GoogleSignIn(
         scopes: const ['email', 'openid'],
-        serverClientId: _googleClientId,
+        serverClientId: _googleServerClientIdForPlugin,
       );
-      await google.signOut();
+      // 清掉上次会话；无会话或 Play 服务偶发错误时不应阻断本次登录
+      try {
+        await google.signOut();
+      } on PlatformException catch (_) {
+        // ignore
+      } catch (_) {
+        // ignore
+      }
       final account = await google.signIn();
       if (account == null) {
         return;
@@ -236,9 +263,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final msg = (e.message ?? '').toLowerCase();
       if (msg.contains('12500') || msg.contains('developer_error')) {
         setState(() {
-          _errorMessage =
-              'Google Sign-In config mismatch (12500). Check Web Client ID, Android package name '
-              '(one.dothings.enerquote), and SHA-1 in Google Cloud Console.';
+          _errorMessage = l10n.errGoogleSignIn12500;
         });
         return;
       }

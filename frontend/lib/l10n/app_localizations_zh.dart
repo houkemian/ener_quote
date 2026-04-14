@@ -40,6 +40,10 @@ class AppLocalizationsZh extends AppLocalizations {
       '未配置第三方登录。请使用编译参数 GOOGLE_SERVER_CLIENT_ID 与 MICROSOFT_OAUTH_CLIENT_ID。';
 
   @override
+  String get errGoogleSignIn12500 =>
+      'Google 登录失败 (12500)：在 Google Cloud「凭据」中，Android 类型 OAuth 客户端的包名须为 one.dothings.enerquote，且 SHA-1 必须与当前安装包的实际签名证书一致（flutter run / 本地调试用 debug.keystore；从 Google Play 安装须在 Play 控制台「应用完整性」查看「应用签名」证书指纹并添加到 Cloud）。Web 客户端 ID 须与 GOOGLE_SERVER_CLIENT_ID 一致且与 Android 客户端在同一 GCP 项目。';
+
+  @override
   String get registerPrompt => '还没有账号？点击这里免费注册';
 
   @override

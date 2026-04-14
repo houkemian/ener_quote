@@ -59,7 +59,9 @@ SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "EnerQuote")
 SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "false").strip().lower() == "true"
 
 # --- OAuth (Google / Microsoft ID token verification on backend) ---
-# Comma-separated OAuth 2.0 Client IDs (Web / iOS / Android) that may appear as `aud` in Google ID tokens.
+# GOOGLE_OAUTH_CLIENT_IDS: comma-separated; order is meaningful for humans — first = Web client ID
+# (same as Flutter GOOGLE_SERVER_CLIENT_ID), second = Android client ID from Google Cloud.
+# Verification tries each value as `audience` until one succeeds (see oauth_id_tokens.py).
 GOOGLE_OAUTH_CLIENT_IDS = os.getenv("GOOGLE_OAUTH_CLIENT_IDS", "191848630682-d0imac6vatistl9o2vnhv8qrtkrp2dj9.apps.googleusercontent.com,191848630682-tvkajg83h26ldjo9ph9ne5nup23a52pb.apps.googleusercontent.com")
 # Azure "Application (client) ID" — must match the client used by the mobile app (flutter_appauth).
 MICROSOFT_OAUTH_CLIENT_ID = os.getenv("MICROSOFT_OAUTH_CLIENT_ID", "")
