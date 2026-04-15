@@ -517,7 +517,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       SizedBox(
                         width: 22 * _uiScale,
-                        child: const _GoogleLogo(),
+                        height: 22 * _uiScale,
+                        child: Image.asset(
+                          'assets/icons/google_logo.png',
+                          fit: BoxFit.contain,
+                        ),
                       ),
                       SizedBox(width: 10 * _uiScale),
                       Text(
@@ -540,7 +544,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       SizedBox(
                         width: 18 * _uiScale,
                         height: 18 * _uiScale,
-                        child: const _MicrosoftLogo(),
+                        child: Image.asset(
+                          'assets/icons/microsoft_logo.png',
+                          fit: BoxFit.contain,
+                        ),
                       ),
                       SizedBox(width: 10 * _uiScale),
                       Text(
@@ -666,99 +673,4 @@ class _IconPill extends StatelessWidget {
       child: Icon(icon, size: 28 * scale, color: color),
     );
   }
-}
-
-class _GoogleLogo extends StatelessWidget {
-  const _GoogleLogo();
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: const Size(18, 18),
-      painter: _GoogleLogoPainter(),
-    );
-  }
-}
-
-class _GoogleLogoPainter extends CustomPainter {
-  static const _blue = Color(0xFF4285F4);
-  static const _red = Color(0xFFEA4335);
-  static const _yellow = Color(0xFFFBBC05);
-  static const _green = Color(0xFF34A853);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final stroke = size.width * 0.20;
-    final rect = Rect.fromLTWH(
-      stroke / 2,
-      stroke / 2,
-      size.width - stroke,
-      size.height - stroke,
-    );
-
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round;
-
-    paint.color = _red;
-    canvas.drawArc(rect, -0.95, 1.35, false, paint);
-    paint.color = _yellow;
-    canvas.drawArc(rect, 0.42, 1.00, false, paint);
-    paint.color = _green;
-    canvas.drawArc(rect, 1.48, 1.18, false, paint);
-    paint.color = _blue;
-    canvas.drawArc(rect, 2.68, 2.64, false, paint);
-
-    // "G" 横杠
-    final barPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round
-      ..color = _blue;
-    final y = size.height * 0.50;
-    canvas.drawLine(
-      Offset(size.width * 0.50, y),
-      Offset(size.width * 0.90, y),
-      barPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _MicrosoftLogo extends StatelessWidget {
-  const _MicrosoftLogo();
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: const Size(18, 18),
-      painter: _MicrosoftLogoPainter(),
-    );
-  }
-}
-
-class _MicrosoftLogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final gap = size.width * 0.08;
-    final tile = (size.width - gap) / 2;
-
-    final paints = [
-      Paint()..color = const Color(0xFFF25022),
-      Paint()..color = const Color(0xFF7FBA00),
-      Paint()..color = const Color(0xFF00A4EF),
-      Paint()..color = const Color(0xFFFFB900),
-    ];
-
-    canvas.drawRect(Rect.fromLTWH(0, 0, tile, tile), paints[0]);
-    canvas.drawRect(Rect.fromLTWH(tile + gap, 0, tile, tile), paints[1]);
-    canvas.drawRect(Rect.fromLTWH(0, tile + gap, tile, tile), paints[2]);
-    canvas.drawRect(Rect.fromLTWH(tile + gap, tile + gap, tile, tile), paints[3]);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

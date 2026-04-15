@@ -45,8 +45,8 @@
 - 服务器部署：`docker compose pull && docker compose up -d`
 
 ## 下一步待办（优先）
-- Google 登录
-- Outlook（Microsoft）登录
+- ~~Google 登录~~
+- ~~Outlook（Microsoft）登录~~
 - OTP 集成测试：重发限制、过期行为、成功即销毁验证码
 
 ---

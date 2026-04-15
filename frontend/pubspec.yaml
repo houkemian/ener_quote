@@ -77,6 +77,8 @@ flutter:
     - assets/fonts/NotoSansSC-VariableFont_wght.ttf
     - assets/images/
     - assets/legal/
+    - assets/icons/google_logo.png
+    - assets/icons/microsoft_logo.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
