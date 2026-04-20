@@ -16,6 +16,7 @@ import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 import '../theme/app_colors.dart';
 import '../widgets/marketing_footer.dart';
+import '../core/billing/revenuecat_service.dart';
 
 /// 编译时注入（与后端 `.env` 中 OAuth Client 一致）：
 /// `--dart-define=GOOGLE_SERVER_CLIENT_ID=xxx.apps.googleusercontent.com`
@@ -158,6 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _persistTokenAndNavigate(String token) async {
     final prefs = await SharedPreferences.getInstance();
+    String? userId;
     final parts = token.split('.');
     if (parts.length == 3) {
       final payloadString = utf8.decode(
@@ -165,8 +167,12 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       final payloadMap = jsonDecode(payloadString) as Map<String, dynamic>;
       await prefs.setString('user_tier', payloadMap['tier']?.toString() ?? 'FREE');
+      userId = payloadMap['sub']?.toString();
     }
     await TokenManager.saveAccessToken(token);
+    if (userId != null && userId.isNotEmpty) {
+      await RevenueCatService.initializeForAppUser(userId);
+    }
     if (!mounted) return;
     await SystemChrome.setPreferredOrientations(const [
       DeviceOrientation.landscapeLeft,

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'dart:io' show Platform;
 import '../l10n/app_localizations.dart';
 import '../core/network/api_client.dart';
 import 'package:image_picker/image_picker.dart';
@@ -21,6 +25,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _currentAccount = '-';
   String? _proExpireDateText;
   bool _isUpgrading = false; // 🌟 新增：是否正在呼叫收银台
+  bool _isRevenueCatLoading = false;
+  bool _isRevenueCatPurchasing = false;
+  Offerings? _revenueCatOfferings;
+  String? _revenueCatError;
 
   // 控制器
   final TextEditingController _companyNameController = TextEditingController();
@@ -31,6 +39,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   bool _isLoading = true;
   bool get _canEditCosts => _userTier == "PRO";
+  bool get _isAndroidRevenueCatFlow => !kIsWeb && Platform.isAndroid;
   bool _costPanelExpanded = false;
 
   @override
@@ -432,7 +441,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return '${local.year}-$mm-$dd';
   }
 
-  void _showProPaywall({String? customSubtitle}) {
+  Future<void> _showProPaywall({String? customSubtitle}) async {
+    if (_isAndroidRevenueCatFlow) {
+      await _loadRevenueCatOfferings();
+    }
     final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
@@ -473,19 +485,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildProFeatureRow(l10n.proFeatureROI),
                   _buildProFeatureRow(l10n.proFeatureNoWatermark),
                   const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: () => _startCheckoutFromPaywall(buildContext),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.secondary,
-                      foregroundColor: AppColors.onSecondary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: Text(
-                      l10n.unlockProBtn,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ),
+                  _isAndroidRevenueCatFlow
+                      ? _buildRevenueCatSection(buildContext, l10n)
+                      : ElevatedButton(
+                          onPressed: () => _startCheckoutFromPaywall(buildContext),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.secondary,
+                            foregroundColor: AppColors.onSecondary,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: Text(
+                            l10n.unlockProBtn,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
                   const SizedBox(height: 10),
                 ],
               ),
@@ -509,6 +523,197 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _loadRevenueCatOfferings() async {
+    if (!_isAndroidRevenueCatFlow) {
+      return;
+    }
+    if (_isRevenueCatLoading) {
+      return;
+    }
+    setState(() {
+      _isRevenueCatLoading = true;
+      _revenueCatError = null;
+    });
+    try {
+      final offerings = await Purchases.getOfferings();
+      setState(() {
+        _revenueCatOfferings = offerings;
+      });
+    } on PlatformException catch (e) {
+      setState(() {
+        _revenueCatError = e.message ?? e.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRevenueCatLoading = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildRevenueCatSection(BuildContext bottomSheetContext, AppLocalizations l10n) {
+    if (_isRevenueCatLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+
+    if (_revenueCatError != null) {
+      return Text(
+        _revenueCatError!,
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+      );
+    }
+
+    final packages = _revenueCatOfferings?.current?.availablePackages ?? const <Package>[];
+    if (packages.isEmpty) {
+      return const Text(
+        'No Android subscription package is currently available.',
+        textAlign: TextAlign.center,
+        style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: packages.map((pkg) {
+        final product = pkg.storeProduct;
+        final title = product.title.trim().isNotEmpty ? product.title : pkg.identifier;
+        final subtitle = product.description.trim();
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.border),
+            borderRadius: BorderRadius.circular(10),
+            color: Theme.of(context).colorScheme.surface,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: AppColors.onSurface,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                product.priceString,
+                style: const TextStyle(
+                  color: AppColors.secondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (subtitle.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
+                ),
+              ],
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isRevenueCatPurchasing
+                      ? null
+                      : () => _purchaseRevenueCatPackage(pkg, bottomSheetContext, l10n),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.secondary,
+                    foregroundColor: AppColors.onSecondary,
+                  ),
+                  child: _isRevenueCatPurchasing
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Upgrade to PRO'),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Future<void> _purchaseRevenueCatPackage(
+    Package package,
+    BuildContext bottomSheetContext,
+    AppLocalizations l10n,
+  ) async {
+    if (_isRevenueCatPurchasing) {
+      return;
+    }
+    setState(() {
+      _isRevenueCatPurchasing = true;
+    });
+    try {
+      final purchaseResult = await Purchases.purchasePackage(package);
+      final isProActive =
+          purchaseResult.customerInfo.entitlements.all['pro']?.isActive == true;
+      if (!isProActive) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Purchase completed, waiting entitlement sync.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_tier', 'PRO');
+      if (mounted) {
+        setState(() {
+          _userTier = "PRO";
+          _proExpireDateText = null;
+        });
+      }
+      if (mounted) {
+        Navigator.pop(bottomSheetContext);
+      }
+
+      await ApiClient().refreshUserTierWithRetry();
+      await _loadSettings();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.paymentSuccessPro),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } on PlatformException catch (e) {
+      final code = PurchasesErrorHelper.getErrorCode(e);
+      if (code == PurchasesErrorCode.purchaseCancelledError) {
+        return;
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.paymentError(e.message ?? e.toString())),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRevenueCatPurchasing = false;
+        });
+      }
+    }
   }
 
   Future<void> _startCheckoutFromPaywall(BuildContext bottomSheetContext) async {

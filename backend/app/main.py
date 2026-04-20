@@ -1,12 +1,13 @@
 import logging
 import os
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request
 from fastapi.responses import FileResponse
 
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import simulation, auth # 引入 auth
-from app.api.deps import get_current_user_payload
+from app.api.deps import get_current_user_payload, get_db
+from sqlalchemy.orm import Session
 
 from app.modules.iam.router import router as iam_router # 导入独立模块
 from app.api.v1.locations import router as locations_router
@@ -98,6 +99,15 @@ app.include_router(
     payment.router, 
     prefix="/api/v1/payment", 
     tags=["Payment - Paddle Billing"])
+
+
+@app.post("/webhook/revenuecat", tags=["Payment - RevenueCat Webhook"])
+async def revenuecat_webhook_entry(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    # 兼容直连地址，同时复用 payment 模块中的核心处理逻辑。
+    return await payment.revenuecat_webhook(request, db)
 
 
 # 4. 健康检查探针 (Health Check)

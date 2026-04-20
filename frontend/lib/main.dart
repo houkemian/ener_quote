@@ -9,6 +9,7 @@ import 'theme/app_theme.dart';
 import 'app_routes.dart';
 import 'package:sentry_flutter/sentry_flutter.dart'; // 🌟 新增：引入探针
 import 'core/auth/token_manager.dart';
+import 'core/billing/revenuecat_service.dart';
 
 
 // 🌟 新增：打造一把全局路由的“万能钥匙”
@@ -20,6 +21,9 @@ void main() async {
 
   final token = await TokenManager.getAccessToken();
   final isLoggedIn = token != null && token.isNotEmpty;
+  if (isLoggedIn) {
+    await RevenueCatService.initializeFromJwt(token);
+  }
 
   // 未登录时展示登录页，强制竖屏；登录后业务页保持横屏。
   await SystemChrome.setPreferredOrientations(

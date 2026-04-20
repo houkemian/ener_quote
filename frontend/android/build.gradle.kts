@@ -1,10 +1,12 @@
 allprojects {
     repositories {
+
+                google()
+        mavenCentral()
         maven { url = uri("https://maven.aliyun.com/repository/google") }
         maven { url = uri("https://maven.aliyun.com/repository/public") }
         maven { url = uri("https://mirrors.tencent.com/nexus/repository/maven-public/") }
-        google()
-        mavenCentral()
+
     }
 }
 
@@ -21,11 +23,13 @@ subprojects {
     // 🌟 终极强权指令：强制接管所有第三方 Flutter 插件的下载源 (纯正 Kotlin 版)
     buildscript {
         repositories {
+
+                        google()
+            mavenCentral()
             maven { url = uri("https://maven.aliyun.com/repository/google") }
             maven { url = uri("https://maven.aliyun.com/repository/public") }
             maven { url = uri("https://mirrors.tencent.com/nexus/repository/maven-public/") }
-            google()
-            mavenCentral()
+
         }
     }
     repositories {

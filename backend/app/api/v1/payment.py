@@ -15,6 +15,7 @@ from app.core.config import (
     PADDLE_CHECKOUT_SUCCESS_REDIRECT_URL,
     PADDLE_CLIENT_TOKEN,
     PADDLE_PRICE_ID,
+    REVENUECAT_WEBHOOK_AUTH,
     PADDLE_WEBHOOK_SECRET,
     paddle_api_base_url,
     paddle_js_environment,
@@ -128,6 +129,33 @@ def _extract_money_fields(data: dict[str, Any]) -> tuple[str | None, str | None]
         str(currency) if currency is not None else None,
         str(amount) if amount is not None else None,
     )
+
+
+def _resolve_user_from_app_user_id(db: Session, app_user_id: str) -> User | None:
+    normalized = app_user_id.strip()
+    if not normalized:
+        return None
+    user = db.query(User).filter(User.id == normalized).first()
+    if user:
+        return user
+    return db.query(User).filter(User.email == normalized.lower()).first()
+
+
+def _parse_revenuecat_expire(event: dict[str, Any]) -> datetime:
+    expiration_ms = event.get("expiration_at_ms")
+    if expiration_ms is not None:
+        try:
+            return datetime.utcfromtimestamp(int(expiration_ms) / 1000)
+        except (TypeError, ValueError):
+            pass
+
+    expires_date = event.get("expires_date") or event.get("expiration_at")
+    if isinstance(expires_date, str) and expires_date.strip():
+        parsed = _parse_event_datetime(expires_date)
+        if parsed:
+            return parsed
+
+    return datetime.utcnow() + timedelta(days=30)
 
 
 def _create_order_if_absent(
@@ -418,6 +446,53 @@ async def paddle_webhook(request: Request, db: Session = Depends(get_db)):
 
     webhook_event.process_status = "ignored"
     db.commit()
+    return {"status": "ignored", "event_type": event_type}
+
+
+@router.post("/webhook/revenuecat")
+async def revenuecat_webhook(request: Request, db: Session = Depends(get_db)):
+    """
+    RevenueCat Webhook:
+    - INITIAL_PURCHASE / RENEWAL => 用户升级 PRO
+    - CANCELLATION / EXPIRATION => 用户降级 FREE
+    """
+    expected_auth = REVENUECAT_WEBHOOK_AUTH
+    if expected_auth:
+        auth_header = request.headers.get("authorization", "").strip()
+        if auth_header != expected_auth:
+            raise HTTPException(status_code=401, detail="Invalid RevenueCat webhook auth")
+
+    payload = await request.json()
+    event = payload.get("event") if isinstance(payload, dict) else None
+    if not isinstance(event, dict):
+        event = payload if isinstance(payload, dict) else {}
+
+    event_type = str(event.get("type") or "").strip().upper()
+    app_user_id = str(event.get("app_user_id") or "").strip()
+    if not event_type or not app_user_id:
+        raise HTTPException(status_code=400, detail="Missing event.type or event.app_user_id")
+
+    user = _resolve_user_from_app_user_id(db, app_user_id)
+    if not user:
+        logger.warning(
+            "RevenueCat webhook user not found: app_user_id=%s event_type=%s",
+            app_user_id,
+            event_type,
+        )
+        return {"status": "no_user", "event_type": event_type}
+
+    if event_type in {"INITIAL_PURCHASE", "RENEWAL"}:
+        user.tier = "PRO"
+        user.pro_expire_date = _parse_revenuecat_expire(event)
+        db.commit()
+        return {"status": "success", "event_type": event_type, "tier": "PRO"}
+
+    if event_type in {"CANCELLATION", "EXPIRATION"}:
+        user.tier = "FREE"
+        user.pro_expire_date = None
+        db.commit()
+        return {"status": "success", "event_type": event_type, "tier": "FREE"}
+
     return {"status": "ignored", "event_type": event_type}
 
 
