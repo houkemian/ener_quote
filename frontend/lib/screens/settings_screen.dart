@@ -829,13 +829,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _showDeleteAccountDialog() async {
-    final bool? confirmed = await showDialog<bool>(
+    await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
         bool isDeleting = false;
         return StatefulBuilder(
-          builder: (context, setDialogState) {
+          builder: (actionContext, setDialogState) {
             return AlertDialog(
               title: const Text('Delete Account'),
               content: const Text(
@@ -855,11 +855,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           setDialogState(() {
                             isDeleting = true;
                           });
-                          final ok = await _deleteAccountAndRedirect();
-                          if (!dialogContext.mounted) {
-                            return;
-                          }
-                          Navigator.of(dialogContext).pop(ok);
+                          await _deleteAccountAndRedirect(actionContext);
                         },
                   child: isDeleting
                       ? const SizedBox(
@@ -878,13 +874,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       },
     );
-
-    if (confirmed != true || !mounted) {
-      return;
-    }
   }
 
-  Future<bool> _deleteAccountAndRedirect() async {
+  Future<void> _deleteAccountAndRedirect(BuildContext context) async {
     try {
       await ApiClient().deleteAccount();
       await Purchases.logOut();
@@ -898,18 +890,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await prefs.remove('ess_cost');
       await prefs.remove('margin_pct');
 
-      if (!mounted) {
-        return true;
+      if (!context.mounted) {
+        return;
       }
 
-      Navigator.of(context).pushAndRemoveUntil(
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
         (route) => false,
       );
-      return true;
     } catch (e) {
-      if (!mounted) {
-        return false;
+      if (!context.mounted) {
+        return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -917,7 +908,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           backgroundColor: Colors.redAccent,
         ),
       );
-      return false;
     }
   }
 }
