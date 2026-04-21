@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import 'package:flutter/services.dart';
 
 class AppConfigService {
@@ -20,10 +21,9 @@ class AppConfigService {
         _config = decoded;
       }
     } catch (e) {
-      print(
-        '[AppConfig] Failed to load $_configAssetPath. '
-        'Falling back to empty config. Error: $e',
-      );
+      if (kDebugMode) {
+        debugPrint('[AppConfig] Failed to load config asset, fallback to empty.');
+      }
     } finally {
       _loaded = true;
     }

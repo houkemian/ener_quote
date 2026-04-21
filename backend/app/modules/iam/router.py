@@ -64,8 +64,6 @@ async def register_user(user_in: UserRegister, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
-    print(f"🎉 [IAM 模块] 新用户注册成功: {new_user.email}, 初始权限: {new_user.tier}")
-    
     return new_user
 
 

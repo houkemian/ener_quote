@@ -274,12 +274,10 @@ def create_checkout_session(
         "custom_data": {"user_id": str(current_user.user_id)},
     }
     logger.info(
-        "Paddle create transaction request: base=%s endpoint=%s payload=%s",
-        base,
+        "Paddle create transaction request: endpoint=%s user_id=%s",
         "/transactions",
-        payload,
+        current_user.user_id,
     )
-    logger.info("Paddle final request URL: %s", request_url)
 
     try:
         with httpx.Client(timeout=30.0) as client:
@@ -293,7 +291,6 @@ def create_checkout_session(
         raise HTTPException(status_code=502, detail="Paddle API unreachable") from e
 
     if response.status_code not in (200, 201):
-        logger.warning("Paddle raw response text: %s", response.text)
         parsed_error: dict[str, Any] = {}
         request_id: str | None = None
         error_code: str | None = None
@@ -309,12 +306,11 @@ def create_checkout_session(
                 pass
 
         logger.warning(
-            "Paddle create transaction failed: status=%s request_id=%s error_code=%s detail=%s raw=%s",
+            "Paddle create transaction failed: status=%s request_id=%s error_code=%s detail=%s",
             response.status_code,
             request_id,
             error_code,
             error_detail,
-            response.text[:2000],
         )
 
         if error_code == "transaction_default_checkout_url_not_set":
@@ -334,7 +330,6 @@ def create_checkout_session(
             detail = response.text[:800]
         raise HTTPException(status_code=400, detail=detail)
 
-    logger.info("Paddle success raw response text: %s", response.text)
     body = response.json()
     data = body.get("data") or {}
     checkout = data.get("checkout") or {}
@@ -363,10 +358,11 @@ async def paddle_webhook(request: Request, db: Session = Depends(get_db)):
         "Paddle-Signature"
     )
 
-    logger.info("Paddle webhook path params: %s", request.path_params)
-    logger.info("Paddle webhook request body: %s", raw)
-    logger.info("Paddle webhook request headers: %s", request.headers)
-    logger.info("Paddle webhook request query params: %s", request.query_params)
+    logger.info(
+        "Paddle webhook received: path=%s content_length=%s",
+        request.url.path,
+        len(raw),
+    )
 
     if not PADDLE_WEBHOOK_SECRET:
         raise HTTPException(status_code=500, detail="Webhook secret not configured")
@@ -435,8 +431,8 @@ async def paddle_webhook(request: Request, db: Session = Depends(get_db)):
         webhook_event.process_status = "processed"
         db.commit()
         logger.info(
-            "User %s upgraded to PRO via Paddle transaction.completed, expire_at=%s",
-            user.email,
+            "User upgraded to PRO via Paddle transaction.completed: user_id=%s expire_at=%s",
+            user.id,
             user.pro_expire_date,
         )
         return {"status": "success", "event_type": event_type}
@@ -468,8 +464,8 @@ async def paddle_webhook(request: Request, db: Session = Depends(get_db)):
         webhook_event.process_status = "processed"
         db.commit()
         logger.info(
-            "User %s renewed PRO via Paddle subscription.renewed, expire_at=%s",
-            user.email,
+            "User renewed PRO via Paddle subscription.renewed: user_id=%s expire_at=%s",
+            user.id,
             user.pro_expire_date,
         )
         return {"status": "success", "event_type": event_type}
@@ -494,9 +490,9 @@ async def paddle_webhook(request: Request, db: Session = Depends(get_db)):
         webhook_event.process_status = "processed"
         db.commit()
         logger.info(
-            "User %s downgraded to FREE via Paddle %s",
-            user.email,
+            "User downgraded to FREE via Paddle %s: user_id=%s",
             event_type,
+            user.id,
         )
         return {"status": "success", "event_type": event_type}
 
@@ -552,8 +548,8 @@ async def revenuecat_webhook(request: Request, db: Session = Depends(get_db)):
         user.pro_expire_date = max(current_expire, grace_end)
         db.commit()
         logger.warning(
-            "RevenueCat BILLING_ISSUE for user=%s, keep PRO grace until=%s",
-            user.email,
+            "RevenueCat BILLING_ISSUE: user_id=%s keep PRO grace until=%s",
+            user.id,
             user.pro_expire_date,
         )
         return {

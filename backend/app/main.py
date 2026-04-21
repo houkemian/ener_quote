@@ -1,8 +1,12 @@
 import logging
 import os
+import random
+from pathlib import Path
 
-from fastapi import FastAPI, Depends, Request
+import redis
+from fastapi import FastAPI, Depends, Request, HTTPException
 from fastapi.responses import FileResponse
+from fastapi.templating import Jinja2Templates
 
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import simulation, auth # 引入 auth
@@ -21,6 +25,8 @@ from app.models.user_settings import UserSettings
 # 🌟 2. 导入我们刚刚写好的 settings 路由
 from app.api.v1.settings import router as settings_router
 from app.api.v1 import payment  # 🌟 新增：引入咱们写好的支付模块
+from app.modules.iam.models import PaymentOrder
+from app.utils.email_sender import send_register_otp_email
 
 
 def _setup_logging() -> logging.Logger:
@@ -47,6 +53,21 @@ def _setup_logging() -> logging.Logger:
 
 logger = _setup_logging()
 logger.info("App logger initialized.")
+
+TEMPLATES = Jinja2Templates(
+    directory=str(Path(__file__).resolve().parents[1] / "templates")
+)
+DELETE_PORTAL_OTP_PREFIX = "delete_portal:otp:"
+DELETE_PORTAL_COOLDOWN_PREFIX = "delete_portal:cooldown:"
+DELETE_PORTAL_OTP_TTL_SECONDS = 300
+DELETE_PORTAL_COOLDOWN_SECONDS = 60
+redis_client = redis.Redis(
+    host=os.getenv("REDIS_HOST", "localhost"),
+    port=int(os.getenv("REDIS_PORT", "6379")),
+    db=int(os.getenv("REDIS_DB", "2")),
+    password=os.getenv("REDIS_PASSWORD"),
+    decode_responses=True,
+)
 
 
 # 1. 初始化 FastAPI 应用，并配置专业的 Swagger 文档信息
@@ -129,3 +150,72 @@ def get_privacy_policy():
 @app.get("/terms.html", tags=["Legal"])
 def get_terms_of_service():
     return FileResponse(os.path.join("static", "terms.html"))
+
+
+@app.get("/account-deletion", tags=["Legal"])
+async def account_deletion_portal(request: Request):
+    return TEMPLATES.TemplateResponse(
+        request=request,
+        name="delete_account_portal.html",
+    )
+
+
+@app.post("/account-deletion/send-code", tags=["Legal"])
+async def send_account_deletion_code(payload: dict, db: Session = Depends(get_db)):
+    email_raw = str(payload.get("email", "")).strip().lower()
+    if "@" not in email_raw:
+        raise HTTPException(status_code=422, detail="Invalid email format")
+
+    cooldown_key = f"{DELETE_PORTAL_COOLDOWN_PREFIX}{email_raw}"
+    if redis_client.exists(cooldown_key):
+        raise HTTPException(status_code=429, detail="Please wait before requesting a new code")
+
+    user = db.query(User).filter(User.email == email_raw).first()
+    if not user:
+        # 避免泄露账号是否存在，前端统一显示“已发送”
+        return {"ok": True, "message": "If the email exists, a verification code has been sent"}
+
+    otp_code = f"{random.randint(0, 999999):06d}"
+    redis_client.setex(f"{DELETE_PORTAL_OTP_PREFIX}{email_raw}", DELETE_PORTAL_OTP_TTL_SECONDS, otp_code)
+    redis_client.setex(cooldown_key, DELETE_PORTAL_COOLDOWN_SECONDS, "1")
+    await send_register_otp_email(email_raw, otp_code, "en")
+
+    return {"ok": True, "message": "Verification code sent"}
+
+
+@app.post("/account-deletion/confirm", tags=["Legal"])
+async def confirm_account_deletion(payload: dict, db: Session = Depends(get_db)):
+    email_raw = str(payload.get("email", "")).strip().lower()
+    code = str(payload.get("code", "")).strip()
+    acknowledged = bool(payload.get("acknowledged", False))
+
+    if "@" not in email_raw:
+        raise HTTPException(status_code=422, detail="Invalid email format")
+    if len(code) != 6 or not code.isdigit():
+        raise HTTPException(status_code=422, detail="Invalid verification code")
+    if not acknowledged:
+        raise HTTPException(status_code=400, detail="You must acknowledge the deletion warning")
+
+    otp_key = f"{DELETE_PORTAL_OTP_PREFIX}{email_raw}"
+    saved_code = redis_client.get(otp_key)
+    if not saved_code or saved_code != code:
+        raise HTTPException(status_code=400, detail="Verification code is invalid or expired")
+
+    with db.begin():
+        user = db.query(User).filter(User.email == email_raw).first()
+        if not user:
+            redis_client.delete(otp_key)
+            return {"ok": True, "message": "Account already deleted"}
+
+        db.query(PaymentOrder).filter(PaymentOrder.user_id == user.id).update(
+            {PaymentOrder.user_id: None},
+            synchronize_session=False,
+        )
+        db.query(UserSettings).filter(UserSettings.user_id == user.id).delete(
+            synchronize_session=False
+        )
+        db.delete(user)
+
+    redis_client.delete(otp_key)
+    redis_client.delete(f"{DELETE_PORTAL_COOLDOWN_PREFIX}{email_raw}")
+    return {"ok": True, "message": "Your account has been permanently deleted"}

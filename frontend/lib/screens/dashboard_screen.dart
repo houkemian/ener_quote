@@ -218,8 +218,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
 
     } on DioException catch (e, stackTrace) {
-      print("🔴 Dio Error: ${e.response?.data}");
-
       // 🌟 主动把这种非致命错误也传给 Sentry 控制台
       await Sentry.captureException(
         e,
@@ -231,9 +229,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _errorMessage = l10n.simulateFailed(errorMsg); // 🌟 动态抛错
       });
     } catch (e, stacktrace) {
-      print("🔥 Parse Error: $e");
-      print(stacktrace);
-
     // 🌟 主动把这种非致命错误也传给 Sentry 控制台
     await Sentry.captureException(
     e,
@@ -301,8 +296,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               String customCompanyName = prefs.getString('company_name') ?? "PV+ESS QUOTE MASTER";
               String customLogoUrl = prefs.getString('logo_url') ?? ""; // 👈 获取 Logo 链接
               final bool isPro = currentUserTier == "PRO";
-              print("👉 [2. 主页读取] 导出 PDF 前，从本地拿到的 Logo 长度: ${customLogoUrl.length}");
-
               // 1. 先进入类 PDF 的预览页，再由预览页导出真实 PDF 文件
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -332,8 +325,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 MaterialPageRoute(builder: (_) => const SettingsScreen()),
               );
 
-              // 🌟 2. 用户返回后，立刻触发重新测算，应用他刚改的成本和利润率！
+              // 🌟 2. 用户返回后，先刷新权限，再触发重算。
               if (mounted) {
+                await _loadUserTier();
                 _fetchRealData();
               }
             },

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart'; // 🌟 引入 UI 库
+import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import '../../main.dart'; // 🌟 引入全局钥匙
 import '../../screens/login_screen.dart'; // 🌟 引入登录页
 import '../../l10n/app_localizations.dart'; // 👈 新增这行
@@ -23,6 +24,12 @@ class ApiClient {
   factory ApiClient() => _instance;
 
   late Dio dio;
+
+  void _debugLog(String message) {
+    if (kDebugMode) {
+      debugPrint(message);
+    }
+  }
 
   ApiClient._internal() {
     // 2. 统一基础配置 (Base URL)
@@ -75,7 +82,7 @@ class ApiClient {
         if (e.response?.statusCode == 401 &&
             hasAuthHeader &&
             !_isAuthEndpoint(path)) {
-          print("🔒 [全局拦截] Token 无效或已过期！强制登出...");
+          _debugLog("Auth token expired, forcing logout.");
 
 
           // 1. 彻底撕毁本地所有缓存
@@ -113,7 +120,7 @@ class ApiClient {
       }
       return null;
     } catch (e) {
-      print("❌ 获取 Paddle 结账链接失败: $e");
+      _debugLog("Failed to fetch checkout URL.");
       rethrow;
     }
   }
@@ -134,7 +141,7 @@ class ApiClient {
       }
       return null;
     } catch (e) {
-      print("❌ Token 刷新失败: $e");
+      _debugLog("Failed to refresh user token.");
       return null;
     }
   }
@@ -162,7 +169,7 @@ class ApiClient {
       final response = await dio.get('/locations/cities');
       return response.data as List<dynamic>;
     } catch (e) {
-      print("❌ 获取城市列表失败: $e");
+      _debugLog("Failed to fetch city list.");
       return [];
     }
   }
@@ -174,7 +181,7 @@ class ApiClient {
       await dio.post('/auth/forgot-password', data: {"email": email, "language":langCode});
       return true; // 不管后端返回什么，前端都展示发送成功
     } catch (e) {
-      print("发送验证码失败: $e");
+      _debugLog("Failed to request password reset.");
       return false;
     }
   }
@@ -189,7 +196,7 @@ class ApiClient {
       });
       return response.statusCode == 200;
     } catch (e) {
-      print("重置密码失败: $e");
+      _debugLog("Failed to reset password.");
       return false;
     }
   }
@@ -248,6 +255,10 @@ class ApiClient {
       );
     }
     return data;
+  }
+
+  Future<void> deleteAccount() async {
+    await dio.delete('/auth/logout');
   }
 
 }

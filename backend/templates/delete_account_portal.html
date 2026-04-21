@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delete Your EnerQuote Account</title>
+    <style>
+      :root {
+        --bg: #f8f9fa;
+        --card: #ffffff;
+        --text: #202124;
+        --subtle: #5f6368;
+        --primary: #1a73e8;
+        --danger: #d93025;
+        --border: #dadce0;
+        --warn-bg: #fce8e6;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, Roboto, "Segoe UI", Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      .container {
+        max-width: 720px;
+        margin: 32px auto;
+        padding: 0 16px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 1px 3px rgba(32, 33, 36, 0.08);
+        padding: 24px;
+      }
+      h1 {
+        margin: 0 0 12px 0;
+        font-size: 30px;
+        line-height: 1.2;
+      }
+      p { margin: 0 0 12px 0; color: var(--subtle); line-height: 1.6; }
+      .warning {
+        margin: 14px 0 20px 0;
+        padding: 14px;
+        border-radius: 10px;
+        border: 1px solid #f4b7b1;
+        background: var(--warn-bg);
+        color: #8a1c13;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .field { margin-top: 14px; }
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 14px;
+        color: var(--text);
+        font-weight: 600;
+      }
+      input[type="email"], input[type="text"] {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 15px;
+      }
+      .actions {
+        margin-top: 16px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 10px 18px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn-primary { background: var(--primary); color: #fff; }
+      .btn-danger { background: var(--danger); color: #fff; }
+      .btn-ghost {
+        background: #fff;
+        color: var(--subtle);
+        border: 1px solid var(--border);
+      }
+      button[disabled] {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      .step { display: none; }
+      .step.active { display: block; }
+      .checkline {
+        margin-top: 14px;
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        font-size: 14px;
+      }
+      .status {
+        margin-top: 12px;
+        font-size: 14px;
+        min-height: 20px;
+      }
+      .ok { color: #188038; }
+      .err { color: var(--danger); }
+      @media (max-width: 640px) {
+        .container { margin: 18px auto; }
+        .card { padding: 16px; border-radius: 12px; }
+        h1 { font-size: 24px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <section class="card">
+        <h1>Delete Your EnerQuote Account</h1>
+        <p>Use this self-service portal to verify ownership and permanently delete your account.</p>
+        <div class="warning">
+          <strong>Crucial:</strong> Deleting your account will permanently remove all your quotes and data. Please note: This action does NOT cancel your active Google Play subscriptions. You must manage them in the Google Play Store.
+        </div>
+
+        <div id="step-email" class="step active">
+          <div class="field">
+            <label for="email">Account Email</label>
+            <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
+          </div>
+          <div class="actions">
+            <button id="send-code-btn" class="btn-primary">Send Verification Code</button>
+          </div>
+        </div>
+
+        <div id="step-code" class="step">
+          <div class="field">
+            <label for="code">Verification Code</label>
+            <input id="code" type="text" placeholder="6-digit code" maxlength="6" inputmode="numeric" />
+          </div>
+          <div class="checkline">
+            <input id="ack" type="checkbox" />
+            <label for="ack" style="margin:0; font-weight:500;">
+              I understand that my data will be deleted and I have manually cancelled my subscription.
+            </label>
+          </div>
+          <div class="actions">
+            <button id="back-btn" class="btn-ghost">Back</button>
+            <button id="confirm-btn" class="btn-danger" disabled>Confirm Deletion</button>
+          </div>
+        </div>
+
+        <div id="status" class="status"></div>
+      </section>
+    </main>
+
+    <script>
+      const stepEmail = document.getElementById('step-email');
+      const stepCode = document.getElementById('step-code');
+      const emailInput = document.getElementById('email');
+      const codeInput = document.getElementById('code');
+      const ackInput = document.getElementById('ack');
+      const sendCodeBtn = document.getElementById('send-code-btn');
+      const confirmBtn = document.getElementById('confirm-btn');
+      const backBtn = document.getElementById('back-btn');
+      const statusEl = document.getElementById('status');
+
+      function setStatus(message, type) {
+        statusEl.textContent = message || '';
+        statusEl.className = `status ${type || ''}`;
+      }
+
+      function setStep(step) {
+        stepEmail.classList.toggle('active', step === 'email');
+        stepCode.classList.toggle('active', step === 'code');
+      }
+
+      function updateConfirmBtnState() {
+        const codeOk = /^\d{6}$/.test(codeInput.value.trim());
+        confirmBtn.disabled = !(codeOk && ackInput.checked);
+      }
+
+      sendCodeBtn.addEventListener('click', async () => {
+        const email = emailInput.value.trim().toLowerCase();
+        if (!email || !email.includes('@')) {
+          setStatus('Please enter a valid email address.', 'err');
+          return;
+        }
+        sendCodeBtn.disabled = true;
+        setStatus('Sending verification code...', '');
+        try {
+          const resp = await fetch('/account-deletion/send-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+          });
+          const data = await resp.json();
+          if (!resp.ok) throw new Error(data.detail || 'Failed to send code');
+          setStep('code');
+          setStatus('Verification code sent. Please check your inbox.', 'ok');
+        } catch (e) {
+          setStatus(e.message || 'Failed to send verification code.', 'err');
+        } finally {
+          sendCodeBtn.disabled = false;
+        }
+      });
+
+      confirmBtn.addEventListener('click', async () => {
+        const email = emailInput.value.trim().toLowerCase();
+        const code = codeInput.value.trim();
+        confirmBtn.disabled = true;
+        setStatus('Deleting account...', '');
+        try {
+          const resp = await fetch('/account-deletion/confirm', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email,
+              code,
+              acknowledged: ackInput.checked
+            })
+          });
+          const data = await resp.json();
+          if (!resp.ok) throw new Error(data.detail || 'Deletion failed');
+          setStatus('Your account has been permanently deleted.', 'ok');
+        } catch (e) {
+          setStatus(e.message || 'Failed to delete account.', 'err');
+        } finally {
+          updateConfirmBtnState();
+        }
+      });
+
+      backBtn.addEventListener('click', () => {
+        setStep('email');
+        codeInput.value = '';
+        ackInput.checked = false;
+        updateConfirmBtnState();
+        setStatus('', '');
+      });
+
+      codeInput.addEventListener('input', () => {
+        codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, 6);
+        updateConfirmBtnState();
+      });
+      ackInput.addEventListener('change', updateConfirmBtnState);
+    </script>
+  </body>
+</html>

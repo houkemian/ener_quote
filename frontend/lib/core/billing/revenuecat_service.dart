@@ -23,10 +23,9 @@ class RevenueCatService {
     }
     final publicKey = AppConfigService.revenueCatPublicKeyAndroid;
     if (publicKey.isEmpty) {
-      print(
-        '[RevenueCat] REVENUECAT_PUBLIC_KEY_ANDROID is empty in '
-        'assets/config/app_config.json. Skip Purchases.configure().',
-      );
+      if (kDebugMode) {
+        debugPrint('[RevenueCat] Android public key is empty, skip configure.');
+      }
       return;
     }
     if (_isConfigured) {

@@ -7,10 +7,12 @@ import 'dart:io' show Platform;
 import '../l10n/app_localizations.dart';
 import '../core/network/api_client.dart';
 import '../core/billing/revenuecat_service.dart';
+import '../core/auth/token_manager.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert'; // 用于 Base64 转换
 import '../theme/app_colors.dart';
 import 'paddle_checkout_webview.dart';
+import 'login_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -83,7 +85,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _showBillingIssueNoticeIfNeeded(billingIssueGraceUntilRaw);
 
     } catch (e) {
-      print("拉取云端配置失败: $e");
       // 如果断网或失败，降级使用本地缓存 (保持你原有的逻辑不变)
       final prefs = await SharedPreferences.getInstance();
       setState(() {
@@ -149,7 +150,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('company_name', _companyNameController.text.trim());
     await prefs.setString('logo_url', _logoUrlController.text.trim());
-    print("👉 [1. 存入设置] 准备存入本地的 Logo 长度: ${_logoUrlController.text.trim().length}");
     await prefs.setDouble('pv_cost', double.tryParse(_pvCostController.text) ?? 800.0);
     await prefs.setDouble('ess_cost', double.tryParse(_essCostController.text) ?? 350.0);
     await prefs.setDouble('margin_pct', double.tryParse(_marginController.text) ?? 20.0);
@@ -314,9 +314,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       SnackBar(content: Text(l10n.msgLogoConverted), backgroundColor: AppColors.success),
                     );
                   }
-                } catch (e) {
-                  print("选取图片失败: $e");
-                }
+                } catch (_) {}
               },
             ),
           ),
@@ -383,6 +381,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Text(
                   l10n.saveSettingsBtn,
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton(
+                onPressed: _showDeleteAccountDialog,
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.redAccent),
+                  foregroundColor: Colors.redAccent,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text(
+                  'Delete Account',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
               ),
               const SizedBox(height: 40),
@@ -813,6 +825,99 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _isUpgrading = false;
         });
       }
+    }
+  }
+
+  Future<void> _showDeleteAccountDialog() async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        bool isDeleting = false;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Delete Account'),
+              content: const Text(
+                'Are you sure? All your data will be permanently deleted.\n\n'
+                '⚠️ IMPORTANT: Deleting your account does NOT cancel your Google Play subscription. '
+                'Please manage your subscriptions in the Play Store.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isDeleting ? null : () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: isDeleting
+                      ? null
+                      : () async {
+                          setDialogState(() {
+                            isDeleting = true;
+                          });
+                          final ok = await _deleteAccountAndRedirect();
+                          if (!dialogContext.mounted) {
+                            return;
+                          }
+                          Navigator.of(dialogContext).pop(ok);
+                        },
+                  child: isDeleting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text(
+                          'Delete',
+                          style: TextStyle(color: Colors.redAccent),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+  }
+
+  Future<bool> _deleteAccountAndRedirect() async {
+    try {
+      await ApiClient().deleteAccount();
+      await Purchases.logOut();
+
+      await TokenManager.clearAccessToken();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('user_tier');
+      await prefs.remove('company_name');
+      await prefs.remove('logo_url');
+      await prefs.remove('pv_cost');
+      await prefs.remove('ess_cost');
+      await prefs.remove('margin_pct');
+
+      if (!mounted) {
+        return true;
+      }
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+      return true;
+    } catch (e) {
+      if (!mounted) {
+        return false;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete account: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return false;
     }
   }
 }

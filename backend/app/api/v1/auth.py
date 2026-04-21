@@ -4,17 +4,21 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from pydantic import EmailStr, TypeAdapter, ValidationError
 from app.api.deps import get_current_user_payload, TokenPayload # 🌟 引入安检门
+from fastapi.security import OAuth2PasswordBearer
 
 from app.core.security import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from app.api.deps import get_db
 # 🌟 引入真实的 IAM 用户表和密码校验工具
-from app.modules.iam.models import User as IAMUser
+from app.modules.iam.models import User as IAMUser, PaymentOrder
 from app.modules.iam.security import verify_password
 from app.modules.iam.schemas import OAuthIdTokenRequest
 from app.services.oauth_id_tokens import verify_google_id_token, verify_microsoft_id_token
+from app.models.user_settings import UserSettings
+from app.core.security import decode_and_validate_access_token, REDIS_PREFIX, redis_client
 
 router = APIRouter()
 email_adapter = TypeAdapter(EmailStr)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 def _resolve_effective_tier(user: IAMUser) -> str:
@@ -245,3 +249,39 @@ async def oauth_microsoft(body: OAuthIdTokenRequest, db: Session = Depends(get_d
         "tier": effective_tier,
         "auth_provider": "microsoft",
     }
+
+
+@router.api_route("/logout", methods=["DELETE", "POST"], status_code=status.HTTP_200_OK)
+async def logout_and_delete_current_user(
+    current_user: TokenPayload = Depends(get_current_user_payload),
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+):
+    """
+    用户注销（账号删除）：
+    1) 先通过依赖校验当前 Bearer Token；
+    2) 在同一事务中删除用户相关数据并删除用户；
+    3) 返回 200 确认信息。
+    """
+    token_payload = decode_and_validate_access_token(token)
+
+    with db.begin():
+        user = db.query(IAMUser).filter(IAMUser.id == current_user.user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="用户不存在")
+
+        # 避免外键约束冲突：解绑支付记录与用户配置，再删除用户
+        db.query(PaymentOrder).filter(PaymentOrder.user_id == current_user.user_id).update(
+            {PaymentOrder.user_id: None},
+            synchronize_session=False,
+        )
+        db.query(UserSettings).filter(UserSettings.user_id == current_user.user_id).delete(
+            synchronize_session=False
+        )
+        db.delete(user)
+
+    jti = token_payload.get("jti")
+    if jti:
+        redis_client.delete(f"{REDIS_PREFIX}{jti}")
+
+    return {"message": "用户已注销并删除成功"}

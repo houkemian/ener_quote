@@ -28,7 +28,6 @@ class PdfExport {
   }) async {
     final effectiveCompanyName = isProUser ? companyName : "EnerQuote System";
     final effectiveLogoUrl = isProUser ? logoUrl : "";
-    print("👉 [3. PDF 引擎] 最终传进 PDF 引擎的 Logo 长度: ${effectiveLogoUrl.length}");
     final font = pw.Font.ttf(await rootBundle.load('assets/fonts/NotoSansSC-VariableFont_wght.ttf'));
     final pdf = pw.Document(
       theme: pw.ThemeData.withFont(
@@ -74,7 +73,6 @@ class PdfExport {
       } catch (e) {
         // 抓取异常的第一行，准备印在 PDF 上
         logoErrorMessage = "Err: ${e.toString().split('\n')[0]}";
-        print("🔥 Logo 加载异常: $e");
       }
     }
 

@@ -156,7 +156,6 @@ def update_my_settings(
         user.tier = effective_tier
         db.commit()
     
-    print(f"✅ 用户 {user_id} 的业务配置已更新。")
     return {
         "user_id": settings.user_id,
         "account_email": account_email,
