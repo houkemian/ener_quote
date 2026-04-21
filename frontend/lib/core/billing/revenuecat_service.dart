@@ -4,21 +4,51 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import '../config/app_config_service.dart';
 
 class RevenueCatService {
   RevenueCatService._();
 
-  static const String _androidPublicKey = String.fromEnvironment(
-    'REVENUECAT_PUBLIC_KEY_ANDROID',
-    defaultValue: '',
-  );
-
   static String? _lastConfiguredUserId;
+  static bool _isConfigured = false;
 
   static bool get _canUseRevenueCat =>
-      !kIsWeb && Platform.isAndroid && _androidPublicKey.trim().isNotEmpty;
+      !kIsWeb &&
+      Platform.isAndroid &&
+      AppConfigService.revenueCatPublicKeyAndroid.isNotEmpty;
+
+  static Future<void> ensureInitialized() async {
+    if (kIsWeb || !Platform.isAndroid) {
+      return;
+    }
+    final publicKey = AppConfigService.revenueCatPublicKeyAndroid;
+    if (publicKey.isEmpty) {
+      print(
+        '[RevenueCat] REVENUECAT_PUBLIC_KEY_ANDROID is empty in '
+        'assets/config/app_config.json. Skip Purchases.configure().',
+      );
+      return;
+    }
+    if (_isConfigured) {
+      return;
+    }
+    await Purchases.setLogLevel(LogLevel.debug);
+    try {
+      final configuration = PurchasesConfiguration(publicKey);
+      await Purchases.configure(configuration);
+      _isConfigured = true;
+    } on PlatformException catch (e) {
+      final code = e.code.toLowerCase();
+      if (code.contains('configured')) {
+        _isConfigured = true;
+        return;
+      }
+      rethrow;
+    }
+  }
 
   static Future<void> initializeFromJwt(String? token) async {
+    await ensureInitialized();
     if (token == null || token.trim().isEmpty) {
       return;
     }
@@ -31,7 +61,11 @@ class RevenueCatService {
 
   static Future<void> initializeForAppUser(String appUserId) async {
     final normalizedUserId = appUserId.trim();
-    if (normalizedUserId.isEmpty || !_canUseRevenueCat) {
+    if (normalizedUserId.isEmpty) {
+      return;
+    }
+    await ensureInitialized();
+    if (!_canUseRevenueCat) {
       return;
     }
     if (_lastConfiguredUserId == normalizedUserId) {
@@ -39,17 +73,9 @@ class RevenueCatService {
     }
 
     try {
-      final configuration = PurchasesConfiguration(_androidPublicKey)
-        ..appUserID = normalizedUserId;
-      await Purchases.configure(configuration);
+      await Purchases.logIn(normalizedUserId);
       _lastConfiguredUserId = normalizedUserId;
-    } on PlatformException catch (e) {
-      final code = e.code.toLowerCase();
-      if (code.contains('configured')) {
-        await Purchases.logIn(normalizedUserId);
-        _lastConfiguredUserId = normalizedUserId;
-        return;
-      }
+    } on PlatformException {
       rethrow;
     }
   }

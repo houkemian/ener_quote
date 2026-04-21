@@ -170,6 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
       userId = payloadMap['sub']?.toString();
     }
     await TokenManager.saveAccessToken(token);
+    await RevenueCatService.initializeFromJwt(token);
     if (userId != null && userId.isNotEmpty) {
       await RevenueCatService.initializeForAppUser(userId);
     }

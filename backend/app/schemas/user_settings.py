@@ -17,6 +17,8 @@ class UserSettingsResponse(BaseModel):
     account_email: Optional[str] = None
     tier: str = "FREE"
     pro_expire_date: Optional[datetime] = None
+    billing_issue_notice: Optional[str] = None
+    billing_issue_grace_until: Optional[datetime] = None
     company_name: str
     logo_url: Optional[str]
     pv_cost_per_kw: float

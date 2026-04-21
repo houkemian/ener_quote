@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pinput/pinput.dart';
 
 import '../core/auth/token_manager.dart';
+import '../core/billing/revenuecat_service.dart';
 import '../core/network/api_client.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
@@ -92,6 +93,7 @@ class _RegisterOtpScreenState extends State<RegisterOtpScreen> {
       await TokenManager.saveAccessToken(result.accessToken);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_tier', result.tier ?? 'FREE');
+      await RevenueCatService.initializeFromJwt(result.accessToken);
 
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(

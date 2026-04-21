@@ -433,6 +433,10 @@ class AppLocalizationsEn extends AppLocalizations {
       '⏳ Payment not received yet. Please wait a few seconds and try again.';
 
   @override
+  String get billingIssueGraceNotice =>
+      'Your payment method may have an issue. Please update it soon to avoid interrupting your PRO experience.';
+
+  @override
   String paymentError(String error) {
     return 'Payment gateway error: $error';
   }

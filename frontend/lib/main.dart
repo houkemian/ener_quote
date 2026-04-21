@@ -10,6 +10,7 @@ import 'app_routes.dart';
 import 'package:sentry_flutter/sentry_flutter.dart'; // 🌟 新增：引入探针
 import 'core/auth/token_manager.dart';
 import 'core/billing/revenuecat_service.dart';
+import 'core/config/app_config_service.dart';
 
 
 // 🌟 新增：打造一把全局路由的“万能钥匙”
@@ -18,6 +19,8 @@ final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>()
 void main() async {
   // 🌟 1. 必须加这一行：确保 Flutter 引擎准备就绪
   WidgetsFlutterBinding.ensureInitialized();
+  await AppConfigService.load();
+  await RevenueCatService.ensureInitialized();
 
   final token = await TokenManager.getAccessToken();
   final isLoggedIn = token != null && token.isNotEmpty;

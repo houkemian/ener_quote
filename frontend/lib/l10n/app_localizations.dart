@@ -866,6 +866,12 @@ abstract class AppLocalizations {
   /// **'⏳ 尚未收到款项，请确保支付成功或稍等几秒再试。'**
   String get paymentPending;
 
+  /// No description provided for @billingIssueGraceNotice.
+  ///
+  /// In zh, this message translates to:
+  /// **'您的支付方式似乎出了点问题，请及时更新以免影响 PRO 体验。'**
+  String get billingIssueGraceNotice;
+
   /// No description provided for @paymentError.
   ///
   /// In zh, this message translates to:

@@ -175,6 +175,7 @@
     "paymentCompleted": "I have paid",
     "paymentSuccessPro": "🎉 Payment successful! PRO features activated!",
     "paymentPending": "⏳ Payment not received yet. Please wait a few seconds and try again.",
+    "billingIssueGraceNotice": "Your payment method may have an issue. Please update it soon to avoid interrupting your PRO experience.",
     "paymentError": "Payment gateway error: {error}",
     "@paymentError": { "placeholders": { "error": { "type": "String" } } },
     "errInvalidEmail": "Please enter a valid email address",

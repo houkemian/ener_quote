@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.api.deps import get_db
 from app.api.deps import get_current_user_payload, TokenPayload
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 
 # 假设你之前在 deps.py 里写过 JWT 验证，名叫 get_current_user_payload
@@ -13,6 +13,7 @@ from app.api.deps import get_current_user_payload
 from app.models.user_settings import UserSettings
 from app.schemas.user_settings import UserSettingsUpdate, UserSettingsResponse
 from app.modules.iam.models import User
+from app.modules.iam.models import PaymentOrder
 
 router = APIRouter(prefix="/settings", tags=["业务配置 - Settings"])
 _EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -57,6 +58,37 @@ def _resolve_effective_tier(user: User | None) -> str:
         return "FREE"
     return user.tier
 
+
+def _resolve_billing_issue_notice(
+    db: Session,
+    user_id: str,
+    effective_tier: str,
+) -> tuple[str | None, datetime | None]:
+    if effective_tier != "PRO":
+        return None, None
+
+    latest_issue = (
+        db.query(PaymentOrder)
+        .filter(
+            PaymentOrder.user_id == user_id,
+            PaymentOrder.event_type == "BILLING_ISSUE",
+        )
+        .order_by(PaymentOrder.occurred_at.desc(), PaymentOrder.created_at.desc())
+        .first()
+    )
+    if not latest_issue:
+        return None, None
+
+    issue_time = latest_issue.occurred_at or latest_issue.created_at
+    if not issue_time:
+        return None, None
+
+    grace_until = issue_time + timedelta(days=3)
+    if grace_until <= datetime.utcnow():
+        return None, None
+
+    return None, grace_until
+
 @router.get("/me", response_model=UserSettingsResponse)
 def get_my_settings(
     db: Session = Depends(get_db),
@@ -69,6 +101,9 @@ def get_my_settings(
     account_email = _resolve_account_email(db, user_id)
     effective_tier = _resolve_effective_tier(user)
     pro_expire_date = user.pro_expire_date if (user and effective_tier == "PRO") else None
+    billing_issue_notice, billing_issue_grace_until = _resolve_billing_issue_notice(
+        db, user_id, effective_tier
+    )
     if user and user.tier != effective_tier:
         user.tier = effective_tier
         db.commit()
@@ -77,6 +112,8 @@ def get_my_settings(
         "account_email": account_email,
         "tier": effective_tier,
         "pro_expire_date": pro_expire_date,
+        "billing_issue_notice": billing_issue_notice,
+        "billing_issue_grace_until": billing_issue_grace_until,
         "company_name": settings.company_name,
         "logo_url": settings.logo_url,
         "pv_cost_per_kw": settings.pv_cost_per_kw,
@@ -112,6 +149,9 @@ def update_my_settings(
     account_email = _resolve_account_email(db, user_id)
     effective_tier = _resolve_effective_tier(user)
     pro_expire_date = user.pro_expire_date if (user and effective_tier == "PRO") else None
+    billing_issue_notice, billing_issue_grace_until = _resolve_billing_issue_notice(
+        db, user_id, effective_tier
+    )
     if user and user.tier != effective_tier:
         user.tier = effective_tier
         db.commit()
@@ -122,6 +162,8 @@ def update_my_settings(
         "account_email": account_email,
         "tier": effective_tier,
         "pro_expire_date": pro_expire_date,
+        "billing_issue_notice": billing_issue_notice,
+        "billing_issue_grace_until": billing_issue_grace_until,
         "company_name": settings.company_name,
         "logo_url": settings.logo_url,
         "pv_cost_per_kw": settings.pv_cost_per_kw,

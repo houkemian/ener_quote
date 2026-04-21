@@ -158,6 +158,62 @@ def _parse_revenuecat_expire(event: dict[str, Any]) -> datetime:
     return datetime.utcnow() + timedelta(days=30)
 
 
+def _parse_revenuecat_event_time(event: dict[str, Any]) -> datetime:
+    event_ms = event.get("event_timestamp_ms")
+    if event_ms is not None:
+        try:
+            return datetime.utcfromtimestamp(int(event_ms) / 1000)
+        except (TypeError, ValueError):
+            pass
+
+    event_time = event.get("event_timestamp_at") or event.get("event_timestamp")
+    if isinstance(event_time, str) and event_time.strip():
+        parsed = _parse_event_datetime(event_time)
+        if parsed:
+            return parsed.replace(tzinfo=None) if parsed.tzinfo else parsed
+
+    return datetime.utcnow()
+
+
+def _record_revenuecat_event(
+    db: Session,
+    *,
+    user: User,
+    event: dict[str, Any],
+    event_type: str,
+) -> None:
+    event_id_raw = event.get("id") or event.get("event_id")
+    event_id = str(event_id_raw).strip() if event_id_raw else None
+    if event_id:
+        existed = db.query(PaymentOrder).filter(PaymentOrder.event_id == event_id).first()
+        if existed:
+            return
+
+    occurred_at = _parse_revenuecat_event_time(event)
+    status_map = {
+        "INITIAL_PURCHASE": "PAID",
+        "RENEWAL": "PAID",
+        "BILLING_ISSUE": "BILLING_ISSUE",
+        "CANCELLATION": "CANCELED",
+        "EXPIRATION": "EXPIRED",
+    }
+    order = PaymentOrder(
+        user_id=user.id,
+        event_id=event_id,
+        event_type=event_type,
+        status=status_map.get(event_type, "INFO"),
+        transaction_id=event.get("transaction_id"),
+        subscription_id=event.get("original_transaction_id") or event.get("product_id"),
+        customer_id=event.get("app_user_id"),
+        customer_email=user.email,
+        currency_code=event.get("currency"),
+        amount=str(event.get("price")) if event.get("price") is not None else None,
+        occurred_at=occurred_at,
+        raw_data=event,
+    )
+    db.add(order)
+
+
 def _create_order_if_absent(
     db: Session,
     *,
@@ -481,11 +537,31 @@ async def revenuecat_webhook(request: Request, db: Session = Depends(get_db)):
         )
         return {"status": "no_user", "event_type": event_type}
 
+    _record_revenuecat_event(db, user=user, event=event, event_type=event_type)
+
     if event_type in {"INITIAL_PURCHASE", "RENEWAL"}:
         user.tier = "PRO"
         user.pro_expire_date = _parse_revenuecat_expire(event)
         db.commit()
         return {"status": "success", "event_type": event_type, "tier": "PRO"}
+
+    if event_type == "BILLING_ISSUE":
+        grace_end = _parse_revenuecat_event_time(event) + timedelta(days=3)
+        current_expire = user.pro_expire_date or datetime.utcnow()
+        user.tier = "PRO"
+        user.pro_expire_date = max(current_expire, grace_end)
+        db.commit()
+        logger.warning(
+            "RevenueCat BILLING_ISSUE for user=%s, keep PRO grace until=%s",
+            user.email,
+            user.pro_expire_date,
+        )
+        return {
+            "status": "success",
+            "event_type": event_type,
+            "tier": "PRO",
+            "grace_until": user.pro_expire_date.isoformat() if user.pro_expire_date else None,
+        }
 
     if event_type in {"CANCELLATION", "EXPIRATION"}:
         user.tier = "FREE"

@@ -6,6 +6,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'dart:io' show Platform;
 import '../l10n/app_localizations.dart';
 import '../core/network/api_client.dart';
+import '../core/billing/revenuecat_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert'; // 用于 Base64 转换
 import '../theme/app_colors.dart';
@@ -26,7 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? _proExpireDateText;
   bool _isUpgrading = false; // 🌟 新增：是否正在呼叫收银台
   bool _isRevenueCatLoading = false;
-  bool _isRevenueCatPurchasing = false;
+  bool _isPurchasing = false;
   Offerings? _revenueCatOfferings;
   String? _revenueCatError;
 
@@ -41,6 +42,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool get _canEditCosts => _userTier == "PRO";
   bool get _isAndroidRevenueCatFlow => !kIsWeb && Platform.isAndroid;
   bool _costPanelExpanded = false;
+  String? _lastShownBillingGraceKey;
 
   @override
   void initState() {
@@ -58,7 +60,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final account = (data['account_email'] ?? '-').toString().trim();
       final tierFromApi = (data['tier'] ?? "FREE").toString();
       final proExpireText = _formatExpireDate(data['pro_expire_date']);
-
+      final billingIssueGraceUntilRaw = data['billing_issue_grace_until']?.toString();
 
       setState(() {
         _userTier = tierFromApi; // 🌟 以服务端综合判断结果为准
@@ -78,6 +80,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await prefs.setDouble('pv_cost', double.tryParse(_pvCostController.text) ?? 800.0);
       await prefs.setDouble('ess_cost', double.tryParse(_essCostController.text) ?? 350.0);
       await prefs.setDouble('margin_pct', double.tryParse(_marginController.text) ?? 20.0);
+      _showBillingIssueNoticeIfNeeded(billingIssueGraceUntilRaw);
 
     } catch (e) {
       print("拉取云端配置失败: $e");
@@ -95,6 +98,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  void _showBillingIssueNoticeIfNeeded(String? billingIssueGraceUntilRaw) {
+    if (!mounted) {
+      return;
+    }
+    final raw = billingIssueGraceUntilRaw?.trim();
+    if (raw == null || raw.isEmpty) {
+      return;
+    }
+    final graceUntil = DateTime.tryParse(raw);
+    if (graceUntil == null || !graceUntil.isAfter(DateTime.now())) {
+      return;
+    }
+    if (_lastShownBillingGraceKey == raw) {
+      return;
+    }
+    _lastShownBillingGraceKey = raw;
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.billingIssueGraceNotice),
+        backgroundColor: Colors.orange,
+        duration: const Duration(seconds: 6),
+      ),
+    );
   }
 
   // 🌟 点击保存，将数据写入本地缓存
@@ -537,6 +566,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _revenueCatError = null;
     });
     try {
+      await RevenueCatService.ensureInitialized();
       final offerings = await Purchases.getOfferings();
       setState(() {
         _revenueCatOfferings = offerings;
@@ -624,18 +654,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isRevenueCatPurchasing
+                  onPressed: _isPurchasing
                       ? null
                       : () => _purchaseRevenueCatPackage(pkg, bottomSheetContext, l10n),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.secondary,
                     foregroundColor: AppColors.onSecondary,
                   ),
-                  child: _isRevenueCatPurchasing
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                  child: _isPurchasing
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text('Connecting Secure Pay...'),
+                          ],
                         )
                       : const Text('Upgrade to PRO'),
                 ),
@@ -652,13 +693,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     BuildContext bottomSheetContext,
     AppLocalizations l10n,
   ) async {
-    if (_isRevenueCatPurchasing) {
+    if (_isPurchasing) {
       return;
     }
     setState(() {
-      _isRevenueCatPurchasing = true;
+      _isPurchasing = true;
     });
     try {
+      await RevenueCatService.ensureInitialized();
       final purchaseResult = await Purchases.purchasePackage(package);
       final isProActive =
           purchaseResult.customerInfo.entitlements.all['pro']?.isActive == true;
@@ -685,9 +727,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Navigator.pop(bottomSheetContext);
       }
 
-      await ApiClient().refreshUserTierWithRetry();
-      await _loadSettings();
-
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -710,15 +749,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } finally {
       if (mounted) {
         setState(() {
-          _isRevenueCatPurchasing = false;
+          _isPurchasing = false;
         });
       }
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
     }
   }
 
   Future<void> _startCheckoutFromPaywall(BuildContext bottomSheetContext) async {
     final l10n = AppLocalizations.of(context)!;
     Navigator.pop(bottomSheetContext);
+    if (!kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.paymentError('Paddle checkout is only available on Web.')),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isUpgrading = true;
     });

@@ -417,6 +417,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get paymentPending => '⏳ 尚未收到款项，请确保支付成功或稍等几秒再试。';
 
   @override
+  String get billingIssueGraceNotice => '您的支付方式似乎出了点问题，请及时更新以免影响 PRO 体验。';
+
+  @override
   String paymentError(String error) {
     return '呼叫收银台失败：$error';
   }

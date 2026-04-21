@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart';
 import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'dart:io' show Platform;
 import '../l10n/app_localizations.dart'; // 👈 新增这行
 import '../core/network/api_client.dart';
+import '../core/billing/revenuecat_service.dart';
 import '../theme/app_colors.dart';
 import '../utils/pdf_export.dart';
 import 'paddle_checkout_webview.dart';
@@ -39,6 +44,7 @@ class PdfPreviewScreen extends StatefulWidget {
 
 class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
   bool _isUpgrading = false;
+  bool _isPurchasing = false;
   late bool _isProUser;
 
   @override
@@ -152,7 +158,7 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: InkWell(
-                        onTap: _isUpgrading ? null : _showProPaywall,
+                        onTap: (_isUpgrading || _isPurchasing) ? null : _showProPaywall,
                         child: const Text(
                           '🔒 Upgrade to PRO to unlock Payback Period & IRR analysis',
                           style: TextStyle(fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
@@ -331,17 +337,36 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
                   _buildProFeatureRow(l10n.proFeatureNoWatermark),
                   const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: _isUpgrading ? null : () => _startCheckoutFromPaywall(buildContext),
+                    onPressed: (_isUpgrading || _isPurchasing)
+                        ? null
+                        : () => _startCheckoutFromPaywall(buildContext),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.secondary,
                       foregroundColor: AppColors.onSecondary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: Text(
-                      l10n.unlockProBtn,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
+                    child: _isPurchasing
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text('Connecting Secure Pay...'),
+                            ],
+                          )
+                        : Text(
+                            l10n.unlockProBtn,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
                   ),
                 ],
               ),
@@ -369,6 +394,21 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
 
   Future<void> _startCheckoutFromPaywall(BuildContext bottomSheetContext) async {
     final l10n = AppLocalizations.of(context)!;
+    if (!kIsWeb && Platform.isAndroid) {
+      await _purchaseWithRevenueCatOnAndroid(bottomSheetContext);
+      return;
+    }
+    if (!kIsWeb) {
+      Navigator.pop(bottomSheetContext);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.paymentError('This platform does not support checkout yet.')),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
     Navigator.pop(bottomSheetContext);
     setState(() {
       _isUpgrading = true;
@@ -411,6 +451,84 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
           _isUpgrading = false;
         });
       }
+    }
+  }
+
+  Future<void> _purchaseWithRevenueCatOnAndroid(BuildContext paywallContext) async {
+    if (_isPurchasing) {
+      return;
+    }
+    final l10n = AppLocalizations.of(context)!;
+    setState(() {
+      _isPurchasing = true;
+    });
+    try {
+      await RevenueCatService.ensureInitialized();
+      final offerings = await Purchases.getOfferings();
+      final packages = offerings.current?.availablePackages ?? const <Package>[];
+      if (packages.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No Android subscription package is currently available.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      final purchaseResult = await Purchases.purchasePackage(packages.first);
+      final isProActive =
+          purchaseResult.customerInfo.entitlements.all['pro']?.isActive == true;
+      if (!isProActive) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Purchase completed, waiting entitlement sync.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_tier', 'PRO');
+      if (!mounted) return;
+      setState(() {
+        _isProUser = true;
+      });
+      if (mounted) {
+        Navigator.pop(paywallContext);
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.paymentSuccessPro),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } on PlatformException catch (e) {
+      final code = PurchasesErrorHelper.getErrorCode(e);
+      if (code == PurchasesErrorCode.purchaseCancelledError) {
+        return;
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.paymentError(e.message ?? e.toString())),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPurchasing = false;
+        });
+      }
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
     }
   }
 }
