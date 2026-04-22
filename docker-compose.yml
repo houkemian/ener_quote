@@ -1,19 +1,4 @@
 services:
-  postgres:
-    image: ${POSTGRES_IMAGE}
-    container_name: ${POSTGRES_CONTAINER_NAME}
-    restart: ${RESTART_POLICY}
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    expose:
-      - "${POSTGRES_PORT}"
-    networks:
-      - ener-network
-
   redis:
     image: ${REDIS_IMAGE}
     container_name: ${REDIS_CONTAINER_NAME}
@@ -33,17 +18,12 @@ services:
     env_file:
       - /home/ubuntu/ener_quote/.env
     environment:
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
       REDIS_DB: ${REDIS_DB}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     depends_on:
-      - postgres
       - redis
     ports:
       - "8000:${BACKEND_PORT}"
@@ -55,5 +35,4 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data:
   redis_data:
