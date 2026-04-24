@@ -1,18 +1,15 @@
 name: Android Release Build
 
-# 触发条件：当你推送 v1.0.0 这样的 tag 时，自动开始打包
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*' # 打标签时自动触发
+  workflow_dispatch: # 额外加了一个“手动发射”按钮，方便你这周末在网页上随便测
 
 jobs:
-  build:
-    name: Build & Release Android AAB
+  build-android:
+    name: Build Android Debug APK
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
 
     steps:
       - name: 📥 Checkout code
@@ -22,25 +19,28 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: '17' # 推荐使用 JDK 17 适配最新的 Gradle
+          java-version: '17'
 
       - name: 🐦 Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true # 开启缓存，大幅提升后续打包速度
+          cache: true
 
       - name: 📦 Install dependencies
         run: flutter pub get
 
-      # 【核心机密 1】：还原你的 Android 签名密钥文件
+      # ==========================================
+      # ⚠️【周末带病演习模式：签名模块已全部封印】⚠️
+      # 等下周拿到密码后，再把这里的注释解开
+      # ==========================================
+      
       # - name: 🔐 Decode Keystore
       #   env:
       #     ENCODED_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 }}
       #   run: |
       #     echo $ENCODED_KEYSTORE | base64 -d > android/app/upload-keystore.jks
 
-      # 【核心机密 2】：动态生成 key.properties 供 Gradle 读取
       # - name: 📝 Create key.properties
       #   run: |
       #     cat << EOF > android/key.properties
@@ -50,18 +50,16 @@ jobs:
       #     storeFile=upload-keystore.jks
       #     EOF
 
-      # 打包 AAB 并注入 RevenueCat 公钥
-      - name: 🏗️ Build AppBundle
-        env:
-          RC_PUBLIC_KEY: ${{ secrets.REVENUECAT_PUBLIC_KEY_ANDROID }}
-        run: |
-          flutter build appbundle --release \
-            --dart-define=REVENUECAT_PUBLIC_KEY_ANDROID=$RC_PUBLIC_KEY
+      # ==========================================
+      # 🎯 演习目标：打一个无签名的测试包
+      # ==========================================
+      
+      - name: 🏗️ Build Debug APK (Sick Drill)
+        run: flutter build apk --debug
 
-      # 将打好的包上传到 GitHub Actions 的控制台供你下载
       - name: ⬆️ Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: release-aab
-          path: frontend/build/app/outputs/bundle/release/app-release.aab
-          retention-days: 7
+          name: debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 3
