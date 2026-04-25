@@ -353,7 +353,7 @@ abstract class AppLocalizations {
   /// No description provided for @connectingPvgis.
   ///
   /// In zh, this message translates to:
-  /// **'正在连接 PVGIS 气象卫星...'**
+  /// **'正在计算数据'**
   String get connectingPvgis;
 
   /// No description provided for @citySaoPaulo.

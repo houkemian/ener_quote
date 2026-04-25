@@ -154,7 +154,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashFlowChartTitle => '20-Year Net Cash Flow Forecast';
 
   @override
-  String get connectingPvgis => 'Connecting to PVGIS...';
+  String get connectingPvgis => 'Calculating data...';
 
   @override
   String get citySaoPaulo => '🇧🇷 São Paulo (Brazil - LATAM)';

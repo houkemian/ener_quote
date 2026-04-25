@@ -149,7 +149,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cashFlowChartTitle => '20年生命周期 净现金流预测';
 
   @override
-  String get connectingPvgis => '正在连接 PVGIS 气象卫星...';
+  String get connectingPvgis => '正在计算数据';
 
   @override
   String get citySaoPaulo => '🇧🇷 São Paulo (巴西 - 拉美区)';
