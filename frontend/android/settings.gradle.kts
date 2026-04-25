@@ -12,8 +12,8 @@ pluginManagement {
 
     repositories {
         // 🌟 换上阿里云镜像大本营 (纯正 Kotlin DSL 语法)
-        maven { url = uri("https://maven.aliyun.com/repository/google") }
-        maven { url = uri("https://maven.aliyun.com/repository/public") }
+        //maven { url = uri("https://maven.aliyun.com/repository/google") }
+        //maven { url = uri("https://maven.aliyun.com/repository/public") }
         
         google()
         mavenCentral()
