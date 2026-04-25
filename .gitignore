@@ -39,3 +39,7 @@ env/
 *.njsproj
 *.sln
 *.sw?
+
+# ── Local-only files (do not commit) ─────────────────────
+frontend/android/build.gradle.kts
+frontend/android/settings.gradle.kts

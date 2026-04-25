@@ -80,7 +80,7 @@
     }
     },
     "cashFlowChartTitle": "20年生命周期 净现金流预测",
-    "connectingPvgis": "正在连接 PVGIS 气象卫星...",
+    "connectingPvgis": "正在计算数据",
     "citySaoPaulo": "🇧🇷 São Paulo (巴西 - 拉美区)",
     "cityMunich": "🇩🇪 Munich (德国 - 欧洲区)",
     "cityHaikou": "🇨🇳 Haikou (中国 - 海南)",
@@ -110,6 +110,7 @@
     "logoUrlLabel": "Logo 图片链接 (URL / Base64)",
     "costSection": "采购成本与利润率",
     "pvCostLabel": "光伏单瓦底价 ($/W)",
+    "pvCostCogsHint": "包含组件、逆变器、支架、BOS 与基础安装人工",
     "essCostLabel": "储能单瓦时底价 ($/Wh)",
     "marginLabel": "期望利润率 (%)",
     "saveSettingsBtn": "保存配置",

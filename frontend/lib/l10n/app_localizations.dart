@@ -500,6 +500,12 @@ abstract class AppLocalizations {
   /// **'光伏单瓦底价 (\$/W)'**
   String get pvCostLabel;
 
+  /// No description provided for @pvCostCogsHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'包含组件、逆变器、支架、BOS 与基础安装人工'**
+  String get pvCostCogsHint;
+
   /// No description provided for @essCostLabel.
   ///
   /// In zh, this message translates to:

@@ -227,6 +227,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pvCostLabel => '光伏单瓦底价 (\$/W)';
 
   @override
+  String get pvCostCogsHint => '包含组件、逆变器、支架、BOS 与基础安装人工';
+
+  @override
   String get essCostLabel => '储能单瓦时底价 (\$/Wh)';
 
   @override

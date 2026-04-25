@@ -237,6 +237,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pvCostLabel => 'PV Base Cost (\$/W)';
 
   @override
+  String get pvCostCogsHint =>
+      'Hardware & Base Installation COGS (Includes panels, inverters, racking, BOS, and base labor).';
+
+  @override
   String get essCostLabel => 'ESS Base Cost (\$/Wh)';
 
   @override

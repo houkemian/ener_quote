@@ -76,7 +76,7 @@
     }
     },
     "cashFlowChartTitle": "20-Year Net Cash Flow Forecast",
-    "connectingPvgis": "Connecting to PVGIS...",
+    "connectingPvgis": "Calculating data...",
     "citySaoPaulo": "🇧🇷 São Paulo (Brazil - LATAM)",
     "cityMunich": "🇩🇪 Munich (Germany - EU)",
     "cityHaikou": "🇨🇳 Haikou (China - Hainan)",
@@ -106,6 +106,7 @@
     "logoUrlLabel": "Logo Image URL / Base64",
     "costSection": "Procurement Costs & Margins",
     "pvCostLabel": "PV Base Cost ($/W)",
+    "pvCostCogsHint": "Hardware & Base Installation COGS (Includes panels, inverters, racking, BOS, and base labor).",
     "essCostLabel": "ESS Base Cost ($/Wh)",
     "marginLabel": "Target Margin (%)",
     "saveSettingsBtn": "Save Configuration",
