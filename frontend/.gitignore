@@ -1,7 +1,7 @@
 # Miscellaneous
 *.class
-<<<<<<< HEAD
 *.lock
+!pubspec.lock
 *.log
 *.pyc
 *.swp
