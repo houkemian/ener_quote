@@ -1,15 +1,18 @@
 name: Android Release Build
 
+# 触发条件：当你推送 v1.0.0 这样的 tag 时，自动开始打包
 on:
   push:
     tags:
-      - 'v*' # 打标签时自动触发
-  workflow_dispatch: # 额外加了一个“手动发射”按钮，方便你这周末在网页上随便测
+      - 'v*'
 
 jobs:
-  build-android:
-    name: Build Android Debug APK
+  build:
+    name: Build & Release Android AAB
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
 
     steps:
       - name: 📥 Checkout code
