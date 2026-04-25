@@ -64,5 +64,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: debug-apk
-          path: frontend/android/flutter-apk/app-debug.apk
+          path: frontend/build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 3
