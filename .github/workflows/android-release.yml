@@ -46,29 +46,19 @@ jobs:
             echo "Scan complete."
           fi
 
-# --- 新增：强制核平注入步骤 ---
-      - name: 🚨 Canary Override  强行写入绝对纯净的 Manifest
-        # 👇【极其关键】确保这里的工作目录和你平时开发、打包的目录完全一致！
-        # 如果你的 pubspec.yaml 在 frontend 目录下，请解除注释并写死它：
-        # working-directory: ./frontend 
+# --- 新增：物理核平幽灵文件 ---
+      - name: ☢️ 终极全盘核平 (Search & Destroy)
         run: |
-          echo "开始强制覆写 AndroidManifest.xml..."
-          cat << 'EOF' > android/app/src/main/AndroidManifest.xml
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <application android:label="app" android:name="${applicationName}">
-                  <activity android:name=".MainActivity" android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
-                      </intent-filter>
-                  </activity>
-                  <meta-data android:name="flutterEmbedding" android:value="2" />
-              </application>
-          </manifest>
-          EOF
-          echo "覆盖完成！当前被 Flutter 锁定的文件内容如下："
-          cat android/app/src/main/AndroidManifest.xml
-
+          echo "=== 1. 寻找并摧毁全盘所有的前朝 Java 注册表 ==="
+          find . -name "GeneratedPluginRegistrant.java" -exec rm -f {} +
+          
+          echo "=== 2. 寻找并摧毁全盘所有的旧版 FlutterApplication ==="
+          find . -name "FlutterApplication.java" -exec rm -f {} +
+          
+          echo "=== 3. 打印当前所有的 Flutter 项目路径 (供大将洞察) ==="
+          find . -name "pubspec.yaml"
+          
+          echo "=== 核平完成，前方没有任何 V1 阻碍！ ==="
       # ==========================================
       # ⚠️【周末带病演习模式：签名模块已全部封印】⚠️
       # 等下周拿到密码后，再把这里的注释解开
