@@ -32,6 +32,7 @@ jobs:
           cache: false
 
       - name: 📦 Install dependencies
+        working-directory: frontend
         run: flutter pub get
 
       - name: 🔎 Diagnose Android embedding inputs
@@ -70,6 +71,7 @@ jobs:
       # ==========================================
       
       - name: 🏗️ Build Debug APK (Sick Drill)
+        working-directory: frontend
         run: flutter build apk --debug -v
 
       - name: ⬆️ Upload Artifact
