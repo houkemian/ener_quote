@@ -47,7 +47,7 @@ jobs:
           fi
 
 # --- 新增：强制核平注入步骤 ---
-      - name: 🚨 Canary Override: 强行写入绝对纯净的 Manifest
+      - name: 🚨 Canary Override  强行写入绝对纯净的 Manifest
         # 👇【极其关键】确保这里的工作目录和你平时开发、打包的目录完全一致！
         # 如果你的 pubspec.yaml 在 frontend 目录下，请解除注释并写死它：
         # working-directory: ./frontend 
