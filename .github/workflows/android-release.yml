@@ -62,14 +62,28 @@ jobs:
       - name: 🏗️ Build Debug APK (Sick Drill)
         working-directory: frontend
         run: |
-          echo "=== 1. 猎杀隐藏的 V1 残党源码 ==="
-          # 寻找并直接抹杀任何残留旧版 io.flutter.app 导入的 Java/Kotlin 文件
-          grep -rl "io.flutter.app" android/app/src/ | xargs -I {} rm -f {} || true
+          echo "=== 1. 物理粉碎所有旧代码与缓存 ==="
+          rm -rf android/app/src/main/kotlin/*
+          rm -rf android/app/src/main/java/*
+          rm -rf android/app/src/debug/*
+          rm -rf android/app/src/profile/*
           
-          echo "=== 2. 强行注入绝对纯净的 V2 Manifest ==="
-          # 使用 EOF 原地生成文件，彻底断绝 Git 残留的隐形乱码或 BOM 幽灵
+          echo "=== 2. 重铸纯净血统的 MainActivity.kt ==="
+          # 根据你的截图，精准复刻你的包名
+          mkdir -p android/app/src/main/kotlin/one/dothings/enerquote/
+          cat << 'EOF' > android/app/src/main/kotlin/one/dothings/enerquote/MainActivity.kt
+          package one.dothings.enerquote
+
+          import io.flutter.embedding.android.FlutterActivity
+
+          class MainActivity: FlutterActivity() {
+          }
+          EOF
+          
+          echo "=== 3. 强行注入带包名的纯净 AndroidManifest.xml ==="
+          # 👇 这里补上了极其致命的 package 属性！
           cat << 'EOF' > android/app/src/main/AndroidManifest.xml
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="one.dothings.enerquote">
               <application android:name="${applicationName}">
                   <activity android:name=".MainActivity" android:exported="true" android:theme="@style/LaunchTheme">
                       <meta-data android:name="io.flutter.embedding.android.NormalTheme" android:resource="@style/NormalTheme" />
@@ -83,8 +97,8 @@ jobs:
           </manifest>
           EOF
           
-          echo "=== 3. 终极决战编译 ==="
-          # 就在这一刻，在被绝对净化的环境下发起编译！
+          echo "=== 4. 决战起爆！ ==="
+          # 环境已达绝对纯净，开始编译！
           flutter build apk --debug -v
 
       - name: ⬆️ Upload Artifact
