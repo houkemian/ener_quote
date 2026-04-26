@@ -62,30 +62,24 @@ jobs:
       - name: 🏗️ Build Debug APK (Sick Drill)
         working-directory: frontend
         run: |
-          echo "=== 1. 物理粉碎所有旧代码与缓存 ==="
-          rm -rf android/app/src/main/kotlin/*
-          rm -rf android/app/src/main/java/*
-          rm -rf android/app/src/debug/*
-          rm -rf android/app/src/profile/*
+          echo "=== 1. 物理拔除所有可能导致幻觉的隐藏缓存 ==="
+          # 这极其关键！彻底烧毁所有欺骗编译器的前朝遗物！
+          rm -rf .dart_tool/
+          rm -rf .flutter-plugins
+          rm -rf .flutter-plugins-dependencies
+          rm -rf build/
+          rm -rf android/.gradle/
           
-          echo "=== 2. 重铸纯净血统的 MainActivity.kt ==="
-          # 根据你的截图，精准复刻你的包名
-          mkdir -p android/app/src/main/kotlin/one/dothings/enerquote/
-          cat << 'EOF' > android/app/src/main/kotlin/one/dothings/enerquote/MainActivity.kt
-          package one.dothings.enerquote
-
-          import io.flutter.embedding.android.FlutterActivity
-
-          class MainActivity: FlutterActivity() {
-          }
-          EOF
+          echo "=== 2. 物理毁灭自动生成的 V1 毒药文件 ==="
+          # 防止刚才的缓存已经生成了毒药，我们再补一刀
+          rm -rf android/app/src/main/java/io/flutter/plugins/
           
-          echo "=== 3. 强行注入带包名的纯净 AndroidManifest.xml ==="
-          # 👇 这里补上了极其致命的 package 属性！
+          echo "=== 3. 强行注入绝对纯净的 V2 Manifest ==="
+          # 确保这道护身符绝对安全，注意里面的 package 必须和你真实包名一致
           cat << 'EOF' > android/app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="one.dothings.enerquote">
-              <application android:name="${applicationName}">
-                  <activity android:name=".MainActivity" android:exported="true" android:theme="@style/LaunchTheme">
+              <application android:name="${applicationName}" android:icon="@mipmap/ic_launcher" android:usesCleartextTraffic="true">
+                  <activity android:name=".MainActivity" android:exported="true" android:theme="@style/LaunchTheme" android:launchMode="singleTop">
                       <meta-data android:name="io.flutter.embedding.android.NormalTheme" android:resource="@style/NormalTheme" />
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
@@ -97,8 +91,11 @@ jobs:
           </manifest>
           EOF
           
-          echo "=== 4. 决战起爆！ ==="
-          # 环境已达绝对纯净，开始编译！
+          echo "=== 4. 重新拉取纯净依赖 ==="
+          # 在没有缓存污染的情况下，重新拉取
+          flutter pub get
+          
+          echo "=== 5. 最终起爆！ ==="
           flutter build apk --debug -v
 
       - name: ⬆️ Upload Artifact
