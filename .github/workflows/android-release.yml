@@ -35,30 +35,6 @@ jobs:
         working-directory: frontend
         run: flutter pub get
 
-      - name: 🔎 Diagnose Android embedding inputs
-        run: |
-          echo "Commit: $(git rev-parse HEAD)"
-          echo "Tag ref: ${GITHUB_REF}"
-          echo "---- android/app/src/main/AndroidManifest.xml ----"
-          sed -n '1,140p' android/app/src/main/AndroidManifest.xml
-          echo "---- Scan for deleted Android v1 embedding markers ----"
-          if grep -R --line-number -E "io\\.flutter\\.app\\.FlutterActivity|io\\.flutter\\.app\\.FlutterApplication|PluginRegistry\\.Registrar|registerWith\\(" android app/src || true; then
-            echo "Scan complete."
-          fi
-
-# --- 新增：物理核平幽灵文件 ---
-      - name: ☢️ 终极全盘核平 (Search & Destroy)
-        run: |
-          echo "=== 1. 寻找并摧毁全盘所有的前朝 Java 注册表 ==="
-          find . -name "GeneratedPluginRegistrant.java" -exec rm -f {} +
-          
-          echo "=== 2. 寻找并摧毁全盘所有的旧版 FlutterApplication ==="
-          find . -name "FlutterApplication.java" -exec rm -f {} +
-          
-          echo "=== 3. 打印当前所有的 Flutter 项目路径 (供大将洞察) ==="
-          find . -name "pubspec.yaml"
-          
-          echo "=== 核平完成，前方没有任何 V1 阻碍！ ==="
       # ==========================================
       # ⚠️【周末带病演习模式：签名模块已全部封印】⚠️
       # 等下周拿到密码后，再把这里的注释解开
@@ -85,7 +61,31 @@ jobs:
       
       - name: 🏗️ Build Debug APK (Sick Drill)
         working-directory: frontend
-        run: flutter build apk --debug -v
+        run: |
+          echo "=== 1. 猎杀隐藏的 V1 残党源码 ==="
+          # 寻找并直接抹杀任何残留旧版 io.flutter.app 导入的 Java/Kotlin 文件
+          grep -rl "io.flutter.app" android/app/src/ | xargs -I {} rm -f {} || true
+          
+          echo "=== 2. 强行注入绝对纯净的 V2 Manifest ==="
+          # 使用 EOF 原地生成文件，彻底断绝 Git 残留的隐形乱码或 BOM 幽灵
+          cat << 'EOF' > android/app/src/main/AndroidManifest.xml
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application android:name="${applicationName}">
+                  <activity android:name=".MainActivity" android:exported="true" android:theme="@style/LaunchTheme">
+                      <meta-data android:name="io.flutter.embedding.android.NormalTheme" android:resource="@style/NormalTheme" />
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+                  <meta-data android:name="flutterEmbedding" android:value="2" />
+              </application>
+          </manifest>
+          EOF
+          
+          echo "=== 3. 终极决战编译 ==="
+          # 就在这一刻，在被绝对净化的环境下发起编译！
+          flutter build apk --debug -v
 
       - name: ⬆️ Upload Artifact
         uses: actions/upload-artifact@v4
