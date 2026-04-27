@@ -6,8 +6,19 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services") version "4.4.4" apply false
 }
 
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // 这是 Firebase 的核心引擎管线
+        classpath("com.google.gms:google-services:4.4.4")
+    }
+}
 
 /**
  * Google 登录（与 Google Cloud Console 中「OAuth 2.0 客户端 ID」一致）：
@@ -23,7 +34,7 @@ val googleServerClientId: String =
 android {
     namespace = "one.dothings.enerquote"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "191848630682",
+    "project_id": "enerquote-493202",
+    "storage_bucket": "enerquote-493202.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:191848630682:android:f22c7b02bb93da4b5f1223",
+        "android_client_info": {
+          "package_name": "one.dothings.enerquote"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "191848630682-j9drqj9gajcpmefqr2khrtankedd5ho2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "one.dothings.enerquote",
+            "certificate_hash": "41dc27f2eb9a705ed9c2ea4d87b2301b76591709"
+          }
+        },
+        {
+          "client_id": "191848630682-d0imac6vatistl9o2vnhv8qrtkrp2dj9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqGVUTicZxEkRFqHQh6SV88O2cnyuSCmY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "191848630682-d0imac6vatistl9o2vnhv8qrtkrp2dj9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
