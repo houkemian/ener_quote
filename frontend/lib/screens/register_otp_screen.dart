@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pinput/pinput.dart';
 
@@ -96,6 +97,10 @@ class _RegisterOtpScreenState extends State<RegisterOtpScreen> {
       await RevenueCatService.initializeFromJwt(result.accessToken);
 
       if (!mounted) return;
+      await SystemChrome.setPreferredOrientations(const [
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
         (route) => false,
