@@ -7,21 +7,21 @@
   <meta name="description" content="Ener Quote helps C&amp;I solar and storage teams run fast financial simulations, visualize cash flows, and deliver professional proposals." />
   <style>
     :root {
-      --bg: #0f172a;
-      --bg-soft: #1e293b;
-      --card: #111827;
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --brand: #00e676;
-      --brand-dark: #00c853;
+      --bg: #ffffff;
+      --bg-soft: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --brand: #16a34a;
+      --brand-dark: #15803d;
       --warn: #f59e0b;
-      --line: #334155;
+      --line: #e2e8f0;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: "Segoe UI", Arial, sans-serif;
-      background: linear-gradient(180deg, var(--bg) 0%, #020617 100%);
+      background: var(--bg);
       color: var(--text);
       line-height: 1.6;
     }
@@ -34,8 +34,8 @@
       top: 0;
       z-index: 10;
       backdrop-filter: blur(8px);
-      background: rgba(2, 6, 23, 0.8);
-      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+      background: rgba(255, 255, 255, 0.9);
+      border-bottom: 1px solid var(--line);
     }
     .nav {
       display: flex;
@@ -51,10 +51,9 @@
       letter-spacing: 0.2px;
     }
     .logo-mark {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      background: linear-gradient(135deg, var(--brand), #84cc16);
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
     }
     .nav a {
       color: var(--muted);
@@ -95,9 +94,9 @@
       align-items: center;
       gap: 8px;
       font-size: 12px;
-      color: #bbf7d0;
-      border: 1px solid #166534;
-      background: rgba(22, 101, 52, 0.2);
+      color: #166534;
+      border: 1px solid #86efac;
+      background: #f0fdf4;
       border-radius: 999px;
       padding: 4px 10px;
       margin-bottom: 12px;
@@ -109,15 +108,16 @@
       letter-spacing: 0.2px;
     }
     .hero p {
-      color: #cbd5e1;
+      color: #334155;
       margin-bottom: 20px;
       max-width: 58ch;
     }
     .hero-card {
-      background: linear-gradient(180deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+      background: linear-gradient(180deg, #ffffff, #f8fafc);
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 18px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
     }
     .kpi {
       display: grid;
@@ -125,8 +125,8 @@
       gap: 10px;
     }
     .kpi .item {
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(51, 65, 85, 0.6);
+      background: #ffffff;
+      border: 1px solid var(--line);
       border-radius: 10px;
       padding: 12px;
     }
@@ -151,10 +151,11 @@
       margin-top: 18px;
     }
     .card {
-      background: rgba(17, 24, 39, 0.95);
+      background: var(--card);
       border: 1px solid var(--line);
       border-radius: 12px;
       padding: 16px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
     }
     .card h3 {
       margin: 0 0 6px;
@@ -172,21 +173,21 @@
       margin: 4px 0 12px;
     }
     .pro {
-      border-color: #854d0e;
-      background: linear-gradient(180deg, rgba(120, 53, 15, 0.14), rgba(17, 24, 39, 0.95));
+      border-color: #fcd34d;
+      background: linear-gradient(180deg, rgba(251, 191, 36, 0.12), #ffffff);
     }
     .list {
       margin: 0;
       padding-left: 18px;
-      color: #d1d5db;
+      color: #334155;
     }
     .list li { margin: 6px 0; }
     .cta {
       margin-top: 24px;
       padding: 18px;
-      border: 1px dashed #166534;
+      border: 1px dashed #86efac;
       border-radius: 12px;
-      background: rgba(22, 101, 52, 0.12);
+      background: #f0fdf4;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -251,14 +252,13 @@
   <header>
     <div class="container nav">
       <div class="logo">
-        <span class="logo-mark" aria-hidden="true"></span>
+        <img class="logo-mark" src="logo.png" alt="Ener Quote logo" />
         <span>Ener Quote</span>
       </div>
       <nav>
         <a href="#features">Features</a>
         <a href="#scenarios">Use cases</a>
         <a href="#pricing">Plans</a>
-        <a href="https://dothings.one/docs">Docs</a>
       </nav>
     </div>
   </header>
@@ -331,18 +331,19 @@
           <h3>FREE</h3>
           <div class="plan-price">$0</div>
           <ul class="list">
-            <li>Core simulation workflow</li>
-            <li>Default scenarios</li>
-            <li>Fast individual onboarding</li>
+            <li>Full PV+ESS simulation engine</li>
+            <li>Standard pricing &amp; cost templates</li>
+            <li>Basic PDF exports (Watermarked)</li>
           </ul>
         </article>
         <article class="card pro">
           <h3>PRO <span style="color:var(--warn);font-size:14px;">Popular</span></h3>
           <div class="plan-price">$19 / month</div>
           <ul class="list">
-            <li>Advanced cities and gated scenarios</li>
-            <li>Branded PDF proposal export</li>
-            <li>Richer commercial configuration</li>
+            <li>Custom company logo and branding</li>
+            <li>Custom base procurement costs and margins</li>
+            <li>Unlock 25-year ROI &amp; cash flow charts</li>
+            <li>Remove all watermarks for pure professional PDFs</li>
           </ul>
         </article>
       </div>
@@ -369,6 +370,8 @@
         <a href="privacy.html">Privacy Policy</a>
         <span class="footer-sep" aria-hidden="true">|</span>
         <a href="refund.html">Refund Policy</a>
+        <span class="footer-sep" aria-hidden="true">|</span>
+        <a href="https://ener-quote.dothings.one/account-deletion">Delete Account</a>
       </nav>
     </div>
   </footer>

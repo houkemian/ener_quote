@@ -7,21 +7,21 @@
   <meta name="description" content="Simple, transparent pricing for Ener Quote. Choose FREE or PRO for your engineering and sales team." />
   <style>
     :root {
-      --bg: #0f172a;
-      --bg-soft: #1e293b;
-      --card: #111827;
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --brand: #00e676;
-      --brand-dark: #00c853;
+      --bg: #ffffff;
+      --bg-soft: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --brand: #16a34a;
+      --brand-dark: #15803d;
       --warn: #f59e0b;
-      --line: #334155;
+      --line: #e2e8f0;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: "Segoe UI", Arial, sans-serif;
-      background: linear-gradient(180deg, var(--bg) 0%, #020617 100%);
+      background: var(--bg);
       color: var(--text);
       line-height: 1.6;
     }
@@ -34,8 +34,8 @@
       top: 0;
       z-index: 10;
       backdrop-filter: blur(8px);
-      background: rgba(2, 6, 23, 0.8);
-      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+      background: rgba(255, 255, 255, 0.9);
+      border-bottom: 1px solid var(--line);
     }
     .nav {
       display: flex;
@@ -51,10 +51,9 @@
       letter-spacing: 0.2px;
     }
     .logo-mark {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      background: linear-gradient(135deg, var(--brand), #84cc16);
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
     }
     .nav a {
       color: var(--muted);
@@ -87,11 +86,11 @@
     .btn-outline {
       border-color: var(--line);
       color: var(--text);
-      background: transparent;
+      background: #ffffff;
     }
     .btn-outline:hover {
-      border-color: #64748b;
-      background: rgba(30, 41, 59, 0.45);
+      border-color: #94a3b8;
+      background: #f8fafc;
     }
     h1 {
       font-size: clamp(30px, 5vw, 48px);
@@ -112,7 +111,7 @@
       text-align: center;
     }
     .hero p {
-      color: #cbd5e1;
+      color: #334155;
       margin: 0 auto;
       max-width: 64ch;
     }
@@ -123,13 +122,14 @@
       margin-top: 18px;
     }
     .card {
-      background: rgba(17, 24, 39, 0.95);
+      background: var(--card);
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 22px;
       display: flex;
       flex-direction: column;
       min-height: 100%;
+      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
     }
     .card h3 {
       margin: 0 0 8px;
@@ -159,14 +159,14 @@
       font-size: 14px;
     }
     .pro {
-      border-color: #854d0e;
-      background: linear-gradient(180deg, rgba(120, 53, 15, 0.14), rgba(17, 24, 39, 0.95));
-      box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.18), 0 16px 36px rgba(0, 0, 0, 0.24);
+      border-color: #fcd34d;
+      background: linear-gradient(180deg, rgba(251, 191, 36, 0.12), #ffffff);
+      box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.18), 0 12px 28px rgba(15, 23, 42, 0.1);
     }
     .list {
       margin: 0 0 24px;
       padding-left: 18px;
-      color: #d1d5db;
+      color: #334155;
       flex: 1;
     }
     .list li { margin: 7px 0; }
@@ -177,10 +177,11 @@
       gap: 14px;
     }
     .faq-item {
-      background: rgba(17, 24, 39, 0.95);
+      background: #ffffff;
       border: 1px solid var(--line);
       border-radius: 12px;
       padding: 16px;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
     }
     .faq-item h3 {
       margin: 0 0 8px;
@@ -188,7 +189,7 @@
     }
     .faq-item p {
       margin: 0;
-      color: #cbd5e1;
+      color: #334155;
       font-size: 14px;
     }
     footer.site-footer {
@@ -248,7 +249,7 @@
   <header>
     <div class="container nav">
       <div class="logo">
-        <span class="logo-mark" aria-hidden="true"></span>
+        <img class="logo-mark" src="logo.png" alt="Ener Quote logo" />
         <span>Ener Quote</span>
       </div>
       <nav>
