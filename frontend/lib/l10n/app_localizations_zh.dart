@@ -44,6 +44,18 @@ class AppLocalizationsZh extends AppLocalizations {
       'Google 登录失败 (12500)：在 Google Cloud「凭据」中，Android 类型 OAuth 客户端的包名须为 one.dothings.enerquote，且 SHA-1 必须与当前安装包的实际签名证书一致（flutter run / 本地调试用 debug.keystore；从 Google Play 安装须在 Play 控制台「应用完整性」查看「应用签名」证书指纹并添加到 Cloud）。Web 客户端 ID 须与 GOOGLE_SERVER_CLIENT_ID 一致且与 Android 客户端在同一 GCP 项目。';
 
   @override
+  String get errMicrosoftClientIdInvalid =>
+      'Microsoft 登录配置不正确。请检查 MICROSOFT_OAUTH_CLIENT_ID 与 Azure App Registration 配置。';
+
+  @override
+  String get errMicrosoftInvalidIdToken =>
+      'Microsoft 返回的 ID Token 无效。请检查 Azure 重定向 URI、账户类型，以及 MICROSOFT_TENANT（consumers/个人，organizations/工作，或 common）。';
+
+  @override
+  String get errMicrosoftPersonalAccountNotSupported =>
+      '当前 Azure 应用不允许个人 Microsoft 账号登录。请设置 MICROSOFT_TENANT=consumers，并在 Azure App Registration 中调整 Supported account types。';
+
+  @override
   String get registerPrompt => '还没有账号？点击这里免费注册';
 
   @override

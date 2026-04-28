@@ -29,6 +29,15 @@ buildscript {
  */
 val googleServerClientId: String =
     (project.findProperty("GOOGLE_SERVER_CLIENT_ID") as String?)?.trim().orEmpty()
+val microsoftOauthClientId: String =
+    (project.findProperty("MICROSOFT_OAUTH_CLIENT_ID") as String?)?.trim().orEmpty()
+val microsoftOauthTenant: String =
+    (project.findProperty("MICROSOFT_TENANT") as String?)?.trim().orEmpty()
+// OAuth redirect URI must stay aligned across:
+// 1) manifestPlaceholders["appAuthRedirectScheme"] below
+// 2) login_screen.dart: one.dothings.enerquote:/oauth2redirect
+// 3) Azure App Registration Redirect URI
+val oauthRedirectScheme = "one.dothings.enerquote"
 
 
 android {
@@ -47,7 +56,7 @@ android {
 
     defaultConfig {
         applicationId = "one.dothings.enerquote"
-        manifestPlaceholders["appAuthRedirectScheme"] = "one.dothings.enerquote"
+        manifestPlaceholders["appAuthRedirectScheme"] = oauthRedirectScheme
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -55,6 +64,12 @@ android {
 
         if (googleServerClientId.isNotEmpty()) {
             resValue("string", "default_web_client_id", googleServerClientId)
+        }
+        if (microsoftOauthClientId.isNotEmpty()) {
+            resValue("string", "microsoft_oauth_client_id", microsoftOauthClientId)
+        }
+        if (microsoftOauthTenant.isNotEmpty()) {
+            resValue("string", "microsoft_oauth_tenant", microsoftOauthTenant)
         }
     }
 

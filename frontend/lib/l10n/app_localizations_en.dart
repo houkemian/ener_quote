@@ -44,6 +44,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Google Sign-In failed (12500). In Google Cloud Console → Credentials, the Android OAuth client must use package one.dothings.enerquote and the SHA-1 of the key that signs the APK you installed (debug keystore for flutter run; for Play builds add the App signing certificate from Play Console → App integrity). The Web client ID must match GOOGLE_SERVER_CLIENT_ID and live in the same GCP project.';
 
   @override
+  String get errMicrosoftClientIdInvalid =>
+      'Microsoft sign-in is not configured correctly. Check MICROSOFT_OAUTH_CLIENT_ID and Azure App Registration.';
+
+  @override
+  String get errMicrosoftInvalidIdToken =>
+      'Microsoft returned an invalid ID token. Check Azure redirect URI, account type, and MICROSOFT_TENANT (consumers/personal, organizations/work, or common).';
+
+  @override
+  String get errMicrosoftPersonalAccountNotSupported =>
+      'This Azure app does not allow personal Microsoft accounts. Set MICROSOFT_TENANT=consumers and update Supported account types in Azure App Registration.';
+
+  @override
   String get registerPrompt => 'Don\'t have an account? Sign up free';
 
   @override

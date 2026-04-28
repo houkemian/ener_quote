@@ -30,13 +30,11 @@ const String _kMicrosoftClientId = String.fromEnvironment(
   defaultValue: '',
 );
 const String _kMicrosoftRedirectUrl =
-    'one.dothings.enerquote://oauth2redirect';
+    'one.dothings.enerquote:/oauth2redirect';
 const String _kMicrosoftTenant = String.fromEnvironment(
   'MICROSOFT_TENANT',
-  defaultValue: 'common',
+  defaultValue: '',
 );
-const String _kMicrosoftDiscoveryUrl =
-    'https://login.microsoftonline.com/$_kMicrosoftTenant/v2.0/.well-known/openid-configuration';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -47,6 +45,9 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   static const double _uiScale = 0.8;
+  static const MethodChannel _configChannel = MethodChannel(
+    'one.dothings.enerquote/config',
+  );
   final TextEditingController _emailController = TextEditingController(
     text: '',
   );
@@ -213,23 +214,46 @@ class _LoginScreenState extends State<LoginScreen> {
     return _dioErrorMessage(e, l10n);
   }
 
-  String _oauthConfigHint() {
-    return 'OAuth config error. '
-        'Set GOOGLE_SERVER_CLIENT_ID (Web client *.apps.googleusercontent.com) via --dart-define, '
-        'or on Android set GOOGLE_SERVER_CLIENT_ID in android/gradle.properties (see android/app/build.gradle.kts). '
-        'Also set MICROSOFT_OAUTH_CLIENT_ID via --dart-define for Microsoft login.';
+  Future<String> _resolveMicrosoftClientId() async {
+    if (_microsoftClientId.isNotEmpty) {
+      return _microsoftClientId;
+    }
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        final fromNative = await _configChannel.invokeMethod<String>(
+          'getMicrosoftOAuthClientId',
+        );
+        return (fromNative ?? '').trim();
+      } catch (_) {
+        return '';
+      }
+    }
+    return '';
   }
 
-  String _microsoftOauthConfigHint() {
-    return 'Microsoft OAuth config error. '
-        'Set MICROSOFT_OAUTH_CLIENT_ID via --dart-define '
-        '(example: --dart-define=MICROSOFT_OAUTH_CLIENT_ID=<azure-app-client-id>).';
+  Future<String> _resolveMicrosoftTenant() async {
+    final fromDartDefine = _kMicrosoftTenant.trim();
+    if (fromDartDefine.isNotEmpty) {
+      return fromDartDefine;
+    }
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        final fromNative = await _configChannel.invokeMethod<String>(
+          'getMicrosoftOAuthTenant',
+        );
+        final tenant = (fromNative ?? '').trim();
+        return tenant.isNotEmpty ? tenant : 'common';
+      } catch (_) {
+        return 'common';
+      }
+    }
+    return 'common';
   }
 
   Future<void> _signInWithGoogle() async {
     final l10n = AppLocalizations.of(context)!;
     if (!_hasGoogleSignInClientId) {
-      setState(() => _errorMessage = _oauthConfigHint());
+      setState(() => _errorMessage = l10n.errOAuthNotConfigured);
       return;
     }
     setState(() {
@@ -296,9 +320,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _signInWithMicrosoft() async {
     final l10n = AppLocalizations.of(context)!;
-    final msId = _microsoftClientId;
+    final msId = await _resolveMicrosoftClientId();
+    final msTenant = await _resolveMicrosoftTenant();
+    debugPrint('[MS-OAuth] start sign-in');
+    debugPrint('[MS-OAuth] tenant=$msTenant');
+    debugPrint(
+      '[MS-OAuth] clientId=${msId.isEmpty ? "<empty>" : "${msId.substring(0, 6)}..."}',
+    );
     if (msId.isEmpty) {
-      setState(() => _errorMessage = _microsoftOauthConfigHint());
+      setState(() => _errorMessage = l10n.errOAuthNotConfigured);
+      debugPrint('[MS-OAuth] missing client id');
       return;
     }
     setState(() {
@@ -306,35 +337,24 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = '';
     });
     try {
-      final discoveryCandidates = <String>[
-        _kMicrosoftDiscoveryUrl,
-        'https://login.microsoftonline.com/consumers/v2.0/.well-known/openid-configuration',
-        'https://login.microsoftonline.com/organizations/v2.0/.well-known/openid-configuration',
-      ].toSet().toList();
+      final discoveryUrl =
+          'https://login.microsoftonline.com/$msTenant/v2.0/.well-known/openid-configuration';
+      debugPrint('[MS-OAuth] trying discovery=$discoveryUrl');
+      final result = await _appAuth.authorizeAndExchangeCode(
+        AuthorizationTokenRequest(
+          msId,
+          _kMicrosoftRedirectUrl,
+          discoveryUrl: discoveryUrl,
+          scopes: const ['openid', 'profile', 'email', 'offline_access'],
+          promptValues: const ['select_account'],
+        ),
+      );
+      debugPrint('[MS-OAuth] authorizeAndExchangeCode succeeded');
 
-      AuthorizationTokenResponse? result;
-      Object? lastError;
-      for (final discovery in discoveryCandidates) {
-        try {
-          result = await _appAuth.authorizeAndExchangeCode(
-            AuthorizationTokenRequest(
-              msId,
-              _kMicrosoftRedirectUrl,
-              discoveryUrl: discovery,
-              scopes: const ['openid', 'profile', 'email', 'offline_access'],
-              promptValues: const ['select_account'],
-            ),
-          );
-          break;
-        } catch (e) {
-          lastError = e;
-        }
-      }
-
-      if (result == null) {
-        throw Exception(lastError?.toString() ?? 'Microsoft authorization failed');
-      }
       final idToken = result.idToken;
+      debugPrint(
+        '[MS-OAuth] idToken present=${idToken != null && idToken.isNotEmpty}',
+      );
       if (idToken == null || idToken.isEmpty) {
         throw Exception('Microsoft did not return id_token');
       }
@@ -342,29 +362,37 @@ class _LoginScreenState extends State<LoginScreen> {
         provider: 'microsoft',
         idToken: idToken,
       );
+      debugPrint('[MS-OAuth] backend exchange success');
       await _persistTokenAndNavigate(data['access_token'] as String);
     } on DioException catch (e) {
+      debugPrint('[MS-OAuth] backend exchange DioException: ${e.message}');
+      debugPrint('[MS-OAuth] response=${e.response?.data}');
       setState(() {
         _errorMessage = _dioOAuthExchangeMessage(e, l10n);
       });
     } on PlatformException catch (e) {
+      debugPrint('[MS-OAuth] PlatformException code=${e.code}');
+      debugPrint('[MS-OAuth] PlatformException message=${e.message}');
+      debugPrint('[MS-OAuth] PlatformException details=${e.details}');
       if (e.code == 'user_canceled' || e.code == 'canceled') {
         return;
       }
       final msg = (e.message ?? '').toLowerCase();
       if (msg.contains('client_id')) {
         setState(() {
-          _errorMessage =
-              'Microsoft OAuth missing/invalid client_id. Check --dart-define=MICROSOFT_OAUTH_CLIENT_ID and Azure App Registration.';
+          _errorMessage = l10n.errMicrosoftClientIdInvalid;
         });
         return;
       }
       if (msg.contains('invalid id token')) {
         setState(() {
-          _errorMessage =
-              'Microsoft returned an ID token that failed local validation. '
-              'Check Azure redirect URI and account type; you can also try '
-              '--dart-define=MICROSOFT_TENANT=consumers (personal) or organizations (work).';
+          _errorMessage = l10n.errMicrosoftInvalidIdToken;
+        });
+        return;
+      }
+      if (msg.contains('personal account') || msg.contains('microsoft account')) {
+        setState(() {
+          _errorMessage = l10n.errMicrosoftPersonalAccountNotSupported;
         });
         return;
       }
@@ -372,6 +400,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _errorMessage = l10n.errSystem(e.message ?? e.toString());
       });
     } catch (e) {
+      debugPrint('[MS-OAuth] unexpected error=$e');
       setState(() {
         _errorMessage = l10n.errSystem(e.toString());
       });
