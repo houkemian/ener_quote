@@ -220,6 +220,12 @@ class _LoginScreenState extends State<LoginScreen> {
         'Also set MICROSOFT_OAUTH_CLIENT_ID via --dart-define for Microsoft login.';
   }
 
+  String _microsoftOauthConfigHint() {
+    return 'Microsoft OAuth config error. '
+        'Set MICROSOFT_OAUTH_CLIENT_ID via --dart-define '
+        '(example: --dart-define=MICROSOFT_OAUTH_CLIENT_ID=<azure-app-client-id>).';
+  }
+
   Future<void> _signInWithGoogle() async {
     final l10n = AppLocalizations.of(context)!;
     if (!_hasGoogleSignInClientId) {
@@ -291,11 +297,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _signInWithMicrosoft() async {
     final l10n = AppLocalizations.of(context)!;
     final msId = _microsoftClientId;
-    final msIdPattern = RegExp(
-      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
-    );
-    if (msId.isEmpty || !msIdPattern.hasMatch(msId)) {
-      setState(() => _errorMessage = _oauthConfigHint());
+    if (msId.isEmpty) {
+      setState(() => _errorMessage = _microsoftOauthConfigHint());
       return;
     }
     setState(() {
