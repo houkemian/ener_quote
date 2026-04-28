@@ -5,6 +5,11 @@
 ## 一句话现状
 - 项目已进入“移动端优先 + 订阅闭环”阶段：认证、支付提权、设置页权益展示、账号删除主链路已跑通，可用于持续迭代增长功能。
 
+## 数据库口径（已统一）
+- 当前后端运行数据库为 **PostgreSQL**（`backend/app/db/database.py` 通过 `DATABASE_URL` 或 `DB_*` 变量连接）。
+- ORM 使用 SQLAlchemy，当前主链路模型为 `iam_users`、`user_settings`、`payment_orders`、`paddle_webhook_events`。
+- 历史文档中出现的 SQLite / `pv_ess.db` 口径已废弃，不再作为对外说明与实施基线。
+
 ## 当前已落地能力（以代码为准）
 - 账号体系
   - 邮箱密码登录（邮箱格式前置校验）。

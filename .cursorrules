@@ -6,11 +6,11 @@ EnerQuote 是一款面向全球 2026 年市场的 B2B SaaS 系统。主要为光
 ## 2. Monorepo Architecture
 这是一个前后端分离的 Monorepo 项目，分为 `/frontend` 和 `/backend` 两个核心目录。
 
-### [Backend] Stack: Python + FastAPI + SQLite + SQLAlchemy
+### [Backend] Stack: Python + FastAPI + PostgreSQL + SQLAlchemy
 * **Path:** `/backend`
 * **Core Engine:** * `app/engine/physics.py`: 8760小时物理能量流计算引擎（光伏发电、电池充放电、需量削峰、谷电套利）。
   * `app/engine/finance.py`: 财务引擎（NPV、IRR、LCOE、投资回收期分析）。
-* **Database:** SQLite (`pv_ess.db`)。ORM 使用 SQLAlchemy。包含多租户架构 (`companies`)，IAM 身份系统 (`users`) 和动态硬件配置库。
+* **Database:** PostgreSQL（通过 `DATABASE_URL` 或 `DB_*` 环境变量配置）。ORM 使用 SQLAlchemy。包含多租户架构草案 (`companies`)、IAM 身份系统（当前主链路 `iam_users`）和支付审计模型。
 * **Third-Party APIs:**
   * Paddle Billing API: 处理 PRO 会员结账及 Webhook 自动提权 (`app/api/v1/payment.py`)。
   * PVGIS API: 跨国拉取真实经纬度的 8760 光照数据 (`app/services/pvgis.py`)。
@@ -30,7 +30,7 @@ EnerQuote 是一款面向全球 2026 年市场的 B2B SaaS 系统。主要为光
 ## 3. Cursor AI Coding Rules (Must Follow)
 1. **Context Awareness:** 修改前后端交互逻辑时，必须同时考虑 `/backend/app/api/` 的接口定义与 `/frontend/lib/core/network/` 的调用。
 2. **Localization First:** 为 Frontend 生成新 UI 时，如果涉及文本，必须提示我更新 `.arb` 字典文件，并使用 `l10n.xxx` 调用。
-3. **Safe Database Migrations:** 修改 Backend SQLAlchemy Models 时，必须提供原生的 SQLite `ALTER TABLE` SQL 脚本或 Alembic 指导。
+3. **Safe Database Migrations:** 修改 Backend SQLAlchemy Models 时，必须提供 PostgreSQL 迁移脚本（推荐 Alembic；如需手写 SQL，请提供 PostgreSQL 方言）。
 4. **Code Generation:** 输出代码时，请明确指出该代码所属的文件路径（例如 `// Path: frontend/lib/screens/xxx.dart`）。
 5. **No Placeholders:** 尽量给出完整的代码替换逻辑，避免使用 `// ... existing code` 导致代码遗漏。
 6. **B2B Mindset:** 保持 B2B SaaS 的严谨性，特别是关于财务公式（IRR、现金流）和能量守恒的逻辑，必须绝对精确。
