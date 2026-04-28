@@ -123,7 +123,7 @@ flutter:
 # ==========================================
 # 1. 桌面图标配置 (App Icon)
 # ==========================================
-flutter_icons:
+flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/images/logo.png"
