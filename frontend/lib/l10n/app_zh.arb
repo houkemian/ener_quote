@@ -199,6 +199,14 @@
     "close": "关闭",
     "legalLoadFailed": "当前无法加载文档，请稍后重试。",
     "footerCopyright": "© 2026 EnerQuote. 保留所有权利。",
+    "versionDisplay": "版本 {version}（{build}）",
+    "@versionDisplay": {
+      "placeholders": {
+        "version": { "type": "String" },
+        "build": { "type": "String" }
+      }
+    },
+    "versionCopied": "版本号已复制到剪贴板",
     "openInBrowserMessage": "请在浏览器中打开 {title}。",
     "@openInBrowserMessage": {
       "placeholders": {

@@ -200,6 +200,14 @@
     "close": "Close",
     "legalLoadFailed": "Unable to load document right now. Please try again later.",
     "footerCopyright": "© 2026 EnerQuote. All rights reserved.",
+    "versionDisplay": "Version {version} ({build})",
+    "@versionDisplay": {
+      "placeholders": {
+        "version": { "type": "String" },
+        "build": { "type": "String" }
+      }
+    },
+    "versionCopied": "Version info copied to clipboard",
     "openInBrowserMessage": "Open {title} in your browser.",
     "@openInBrowserMessage": {
       "placeholders": {

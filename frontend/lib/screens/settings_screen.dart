@@ -13,6 +13,7 @@ import 'dart:convert'; // 用于 Base64 转换
 import '../theme/app_colors.dart';
 import 'paddle_checkout_webview.dart';
 import 'login_screen.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -45,11 +46,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool get _isAndroidRevenueCatFlow => !kIsWeb && Platform.isAndroid;
   bool _costPanelExpanded = false;
   String? _lastShownBillingGraceKey;
+  String _appVersion = '--';
+  String _appBuildNumber = '--';
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
+    _loadVersionInfo();
+  }
+
+  Future<void> _loadVersionInfo() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (!mounted) {
+        return;
+      }
+      final version = packageInfo.version.trim().isEmpty ? '--' : packageInfo.version.trim();
+      final buildNumber = packageInfo.buildNumber.trim().isEmpty ? '--' : packageInfo.buildNumber.trim();
+      setState(() {
+        _appVersion = version;
+        _appBuildNumber = buildNumber;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _appVersion = '--';
+        _appBuildNumber = '--';
+      });
+    }
+  }
+
+  Future<void> _copyVersionInfo() async {
+    final l10n = AppLocalizations.of(context)!;
+    final versionLabel = l10n.versionDisplay(_appVersion, _appBuildNumber);
+    await Clipboard.setData(ClipboardData(text: versionLabel));
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.versionCopied),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   // 🌟 初始化时从云端拉取配置
@@ -400,7 +443,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
+              SafeArea(
+                top: false,
+                child: Center(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(6),
+                    onLongPress: _copyVersionInfo,
+                    onDoubleTap: _copyVersionInfo,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      child: Text(
+                        l10n.versionDisplay(_appVersion, _appBuildNumber),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
             ],
           ),
         ),

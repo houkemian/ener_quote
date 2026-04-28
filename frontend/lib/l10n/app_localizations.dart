@@ -1010,6 +1010,18 @@ abstract class AppLocalizations {
   /// **'© 2026 EnerQuote. 保留所有权利。'**
   String get footerCopyright;
 
+  /// No description provided for @versionDisplay.
+  ///
+  /// In zh, this message translates to:
+  /// **'版本 {version}（{build}）'**
+  String versionDisplay(String version, String build);
+
+  /// No description provided for @versionCopied.
+  ///
+  /// In zh, this message translates to:
+  /// **'版本号已复制到剪贴板'**
+  String get versionCopied;
+
   /// No description provided for @openInBrowserMessage.
   ///
   /// In zh, this message translates to:

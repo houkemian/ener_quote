@@ -513,6 +513,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get footerCopyright => '© 2026 EnerQuote. All rights reserved.';
 
   @override
+  String versionDisplay(String version, String build) {
+    return 'Version $version ($build)';
+  }
+
+  @override
+  String get versionCopied => 'Version info copied to clipboard';
+
+  @override
   String openInBrowserMessage(String title) {
     return 'Open $title in your browser.';
   }

@@ -491,6 +491,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get footerCopyright => '© 2026 EnerQuote. 保留所有权利。';
 
   @override
+  String versionDisplay(String version, String build) {
+    return '版本 $version（$build）';
+  }
+
+  @override
+  String get versionCopied => '版本号已复制到剪贴板';
+
+  @override
   String openInBrowserMessage(String title) {
     return '请在浏览器中打开 $title。';
   }
