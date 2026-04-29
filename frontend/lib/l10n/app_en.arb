@@ -217,5 +217,26 @@
         "title": { "type": "String" }
       }
     },
-    "openInBrowser": "Open in browser"
+    "openInBrowser": "Open in browser",
+    "billingManagementTitle": "Billing Management",
+    "billingCurrentPlanTitle": "Current Plan",
+    "billingProPlanName": "PRO / Premium",
+    "billingFreePlanName": "Free Plan",
+    "billingRenewExpireOn": "Your subscription renews/expires on {date}",
+    "@billingRenewExpireOn": { "placeholders": { "date": { "type": "String" } } },
+    "billingFreePlanHint": "You are currently on the free plan.",
+    "billingUpgradeCta": "Upgrade for more features",
+    "billingManageTitle": "Manage Subscription",
+    "billingManageHint": "Open the official store management page for cancellation, renewal, or plan changes.",
+    "billingManageButton": "Manage My Subscription",
+    "billingHistoryTitle": "Billing History",
+    "billingHistoryEmpty": "No billing history yet.",
+    "billingPurchaseExpire": "Purchase: {purchase}   Expire: {expire}",
+    "@billingPurchaseExpire": { "placeholders": { "purchase": { "type": "String" }, "expire": { "type": "String" } } },
+    "billingManageDialogTitle": "Subscription Management",
+    "billingManageDialogMessage": "Unable to open the subscription management page automatically. Please manage your subscription from the system app store.",
+    "retry": "Retry",
+    "billingLoadFailed": "Failed to load billing info: {error}",
+    "@billingLoadFailed": { "placeholders": { "error": { "type": "String" } } },
+    "billingEntryLabel": "Billing"
 }

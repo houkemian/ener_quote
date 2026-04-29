@@ -216,5 +216,26 @@
         "title": { "type": "String" }
       }
     },
-    "openInBrowser": "在浏览器中打开"
+    "openInBrowser": "在浏览器中打开",
+    "billingManagementTitle": "订阅与账单管理",
+    "billingCurrentPlanTitle": "当前订阅",
+    "billingProPlanName": "PRO / 高级版",
+    "billingFreePlanName": "免费版",
+    "billingRenewExpireOn": "您的订阅将于 {date} 续订/到期",
+    "@billingRenewExpireOn": { "placeholders": { "date": { "type": "String" } } },
+    "billingFreePlanHint": "您当前使用免费计划。",
+    "billingUpgradeCta": "升级以解锁更多功能",
+    "billingManageTitle": "管理订阅",
+    "billingManageHint": "打开系统官方订阅管理页面，进行续费、取消或变更方案。",
+    "billingManageButton": "管理我的订阅",
+    "billingHistoryTitle": "历史账单",
+    "billingHistoryEmpty": "暂无历史账单。",
+    "billingPurchaseExpire": "购买：{purchase}   到期：{expire}",
+    "@billingPurchaseExpire": { "placeholders": { "purchase": { "type": "String" }, "expire": { "type": "String" } } },
+    "billingManageDialogTitle": "订阅管理",
+    "billingManageDialogMessage": "暂时无法自动打开订阅管理页面。请前往系统应用商店管理您的订阅。",
+    "retry": "重试",
+    "billingLoadFailed": "加载账单信息失败：{error}",
+    "@billingLoadFailed": { "placeholders": { "error": { "type": "String" } } },
+    "billingEntryLabel": "账单"
 }

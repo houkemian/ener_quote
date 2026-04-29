@@ -517,4 +517,64 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get openInBrowser => '在浏览器中打开';
+
+  @override
+  String get billingManagementTitle => '订阅与账单管理';
+
+  @override
+  String get billingCurrentPlanTitle => '当前订阅';
+
+  @override
+  String get billingProPlanName => 'PRO / 高级版';
+
+  @override
+  String get billingFreePlanName => '免费版';
+
+  @override
+  String billingRenewExpireOn(String date) {
+    return '您的订阅将于 $date 续订/到期';
+  }
+
+  @override
+  String get billingFreePlanHint => '您当前使用免费计划。';
+
+  @override
+  String get billingUpgradeCta => '升级以解锁更多功能';
+
+  @override
+  String get billingManageTitle => '管理订阅';
+
+  @override
+  String get billingManageHint => '打开系统官方订阅管理页面，进行续费、取消或变更方案。';
+
+  @override
+  String get billingManageButton => '管理我的订阅';
+
+  @override
+  String get billingHistoryTitle => '历史账单';
+
+  @override
+  String get billingHistoryEmpty => '暂无历史账单。';
+
+  @override
+  String billingPurchaseExpire(String purchase, String expire) {
+    return '购买：$purchase   到期：$expire';
+  }
+
+  @override
+  String get billingManageDialogTitle => '订阅管理';
+
+  @override
+  String get billingManageDialogMessage => '暂时无法自动打开订阅管理页面。请前往系统应用商店管理您的订阅。';
+
+  @override
+  String get retry => '重试';
+
+  @override
+  String billingLoadFailed(String error) {
+    return '加载账单信息失败：$error';
+  }
+
+  @override
+  String get billingEntryLabel => '账单';
 }

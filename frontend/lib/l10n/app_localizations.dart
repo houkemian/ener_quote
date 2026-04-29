@@ -1051,6 +1051,114 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'在浏览器中打开'**
   String get openInBrowser;
+
+  /// No description provided for @billingManagementTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'订阅与账单管理'**
+  String get billingManagementTitle;
+
+  /// No description provided for @billingCurrentPlanTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前订阅'**
+  String get billingCurrentPlanTitle;
+
+  /// No description provided for @billingProPlanName.
+  ///
+  /// In zh, this message translates to:
+  /// **'PRO / 高级版'**
+  String get billingProPlanName;
+
+  /// No description provided for @billingFreePlanName.
+  ///
+  /// In zh, this message translates to:
+  /// **'免费版'**
+  String get billingFreePlanName;
+
+  /// No description provided for @billingRenewExpireOn.
+  ///
+  /// In zh, this message translates to:
+  /// **'您的订阅将于 {date} 续订/到期'**
+  String billingRenewExpireOn(String date);
+
+  /// No description provided for @billingFreePlanHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'您当前使用免费计划。'**
+  String get billingFreePlanHint;
+
+  /// No description provided for @billingUpgradeCta.
+  ///
+  /// In zh, this message translates to:
+  /// **'升级以解锁更多功能'**
+  String get billingUpgradeCta;
+
+  /// No description provided for @billingManageTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'管理订阅'**
+  String get billingManageTitle;
+
+  /// No description provided for @billingManageHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'打开系统官方订阅管理页面，进行续费、取消或变更方案。'**
+  String get billingManageHint;
+
+  /// No description provided for @billingManageButton.
+  ///
+  /// In zh, this message translates to:
+  /// **'管理我的订阅'**
+  String get billingManageButton;
+
+  /// No description provided for @billingHistoryTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'历史账单'**
+  String get billingHistoryTitle;
+
+  /// No description provided for @billingHistoryEmpty.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无历史账单。'**
+  String get billingHistoryEmpty;
+
+  /// No description provided for @billingPurchaseExpire.
+  ///
+  /// In zh, this message translates to:
+  /// **'购买：{purchase}   到期：{expire}'**
+  String billingPurchaseExpire(String purchase, String expire);
+
+  /// No description provided for @billingManageDialogTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'订阅管理'**
+  String get billingManageDialogTitle;
+
+  /// No description provided for @billingManageDialogMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂时无法自动打开订阅管理页面。请前往系统应用商店管理您的订阅。'**
+  String get billingManageDialogMessage;
+
+  /// No description provided for @retry.
+  ///
+  /// In zh, this message translates to:
+  /// **'重试'**
+  String get retry;
+
+  /// No description provided for @billingLoadFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'加载账单信息失败：{error}'**
+  String billingLoadFailed(String error);
+
+  /// No description provided for @billingEntryLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'账单'**
+  String get billingEntryLabel;
 }
 
 class _AppLocalizationsDelegate

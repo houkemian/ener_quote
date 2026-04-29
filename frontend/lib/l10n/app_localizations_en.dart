@@ -539,4 +539,66 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get openInBrowser => 'Open in browser';
+
+  @override
+  String get billingManagementTitle => 'Billing Management';
+
+  @override
+  String get billingCurrentPlanTitle => 'Current Plan';
+
+  @override
+  String get billingProPlanName => 'PRO / Premium';
+
+  @override
+  String get billingFreePlanName => 'Free Plan';
+
+  @override
+  String billingRenewExpireOn(String date) {
+    return 'Your subscription renews/expires on $date';
+  }
+
+  @override
+  String get billingFreePlanHint => 'You are currently on the free plan.';
+
+  @override
+  String get billingUpgradeCta => 'Upgrade for more features';
+
+  @override
+  String get billingManageTitle => 'Manage Subscription';
+
+  @override
+  String get billingManageHint =>
+      'Open the official store management page for cancellation, renewal, or plan changes.';
+
+  @override
+  String get billingManageButton => 'Manage My Subscription';
+
+  @override
+  String get billingHistoryTitle => 'Billing History';
+
+  @override
+  String get billingHistoryEmpty => 'No billing history yet.';
+
+  @override
+  String billingPurchaseExpire(String purchase, String expire) {
+    return 'Purchase: $purchase   Expire: $expire';
+  }
+
+  @override
+  String get billingManageDialogTitle => 'Subscription Management';
+
+  @override
+  String get billingManageDialogMessage =>
+      'Unable to open the subscription management page automatically. Please manage your subscription from the system app store.';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String billingLoadFailed(String error) {
+    return 'Failed to load billing info: $error';
+  }
+
+  @override
+  String get billingEntryLabel => 'Billing';
 }
