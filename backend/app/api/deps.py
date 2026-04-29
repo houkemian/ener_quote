@@ -1,25 +1,40 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-import jwt
 from pydantic import BaseModel
 
-from app.core.security import decode_and_validate_access_token
+from app.modules.iam.models import User
+from app.services.firebase_auth import verify_firebase_id_token
 
 from typing import Generator
 from app.db.database import SessionLocal # 引入刚才写好的 Session 工厂
+from sqlalchemy.orm import Session
 
 
 
-# 告诉 FastAPI，前端应该向哪个地址发送账号密码来换取 Token
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+# 告诉 FastAPI，前端使用 Firebase token 与 /auth/firebase 完成登录态同步。
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/firebase")
+
+
+# 🌟 数据库依赖注入：FastAPI 会在每次接口被调用时，自动开门、关门
+def get_db() -> Generator:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 class TokenPayload(BaseModel):
     user_id: str
+    firebase_uid: str
+    email: str
     company_id: str
     role: str
     tier: str  # 🌟 新增：拦截器能识别当前用户的付费等级了！
 
-async def get_current_user_payload(token: str = Depends(oauth2_scheme)) -> TokenPayload:
+async def get_current_user_payload(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> TokenPayload:
     """
     终极安检门：拦截所有请求，撕开 Token，提取公司 ID
     """
@@ -30,35 +45,32 @@ async def get_current_user_payload(token: str = Depends(oauth2_scheme)) -> Token
     )
     
     try:
-        # 1. 验证签名、过期时间，并校验 Redis(DB2) 中会话是否仍有效
-        payload = decode_and_validate_access_token(token)
-        
-        # 2. 提取核心 SaaS 隔离数据
-        user_id: str = payload.get("sub")
-        company_id: str = payload.get("company_id")
-        role: str = payload.get("role")
-        tier: str = payload.get("tier", "FREE") # 🌟 提取权限，默认 FREE
-        
-        if user_id is None or company_id is None:
-            raise credentials_exception
-            
-        return TokenPayload(
-            user_id=user_id, 
-            company_id=company_id, 
-            role=role,
-            tier=tier # 🌟 返回给业务方
-        )
-        
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="登录已过期，请重新登录")
-    except jwt.PyJWTError:
+        payload = verify_firebase_id_token(token)
+    except ValueError:
         raise credentials_exception
-    
+    firebase_uid = str(payload.get("user_id") or payload.get("sub") or "").strip()
+    email = str(payload.get("email") or "").strip().lower()
+    if not firebase_uid or not email:
+        raise credentials_exception
 
-# 🌟 数据库依赖注入：FastAPI 会在每次接口被调用时，自动开门、关门
-def get_db() -> Generator:
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
+    if not user:
+        user = db.query(User).filter(User.email == email).first()
+        if user:
+            user.firebase_uid = firebase_uid
+            provider = payload.get("firebase", {}).get("sign_in_provider")
+            if provider:
+                user.auth_provider = str(provider)
+            db.commit()
+            db.refresh(user)
+    if not user:
+        raise credentials_exception
+
+    return TokenPayload(
+        user_id=user.id,
+        firebase_uid=firebase_uid,
+        email=email,
+        company_id="solo-tenant",
+        role="SALES",
+        tier=user.tier or "FREE",
+    )

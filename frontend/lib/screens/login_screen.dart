@@ -2,12 +2,11 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_appauth/flutter_appauth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../core/network/api_client.dart';
 import '../core/auth/token_manager.dart';
 import 'package:dio/dio.dart';
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 // 🌟 引入多语言引擎
 import '../l10n/app_localizations.dart';
@@ -18,21 +17,8 @@ import '../theme/app_colors.dart';
 import '../widgets/marketing_footer.dart';
 import '../core/billing/revenuecat_service.dart';
 
-/// 编译时注入（与后端 `.env` 中 OAuth Client 一致）：
-/// `--dart-define=GOOGLE_SERVER_CLIENT_ID=xxx.apps.googleusercontent.com`
-/// `--dart-define=MICROSOFT_OAUTH_CLIENT_ID=azure-application-id`
 const String _kGoogleServerClientId = String.fromEnvironment(
   'GOOGLE_SERVER_CLIENT_ID',
-  defaultValue: '',
-);
-const String _kMicrosoftClientId = String.fromEnvironment(
-  'MICROSOFT_OAUTH_CLIENT_ID',
-  defaultValue: '',
-);
-const String _kMicrosoftRedirectUrl =
-    'one.dothings.enerquote:/oauth2redirect';
-const String _kMicrosoftTenant = String.fromEnvironment(
-  'MICROSOFT_TENANT',
   defaultValue: '',
 );
 
@@ -45,9 +31,6 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   static const double _uiScale = 0.8;
-  static const MethodChannel _configChannel = MethodChannel(
-    'one.dothings.enerquote/config',
-  );
   final TextEditingController _emailController = TextEditingController(
     text: '',
   );
@@ -57,10 +40,9 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   String _errorMessage = '';
 
-  final FlutterAppAuth _appAuth = const FlutterAppAuth();
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
   String get _googleClientId => _kGoogleServerClientId.trim();
-  String get _microsoftClientId => _kMicrosoftClientId.trim();
 
   /// Android: [android/app/build.gradle.kts] injects `default_web_client_id` from
   /// `GOOGLE_SERVER_CLIENT_ID` in [android/gradle.properties]; `serverClientId` may be null so
@@ -158,18 +140,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _persistTokenAndNavigate(String token) async {
+  Future<void> _persistTokenAndNavigate(String token, {String? tierHint}) async {
     final prefs = await SharedPreferences.getInstance();
-    String? userId;
-    final parts = token.split('.');
-    if (parts.length == 3) {
-      final payloadString = utf8.decode(
-        base64Url.decode(base64Url.normalize(parts[1])),
-      );
-      final payloadMap = jsonDecode(payloadString) as Map<String, dynamic>;
-      await prefs.setString('user_tier', payloadMap['tier']?.toString() ?? 'FREE');
-      userId = payloadMap['sub']?.toString();
-    }
+    String? userId = _firebaseAuth.currentUser?.uid;
+    await prefs.setString('user_tier', tierHint ?? 'FREE');
     await TokenManager.saveAccessToken(token);
     await RevenueCatService.initializeFromJwt(token);
     if (userId != null && userId.isNotEmpty) {
@@ -180,6 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const DashboardScreen()),
     );
@@ -196,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return l10n.errNetwork(e.message ?? 'Unknown Error');
   }
 
-  /// 换票接口若 404，多为线上 API 未部署 OAuth 路由（`detail` 常为 `Not Found`）。
+  /// Firebase 登录同步接口若 404，多为线上 API 未部署 `/auth/firebase`。
   String _dioOAuthExchangeMessage(DioException e, AppLocalizations l10n) {
     final code = e.response?.statusCode;
     final data = e.response?.data;
@@ -208,46 +183,10 @@ class _LoginScreenState extends State<LoginScreen> {
         detail == 'Not Found' ||
         (detail != null && detail.toLowerCase().contains('not found'));
     if (looksNotFound) {
-      return 'OAuth API not found (404). Deploy backend routes POST /auth/oauth/google and '
-          '/auth/oauth/microsoft (under /api/v1), or set ApiClient baseUrl to a server that has them.';
+      return 'Firebase auth API not found (404). Deploy backend route POST /auth/firebase '
+          '(under /api/v1), or set ApiClient baseUrl to a server that has it.';
     }
     return _dioErrorMessage(e, l10n);
-  }
-
-  Future<String> _resolveMicrosoftClientId() async {
-    if (_microsoftClientId.isNotEmpty) {
-      return _microsoftClientId;
-    }
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      try {
-        final fromNative = await _configChannel.invokeMethod<String>(
-          'getMicrosoftOAuthClientId',
-        );
-        return (fromNative ?? '').trim();
-      } catch (_) {
-        return '';
-      }
-    }
-    return '';
-  }
-
-  Future<String> _resolveMicrosoftTenant() async {
-    final fromDartDefine = _kMicrosoftTenant.trim();
-    if (fromDartDefine.isNotEmpty) {
-      return fromDartDefine;
-    }
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      try {
-        final fromNative = await _configChannel.invokeMethod<String>(
-          'getMicrosoftOAuthTenant',
-        );
-        final tenant = (fromNative ?? '').trim();
-        return tenant.isNotEmpty ? tenant : 'common';
-      } catch (_) {
-        return 'common';
-      }
-    }
-    return 'common';
   }
 
   Future<void> _signInWithGoogle() async {
@@ -265,14 +204,6 @@ class _LoginScreenState extends State<LoginScreen> {
         scopes: const ['email', 'openid'],
         serverClientId: _googleServerClientIdForPlugin,
       );
-      // 清掉上次会话；无会话或 Play 服务偶发错误时不应阻断本次登录
-      try {
-        await google.signOut();
-      } on PlatformException catch (_) {
-        // ignore
-      } catch (_) {
-        // ignore
-      }
       final account = await google.signIn();
       if (account == null) {
         return;
@@ -281,14 +212,22 @@ class _LoginScreenState extends State<LoginScreen> {
       final idToken = auth.idToken;
       if (idToken == null || idToken.isEmpty) {
         throw Exception(
-          'Google did not return id_token. Check GOOGLE_SERVER_CLIENT_ID and Android SHA-1.',
+          'Google did not return id_token.',
         );
       }
-      final data = await ApiClient().exchangeOAuthIdToken(
-        provider: 'google',
-        idToken: idToken,
+      final credential = GoogleAuthProvider.credential(idToken: idToken);
+      final authResult = await _firebaseAuth.signInWithCredential(credential);
+      final firebaseToken = await authResult.user?.getIdToken();
+      if (firebaseToken == null || firebaseToken.isEmpty) {
+        throw Exception('Firebase did not return ID token');
+      }
+      final data = await ApiClient().authenticateWithFirebaseIdToken(
+        firebaseIdToken: firebaseToken,
       );
-      await _persistTokenAndNavigate(data['access_token'] as String);
+      await _persistTokenAndNavigate(
+        firebaseToken,
+        tierHint: data['tier']?.toString(),
+      );
     } on DioException catch (e) {
       setState(() {
         _errorMessage = _dioOAuthExchangeMessage(e, l10n);
@@ -320,60 +259,35 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _signInWithMicrosoft() async {
     final l10n = AppLocalizations.of(context)!;
-    final msId = await _resolveMicrosoftClientId();
-    final msTenant = await _resolveMicrosoftTenant();
-    debugPrint('[MS-OAuth] start sign-in');
-    debugPrint('[MS-OAuth] tenant=$msTenant');
-    debugPrint(
-      '[MS-OAuth] clientId=${msId.isEmpty ? "<empty>" : "${msId.substring(0, 6)}..."}',
-    );
-    if (msId.isEmpty) {
-      setState(() => _errorMessage = l10n.errOAuthNotConfigured);
-      debugPrint('[MS-OAuth] missing client id');
-      return;
-    }
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
     try {
-      final discoveryUrl =
-          'https://login.microsoftonline.com/$msTenant/v2.0/.well-known/openid-configuration';
-      debugPrint('[MS-OAuth] trying discovery=$discoveryUrl');
-      final result = await _appAuth.authorizeAndExchangeCode(
-        AuthorizationTokenRequest(
-          msId,
-          _kMicrosoftRedirectUrl,
-          discoveryUrl: discoveryUrl,
-          scopes: const ['openid', 'profile', 'email', 'offline_access'],
-          promptValues: const ['select_account'],
-        ),
-      );
-      debugPrint('[MS-OAuth] authorizeAndExchangeCode succeeded');
-
-      final idToken = result.idToken;
-      debugPrint(
-        '[MS-OAuth] idToken present=${idToken != null && idToken.isNotEmpty}',
-      );
-      if (idToken == null || idToken.isEmpty) {
-        throw Exception('Microsoft did not return id_token');
+      final microsoftProvider = OAuthProvider('microsoft.com')
+        ..setScopes(const ['openid', 'profile', 'email']);
+      UserCredential authResult;
+      if (kIsWeb) {
+        authResult = await _firebaseAuth.signInWithPopup(microsoftProvider);
+      } else {
+        authResult = await _firebaseAuth.signInWithProvider(microsoftProvider);
       }
-      final data = await ApiClient().exchangeOAuthIdToken(
-        provider: 'microsoft',
-        idToken: idToken,
+      final firebaseToken = await authResult.user?.getIdToken();
+      if (firebaseToken == null || firebaseToken.isEmpty) {
+        throw Exception('Firebase did not return ID token');
+      }
+      final data = await ApiClient().authenticateWithFirebaseIdToken(
+        firebaseIdToken: firebaseToken,
       );
-      debugPrint('[MS-OAuth] backend exchange success');
-      await _persistTokenAndNavigate(data['access_token'] as String);
+      await _persistTokenAndNavigate(
+        firebaseToken,
+        tierHint: data['tier']?.toString(),
+      );
     } on DioException catch (e) {
-      debugPrint('[MS-OAuth] backend exchange DioException: ${e.message}');
-      debugPrint('[MS-OAuth] response=${e.response?.data}');
       setState(() {
         _errorMessage = _dioOAuthExchangeMessage(e, l10n);
       });
     } on PlatformException catch (e) {
-      debugPrint('[MS-OAuth] PlatformException code=${e.code}');
-      debugPrint('[MS-OAuth] PlatformException message=${e.message}');
-      debugPrint('[MS-OAuth] PlatformException details=${e.details}');
       if (e.code == 'user_canceled' || e.code == 'canceled') {
         return;
       }
@@ -400,7 +314,6 @@ class _LoginScreenState extends State<LoginScreen> {
         _errorMessage = l10n.errSystem(e.message ?? e.toString());
       });
     } catch (e) {
-      debugPrint('[MS-OAuth] unexpected error=$e');
       setState(() {
         _errorMessage = l10n.errSystem(e.toString());
       });

@@ -15,9 +15,9 @@
   - 邮箱密码登录（邮箱格式前置校验）。
   - 邮箱 OTP 注册（发送验证码 + 校验注册 + 成功即销毁 OTP）。
   - 忘记密码（邮件验证码找回）。
-  - OAuth 登录：Google / Microsoft 均已接入（前后端均有实现）。
+  - Firebase Auth 登录：Google / Microsoft 统一由 Firebase 托管。
 - 会话与权限
-  - JWT 携带 `tier`，并支持 `POST /api/v1/auth/refresh` 无感刷新权限。
+  - 会话使用 Firebase ID Token；后端通过 `POST /api/v1/auth/firebase` 同步账号并返回 tier。
   - 后端按 `tier + pro_expire_date` 计算有效权益，过期自动回落 `FREE`。
   - 前端全局 401 拦截，避免误拦截 `/auth/*`。
 - 支付与提权
@@ -35,14 +35,11 @@
 
 ## 关键接口速记
 - 认证与注册
-  - `POST /api/v1/auth/login`
-  - `POST /api/v1/auth/refresh`
+  - `POST /api/v1/auth/firebase`
   - `POST /api/v1/auth/send-otp`
   - `POST /api/v1/auth/verify-otp-and-register`
   - `POST /api/v1/auth/forgot-password`
   - `POST /api/v1/auth/reset-password`
-  - `POST /api/v1/auth/oauth/google`
-  - `POST /api/v1/auth/oauth/microsoft`
   - `DELETE|POST /api/v1/auth/logout`
 - 支付
   - `POST /api/v1/payment/checkout`

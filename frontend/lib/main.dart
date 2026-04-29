@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'; // 👈 引入
+import 'package:firebase_core/firebase_core.dart';
 import 'l10n/app_localizations.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
@@ -19,6 +20,7 @@ final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>()
 void main() async {
   // 🌟 1. 必须加这一行：确保 Flutter 引擎准备就绪
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   await AppConfigService.load();
   await RevenueCatService.ensureInitialized();
 

@@ -17,6 +17,7 @@ from app.modules.iam.router import router as iam_router # 导入独立模块
 from app.api.v1.locations import router as locations_router
 
 from app.db.database import engine, Base
+from app.db.startup_migrations import ensure_firebase_uid_column
 # 引入你写好的 IAM User 模型，这样 Base 才能“看到”它
 from app.modules.iam.models import User
 
@@ -79,6 +80,11 @@ app = FastAPI(
 
 # 🌟 一键生成所有数据库表！(如果表已经存在，它不会覆盖)
 Base.metadata.create_all(bind=engine)
+column_created, _ = ensure_firebase_uid_column(engine)
+if column_created:
+    logger.info("Startup migration applied: added iam_users.firebase_uid.")
+else:
+    logger.info("Startup migration checked: iam_users.firebase_uid already exists.")
 
 # 2. 配置 CORS (跨域资源共享)
 # 为了方便前期开发，这里允许所有来源("*")。上线时需替换为你的真实 App 域名。

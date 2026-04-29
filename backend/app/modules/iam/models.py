@@ -17,6 +17,7 @@ class User(Base):
     # 🌟 SSO 提供商标识：'local' (默认账号密码), 'google', 'apple', 'microsoft'
     auth_provider = Column(String, default="local", nullable=False)
     provider_id = Column(String, unique=True, nullable=True, index=True)
+    firebase_uid = Column(String, unique=True, nullable=True, index=True)
 
     # 💰 SaaS 订阅权益模型
     tier = Column(String, default="FREE", nullable=False) # 比如: FREE, PRO, ENTERPRISE

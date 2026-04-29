@@ -28,7 +28,7 @@ EnerQuote 是面向光伏+储能集成商的报价与收益测算 SaaS，提供�
 
 ### 2.2 角色模型（当前实现）
 
-JWT 载荷固定包含：
+Firebase ID Token 校验后，后端派生以下会话字段：
 
 - `sub`：用户 ID
 - `company_id`：当前为 `"solo-tenant"`（MVP 单租户口径）
@@ -46,9 +46,8 @@ JWT 载荷固定包含：
 - 邮箱密码登录
 - 邮箱 OTP 注册（发码 + 验码 + 注册）
 - 忘记密码（邮箱验证码重置）
-- Google OAuth 登录
-- Microsoft OAuth 登录
-- Token 刷新（支付后无感提权）
+- Firebase Auth Google 登录
+- Firebase Auth Microsoft 登录
 - 账号删除（App 内 + 网页 OTP 门户）
 
 ### 3.2 测算引擎
@@ -96,8 +95,8 @@ JWT 载荷固定包含：
 
 ### 4.2 登录与会话流程
 
-1. 用户邮箱密码登录或 OAuth 登录  
-2. 后端签发 JWT，并将 `jti` 写入 Redis（状态化 token）  
+1. 用户通过 Firebase（邮箱/Google/Microsoft）完成登录  
+2. 前端携带 Firebase ID Token 调用 `/auth/firebase` 完成账号同步  
 3. 前端请求时统一注入 Bearer Token  
 4. 401（非 auth 接口）触发全局登出
 
@@ -114,7 +113,7 @@ JWT 载荷固定包含：
   1. 调 `/payment/checkout` 获取托管结账链接
   2. 用户完成支付，Paddle webhook 回调
   3. 后端验签、落库、将用户升级为 PRO（默认+30天）
-  4. 前端轮询 `/auth/refresh` 同步最新 tier
+  4. 前端轮询 `/settings/me` 同步最新 tier
 
 - Android（RevenueCat）：
   1. App 侧完成订阅购买
@@ -176,7 +175,7 @@ JWT 载荷固定包含：
 
 ## 6. 非功能与技术约束（代码反推）
 
-- 鉴权：JWT + Redis 会话有效性校验（可撤销）
+- 鉴权：Firebase ID Token 服务端校验
 - 可观测性：关键链路含日志（支付、webhook、外部 API）
 - 安全：
   - Paddle webhook 必须签名验证
@@ -192,14 +191,11 @@ JWT 载荷固定包含：
 
 ### 7.1 认证
 
-- `POST /api/v1/auth/login`
-- `POST /api/v1/auth/refresh`
+- `POST /api/v1/auth/firebase`
 - `POST /api/v1/auth/send-otp`
 - `POST /api/v1/auth/verify-otp-and-register`
 - `POST /api/v1/auth/forgot-password`
 - `POST /api/v1/auth/reset-password`
-- `POST /api/v1/auth/oauth/google`
-- `POST /api/v1/auth/oauth/microsoft`
 - `DELETE|POST /api/v1/auth/logout`
 
 ### 7.2 测算与配置
@@ -378,7 +374,7 @@ erDiagram
 
 ## 13. 验收口径（用于后续 PRD 实施核对）
 
-- 能完成邮箱登录、OAuth 登录、注册 OTP、忘记密码
+- 能完成 Firebase 登录（Google/Microsoft/邮箱）、注册 OTP、忘记密码
 - FREE 用户不可写成本参数，PRO 可写且可在 Dashboard 生效
 - 支付完成后可在短时间内从 FREE 升级至 PRO（含 refresh）
 - webhook 重放不会重复入账（`event_id` 幂等）

@@ -1,24 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
-from pydantic import EmailStr, TypeAdapter, ValidationError
-from app.api.deps import get_current_user_payload, TokenPayload # 🌟 引入安检门
-from fastapi.security import OAuth2PasswordBearer
+from datetime import datetime
 
-from app.core.security import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
-from app.api.deps import get_db
-# 🌟 引入真实的 IAM 用户表和密码校验工具
-from app.modules.iam.models import User as IAMUser, PaymentOrder
-from app.modules.iam.security import verify_password
-from app.modules.iam.schemas import OAuthIdTokenRequest
-from app.services.oauth_id_tokens import verify_google_id_token, verify_microsoft_id_token
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.api.deps import TokenPayload, get_current_user_payload, get_db
 from app.models.user_settings import UserSettings
-from app.core.security import decode_and_validate_access_token, REDIS_PREFIX, redis_client
+from app.modules.iam.models import PaymentOrder, User as IAMUser
+from app.modules.iam.schemas import FirebaseIdTokenRequest
+from app.services.firebase_auth import verify_firebase_id_token
 
 router = APIRouter()
-email_adapter = TypeAdapter(EmailStr)
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 def _resolve_effective_tier(user: IAMUser) -> str:
@@ -30,47 +21,34 @@ def _resolve_effective_tier(user: IAMUser) -> str:
     return user.tier
 
 
-def _issue_jwt_for_user(user: IAMUser, effective_tier: str) -> str:
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    return create_access_token(
-        data={
-            "sub": user.id,
-            "company_id": "solo-tenant",
-            "role": "SALES",
-            "tier": effective_tier,
-        },
-        expires_delta=access_token_expires,
-    )
-
-
-def _upsert_oauth_user(
+def _upsert_firebase_user(
     db: Session,
     *,
     email: str,
-    provider_id: str,
-    auth_provider: str,
+    firebase_uid: str,
+    auth_provider: str | None,
 ) -> IAMUser:
-    """Find or create user for Google / Microsoft. Conflicts with local password accounts return 409."""
+    """Find or create a user by Firebase UID with same-email auto-merge."""
     email_norm = email.strip().lower()
-
-    by_sub = (
-        db.query(IAMUser)
-        .filter(
-            IAMUser.auth_provider == auth_provider,
-            IAMUser.provider_id == provider_id,
-        )
-        .first()
-    )
-    if by_sub:
-        return by_sub
+    provider = auth_provider or "firebase"
+    by_uid = db.query(IAMUser).filter(IAMUser.firebase_uid == firebase_uid).first()
+    if by_uid:
+        if by_uid.email != email_norm:
+            by_uid.email = email_norm
+        if by_uid.auth_provider != provider:
+            by_uid.auth_provider = provider
+        db.commit()
+        db.refresh(by_uid)
+        return by_uid
 
     by_email = db.query(IAMUser).filter(IAMUser.email == email_norm).first()
     if not by_email:
         new_user = IAMUser(
             email=email_norm,
             hashed_password=None,
-            auth_provider=auth_provider,
-            provider_id=provider_id,
+            auth_provider=provider,
+            provider_id=firebase_uid,
+            firebase_uid=firebase_uid,
             tier="FREE",
         )
         db.add(new_user)
@@ -78,183 +56,62 @@ def _upsert_oauth_user(
         db.refresh(new_user)
         return new_user
 
-    if by_email.auth_provider == "local" and by_email.hashed_password:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="该邮箱已使用密码注册，请使用密码登录",
-        )
-    if by_email.auth_provider != auth_provider:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"该邮箱已绑定其他登录方式（{by_email.auth_provider}）",
-        )
+    # 同邮箱自动合并：将旧账号绑定到 Firebase UID。
+    uid_conflict = db.query(IAMUser).filter(IAMUser.firebase_uid == firebase_uid).first()
+    if uid_conflict and uid_conflict.id != by_email.id:
+        raise HTTPException(status_code=409, detail="Firebase UID already bound to another account")
+
+    if by_email.firebase_uid is None:
+        by_email.firebase_uid = firebase_uid
     if by_email.provider_id is None:
-        by_email.provider_id = provider_id
-        db.commit()
-        db.refresh(by_email)
-        return by_email
-    if by_email.provider_id == provider_id:
-        return by_email
-    raise HTTPException(
-        status_code=status.HTTP_409_CONFLICT,
-        detail="该邮箱已绑定其他第三方账号",
-    )
+        by_email.provider_id = firebase_uid
+    by_email.auth_provider = provider
+    db.commit()
+    db.refresh(by_email)
+    return by_email
 
 
-@router.post("/login")
-async def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
+@router.post("/firebase")
+async def authenticate_with_firebase(
+    body: FirebaseIdTokenRequest,
+    db: Session = Depends(get_db),
 ):
-    """真实查库登录，发放携带 tier (权限) 的 JWT"""
+    """Verify Firebase ID token and upsert IAM user."""
     try:
-        email_adapter.validate_python(form_data.username)
-    except ValidationError:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="邮箱格式不正确",
-        )
-
-    # 1. 去数据库查这个邮箱
-    user = db.query(IAMUser).filter(IAMUser.email == form_data.username).first()
-    
-    # 2. 验证密码（纯 OAuth 账号无密码）
-    if (
-        not user
-        or not user.hashed_password
-        or not verify_password(form_data.password, user.hashed_password)
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="账号或密码错误",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    # 3. 制作 Token 载荷 (Payload)，把真实的主键和权限塞进去！
-    effective_tier = _resolve_effective_tier(user)
-    if user.tier != effective_tier:
-        user.tier = effective_tier
-        db.commit()
-
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={
-            "sub": user.id,              # 真实的 UUID
-            "company_id": "solo-tenant", # MVP 阶段单人单企
-            "role": "SALES",
-            "tier": effective_tier       # 🌟 核心：把 FREE 或 PRO 写进通行证！
-        },
-        expires_delta=access_token_expires
-    )
-    
-    return {"access_token": access_token, "token_type": "bearer"}
-
-@router.post("/refresh")
-async def refresh_token(
-    current_user: TokenPayload = Depends(get_current_user_payload),
-    db: Session = Depends(get_db)
-):
-    """Token 以旧换新：用于支付完成后无感刷新前端权限"""
-    # 1. 拿着旧 Token 里的 user_id 去查数据库的最新状态
-    user = db.query(IAMUser).filter(IAMUser.id == current_user.user_id).first()
-    
-    if not user or not user.is_active:
-        raise HTTPException(status_code=401, detail="用户不存在或已被禁用")
-
-    # 2. 重新签发一张全新的 Token，把最新的 tier 写进去
-    effective_tier = _resolve_effective_tier(user)
-    if user.tier != effective_tier:
-        user.tier = effective_tier
-        db.commit()
-
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    new_token = create_access_token(
-        data={
-            "sub": user.id,
-            "company_id": current_user.company_id,
-            "role": current_user.role,
-            "tier": effective_tier  # 🌟 tier + pro_expire_date 综合判断后的结果
-        },
-        expires_delta=access_token_expires
-    )
-    
-    return {
-        "access_token": new_token, 
-        "token_type": "bearer",
-        "tier": effective_tier # 顺便把状态明文返回给前端更新 UI
-    }
-
-
-@router.post("/oauth/google")
-async def oauth_google(body: OAuthIdTokenRequest, db: Session = Depends(get_db)):
-    """使用 Google ID Token 登录或注册，签发 EnerQuote JWT。"""
-    try:
-        claims = verify_google_id_token(body.id_token)
+        claims = verify_firebase_id_token(body.firebase_id_token)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
-    email = claims.get("email")
-    sub = claims.get("sub")
-    if not email or not sub:
-        raise HTTPException(status_code=400, detail="Google token missing email or sub")
+    firebase_uid = str(claims.get("user_id") or claims.get("sub") or "").strip()
+    email = str(claims.get("email") or "").strip().lower()
+    if not firebase_uid or not email:
+        raise HTTPException(status_code=400, detail="Firebase token missing uid or email")
+    if claims.get("email_verified") is not True:
+        raise HTTPException(status_code=403, detail="Firebase email is not verified")
 
-    user = _upsert_oauth_user(
+    provider = claims.get("firebase", {}).get("sign_in_provider")
+    user = _upsert_firebase_user(
         db,
-        email=str(email),
-        provider_id=str(sub),
-        auth_provider="google",
+        email=email,
+        firebase_uid=firebase_uid,
+        auth_provider=str(provider) if provider else None,
     )
     effective_tier = _resolve_effective_tier(user)
     if user.tier != effective_tier:
         user.tier = effective_tier
         db.commit()
-
-    token = _issue_jwt_for_user(user, effective_tier)
     return {
-        "access_token": token,
         "token_type": "bearer",
         "tier": effective_tier,
-        "auth_provider": "google",
-    }
-
-
-@router.post("/oauth/microsoft")
-async def oauth_microsoft(body: OAuthIdTokenRequest, db: Session = Depends(get_db)):
-    """使用 Microsoft (Outlook / Azure AD) ID Token 登录或注册。"""
-    try:
-        claims = verify_microsoft_id_token(body.id_token)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-
-    email = claims.get("email")
-    sub = claims.get("sub")
-    if not email or not sub:
-        raise HTTPException(status_code=400, detail="Microsoft token missing email or sub")
-
-    user = _upsert_oauth_user(
-        db,
-        email=str(email),
-        provider_id=str(sub),
-        auth_provider="microsoft",
-    )
-    effective_tier = _resolve_effective_tier(user)
-    if user.tier != effective_tier:
-        user.tier = effective_tier
-        db.commit()
-
-    token = _issue_jwt_for_user(user, effective_tier)
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-        "tier": effective_tier,
-        "auth_provider": "microsoft",
+        "user_id": user.id,
+        "firebase_uid": user.firebase_uid,
+        "auth_provider": user.auth_provider,
     }
 
 
 @router.api_route("/logout", methods=["DELETE", "POST"], status_code=status.HTTP_200_OK)
 async def logout_and_delete_current_user(
     current_user: TokenPayload = Depends(get_current_user_payload),
-    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ):
     """
@@ -263,8 +120,6 @@ async def logout_and_delete_current_user(
     2) 在同一事务中删除用户相关数据并删除用户；
     3) 返回 200 确认信息。
     """
-    token_payload = decode_and_validate_access_token(token)
-
     with db.begin():
         user = db.query(IAMUser).filter(IAMUser.id == current_user.user_id).first()
         if not user:
@@ -279,9 +134,5 @@ async def logout_and_delete_current_user(
             synchronize_session=False
         )
         db.delete(user)
-
-    jti = token_payload.get("jti")
-    if jti:
-        redis_client.delete(f"{REDIS_PREFIX}{jti}")
 
     return {"message": "用户已注销并删除成功"}

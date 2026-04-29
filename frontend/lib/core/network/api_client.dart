@@ -45,7 +45,7 @@ class ApiClient {
     );
 
     dio = Dio(options);
-    bool _isAuthEndpoint(String path) {
+    bool isAuthEndpoint(String path) {
       final normalized = path.toLowerCase();
       return normalized.contains('/auth/') || normalized.startsWith('auth/');
     }
@@ -57,9 +57,9 @@ class ApiClient {
     // 3. 🌟 核心魔法：全局拦截器 (Interceptor)
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        // 登录与 OAuth 换票接口不需要 Token
+        // 登录态同步接口不需要已有 Token
         final p = options.path.toLowerCase();
-        if (p.contains('/auth/login') || p.contains('/auth/oauth/')) {
+        if (p.contains('/auth/login') || p.contains('/auth/firebase')) {
           return handler.next(options);
         }
 
@@ -81,7 +81,7 @@ class ApiClient {
         );
         if (e.response?.statusCode == 401 &&
             hasAuthHeader &&
-            !_isAuthEndpoint(path)) {
+            !isAuthEndpoint(path)) {
           _debugLog("Auth token expired, forcing logout.");
 
 
@@ -124,18 +124,14 @@ class ApiClient {
       rethrow;
     }
   }
-// 🌟 刷新本地门禁卡
+// 🌟 Firebase token 无需后端 refresh；改为拉取最新 tier
   Future<String?> refreshUserToken() async {
     try {
-      final response = await dio.post('/auth/refresh');
+      final response = await dio.get('/settings/me');
       if (response.statusCode == 200) {
-        final newToken = response.data['access_token'];
-        final newTier = response.data['tier'];
-
-        // 瞬间替换本地缓存，完成无感升级
-        await TokenManager.saveAccessToken(newToken);
+        final newTier = response.data['tier'] as String?;
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_tier', newTier);
+        await prefs.setString('user_tier', newTier ?? 'FREE');
 
         return newTier;
       }
@@ -235,23 +231,19 @@ class ApiClient {
     );
   }
 
-  /// Google / Microsoft：用 IdP 的 `id_token` 换取 EnerQuote JWT。
-  Future<Map<String, dynamic>> exchangeOAuthIdToken({
-    required String provider,
-    required String idToken,
+  /// Google / Microsoft：将 Firebase ID token 同步到后端账号体系。
+  Future<Map<String, dynamic>> authenticateWithFirebaseIdToken({
+    required String firebaseIdToken,
   }) async {
-    final path = provider == 'google'
-        ? '/auth/oauth/google'
-        : '/auth/oauth/microsoft';
     final response = await dio.post<Map<String, dynamic>>(
-      path,
-      data: {'id_token': idToken},
+      '/auth/firebase',
+      data: {'firebase_id_token': firebaseIdToken},
     );
     final data = response.data;
     if (data == null) {
       throw DioException(
         requestOptions: response.requestOptions,
-        error: 'Empty OAuth response',
+        error: 'Empty Firebase auth response',
       );
     }
     return data;

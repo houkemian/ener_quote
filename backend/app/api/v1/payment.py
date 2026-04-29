@@ -135,6 +135,9 @@ def _resolve_user_from_app_user_id(db: Session, app_user_id: str) -> User | None
     normalized = app_user_id.strip()
     if not normalized:
         return None
+    user = db.query(User).filter(User.firebase_uid == normalized).first()
+    if user:
+        return user
     user = db.query(User).filter(User.id == normalized).first()
     if user:
         return user
