@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
@@ -20,6 +21,10 @@ import '../core/billing/revenuecat_service.dart';
 const String _kGoogleServerClientId = String.fromEnvironment(
   'GOOGLE_SERVER_CLIENT_ID',
   defaultValue: '',
+);
+const String _kMicrosoftFirebaseProviderId = String.fromEnvironment(
+  'MICROSOFT_FIREBASE_PROVIDER_ID',
+  defaultValue: 'microsoft.com',
 );
 
 class LoginScreen extends StatefulWidget {
@@ -264,25 +269,42 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = '';
     });
     try {
-      final microsoftProvider = OAuthProvider('microsoft.com')
+      final providerId = _kMicrosoftFirebaseProviderId.trim().isNotEmpty
+          ? _kMicrosoftFirebaseProviderId.trim()
+          : 'microsoft.com';
+      debugPrint('[MS-Firebase] start sign-in, providerId=$providerId');
+      final microsoftProvider = OAuthProvider(providerId)
         ..setScopes(const ['openid', 'profile', 'email']);
       UserCredential authResult;
       if (kIsWeb) {
-        authResult = await _firebaseAuth.signInWithPopup(microsoftProvider);
+        authResult = await _firebaseAuth
+            .signInWithPopup(microsoftProvider)
+            .timeout(const Duration(seconds: 60));
       } else {
-        authResult = await _firebaseAuth.signInWithProvider(microsoftProvider);
+        authResult = await _firebaseAuth
+            .signInWithProvider(microsoftProvider)
+            .timeout(const Duration(seconds: 60));
       }
+      debugPrint('[MS-Firebase] provider returned, resolving Firebase token');
       final firebaseToken = await authResult.user?.getIdToken();
       if (firebaseToken == null || firebaseToken.isEmpty) {
         throw Exception('Firebase did not return ID token');
       }
+      debugPrint('[MS-Firebase] got Firebase ID token, syncing backend user');
       final data = await ApiClient().authenticateWithFirebaseIdToken(
         firebaseIdToken: firebaseToken,
       );
+      debugPrint('[MS-Firebase] backend sync success, navigating dashboard');
       await _persistTokenAndNavigate(
         firebaseToken,
         tierHint: data['tier']?.toString(),
       );
+    } on TimeoutException {
+      setState(() {
+        _errorMessage = l10n.errSystem(
+          'Microsoft sign-in timed out. Check Firebase provider config and redirect settings.',
+        );
+      });
     } on DioException catch (e) {
       setState(() {
         _errorMessage = _dioOAuthExchangeMessage(e, l10n);
