@@ -6,18 +6,7 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-    id("com.google.gms.google-services") version "4.4.4" apply false
-}
-
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        // 这是 Firebase 的核心引擎管线
-        classpath("com.google.gms:google-services:4.4.4")
-    }
+    id("com.google.gms.google-services")
 }
 
 /**
@@ -62,9 +51,6 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
-        if (googleServerClientId.isNotEmpty()) {
-            resValue("string", "default_web_client_id", googleServerClientId)
-        }
         if (microsoftOauthClientId.isNotEmpty()) {
             resValue("string", "microsoft_oauth_client_id", microsoftOauthClientId)
         }
