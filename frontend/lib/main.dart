@@ -3,7 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart'; // 👈 引�
 import 'package:firebase_core/firebase_core.dart';
 import 'l10n/app_localizations.dart';
 import 'screens/login_screen.dart';
-import 'screens/dashboard_screen.dart';
+import 'screens/project_list_screen.dart';
 import 'screens/legal_document_page.dart';
 import 'package:flutter/services.dart';
 import 'theme/app_theme.dart';
@@ -87,7 +87,7 @@ class PvEssQuoteApp extends StatelessWidget {
 
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appWindowTitle,
       theme: AppTheme.light(),
-      home: isLoggedIn ? const DashboardScreen() : const LoginScreen(),
+      home: isLoggedIn ? const ProjectListScreen() : const LoginScreen(),
       routes: {
         AppRoutes.login: (_) => const LoginScreen(),
         AppRoutes.terms: (context) => LegalDocumentPage(

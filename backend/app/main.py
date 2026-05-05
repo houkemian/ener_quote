@@ -10,6 +10,7 @@ from fastapi.templating import Jinja2Templates
 
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import simulation, auth # 引入 auth
+from app.api.v1.projects import router as projects_router
 from app.api.deps import get_current_user_payload, get_db
 from sqlalchemy.orm import Session
 
@@ -23,6 +24,7 @@ from app.modules.iam.models import User
 
 # 🌟 1. 必须导入 UserSettings 模型，否则 Base.metadata.create_all 看不到它！
 from app.models.user_settings import UserSettings 
+from app.models.project import Project, ProjectCalculation
 # 🌟 2. 导入我们刚刚写好的 settings 路由
 from app.api.v1.settings import router as settings_router
 from app.api.v1 import payment  # 🌟 新增：引入咱们写好的支付模块
@@ -115,6 +117,12 @@ app.include_router(
     prefix="/api/v1", 
     tags=["Simulation"],
     dependencies=[Depends(get_current_user_payload)] # 👈 保安站在这里
+)
+
+app.include_router(
+    projects_router,
+    prefix="/api/v1",
+    dependencies=[Depends(get_current_user_payload)],
 )
 
 app.include_router(

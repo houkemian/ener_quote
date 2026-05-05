@@ -11,7 +11,7 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // 🌟 引入多语言引擎
 import '../l10n/app_localizations.dart';
-import 'dashboard_screen.dart'; // 引入你的测算主页
+import 'project_list_screen.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 import '../theme/app_colors.dart';
@@ -161,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
     ]);
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      MaterialPageRoute(builder: (_) => const ProjectListScreen()),
     );
   }
 

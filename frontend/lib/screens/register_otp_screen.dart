@@ -11,7 +11,7 @@ import '../core/billing/revenuecat_service.dart';
 import '../core/network/api_client.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
-import 'dashboard_screen.dart';
+import 'project_list_screen.dart';
 
 class RegisterOtpScreen extends StatefulWidget {
   final String email;
@@ -102,7 +102,7 @@ class _RegisterOtpScreenState extends State<RegisterOtpScreen> {
         DeviceOrientation.landscapeRight,
       ]);
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        MaterialPageRoute(builder: (_) => const ProjectListScreen()),
         (route) => false,
       );
     } on DioException catch (e) {

@@ -18,6 +18,67 @@ class VerifyOtpRegisterResponse {
   const VerifyOtpRegisterResponse({required this.accessToken, this.tier});
 }
 
+class ProjectItem {
+  final String id;
+  final String userId;
+  final String projectName;
+  final String? clientName;
+  final String? location;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  const ProjectItem({
+    required this.id,
+    required this.userId,
+    required this.projectName,
+    required this.clientName,
+    required this.location,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory ProjectItem.fromJson(Map<String, dynamic> json) {
+    return ProjectItem(
+      id: json['id'] as String,
+      userId: json['user_id'] as String? ?? '',
+      projectName: json['project_name'] as String? ?? '',
+      clientName: json['client_name'] as String?,
+      location: json['location'] as String?,
+      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ?? DateTime.now(),
+    );
+  }
+}
+
+class ProjectCalculationItem {
+  final String id;
+  final String projectId;
+  final String versionName;
+  final Map<String, dynamic> parameters;
+  final Map<String, dynamic> results;
+  final DateTime createdAt;
+
+  const ProjectCalculationItem({
+    required this.id,
+    required this.projectId,
+    required this.versionName,
+    required this.parameters,
+    required this.results,
+    required this.createdAt,
+  });
+
+  factory ProjectCalculationItem.fromJson(Map<String, dynamic> json) {
+    return ProjectCalculationItem(
+      id: json['id'] as String,
+      projectId: json['project_id'] as String? ?? '',
+      versionName: json['version_name'] as String? ?? '',
+      parameters: (json['parameters'] as Map?)?.cast<String, dynamic>() ?? const {},
+      results: (json['results'] as Map?)?.cast<String, dynamic>() ?? const {},
+      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
+    );
+  }
+}
+
 class ApiClient {
   // 1. 单例模式：确保全局只生成一个 ApiClient 实例
   static final ApiClient _instance = ApiClient._internal();
@@ -251,6 +312,57 @@ class ApiClient {
 
   Future<void> deleteAccount() async {
     await dio.delete('/auth/logout');
+  }
+
+  Future<List<ProjectItem>> getProjects() async {
+    final response = await dio.get<List<dynamic>>('/projects');
+    final list = response.data ?? const [];
+    return list
+        .whereType<Map>()
+        .map((e) => ProjectItem.fromJson(e.cast<String, dynamic>()))
+        .toList();
+  }
+
+  Future<ProjectItem> createProject({
+    required String projectName,
+    String? clientName,
+    String? location,
+  }) async {
+    final response = await dio.post<Map<String, dynamic>>(
+      '/projects',
+      data: {
+        'project_name': projectName,
+        'client_name': clientName,
+        'location': location,
+      },
+    );
+    return ProjectItem.fromJson(response.data ?? const {});
+  }
+
+  Future<List<ProjectCalculationItem>> getProjectCalculations(String projectId) async {
+    final response = await dio.get<List<dynamic>>('/projects/$projectId/calculations');
+    final list = response.data ?? const [];
+    return list
+        .whereType<Map>()
+        .map((e) => ProjectCalculationItem.fromJson(e.cast<String, dynamic>()))
+        .toList();
+  }
+
+  Future<ProjectCalculationItem> createProjectCalculation({
+    required String projectId,
+    required String versionName,
+    required Map<String, dynamic> parameters,
+    required Map<String, dynamic> results,
+  }) async {
+    final response = await dio.post<Map<String, dynamic>>(
+      '/projects/$projectId/calculations',
+      data: {
+        'version_name': versionName,
+        'parameters': parameters,
+        'results': results,
+      },
+    );
+    return ProjectCalculationItem.fromJson(response.data ?? const {});
   }
 
 }
