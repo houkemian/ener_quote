@@ -11,6 +11,12 @@ class ProjectCreateRequest(BaseModel):
     location: str | None = Field(default=None, max_length=255)
 
 
+class ProjectUpdateRequest(BaseModel):
+    project_name: str | None = Field(default=None, min_length=1, max_length=200)
+    client_name: str | None = Field(default=None, max_length=200)
+    location: str | None = Field(default=None, max_length=255)
+
+
 class ProjectResponse(BaseModel):
     id: UUID
     user_id: str

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode, debugPrint;
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -711,6 +711,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       await RevenueCatService.ensureInitialized();
       final offerings = await Purchases.getOfferings();
+      if (kDebugMode) {
+        final packages = offerings.current?.availablePackages ?? const <Package>[];
+        debugPrint('[Paywall][Settings] offering=${offerings.current?.identifier} packageCount=${packages.length}');
+        for (final p in packages) {
+          debugPrint(
+            '[Paywall][Settings] id=${p.identifier} type=${p.packageType.name} '
+            'storeId=${p.storeProduct.identifier} price=${p.storeProduct.priceString}',
+          );
+        }
+      }
       setState(() {
         _revenueCatOfferings = offerings;
       });
@@ -895,10 +905,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _isPurchasing = false;
         });
       }
-      await SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
     }
   }
 

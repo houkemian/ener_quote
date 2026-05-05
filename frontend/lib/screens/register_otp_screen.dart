@@ -97,10 +97,6 @@ class _RegisterOtpScreenState extends State<RegisterOtpScreen> {
       await RevenueCatService.initializeFromJwt(result.accessToken);
 
       if (!mounted) return;
-      await SystemChrome.setPreferredOrientations(const [
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const ProjectListScreen()),
         (route) => false,

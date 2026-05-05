@@ -79,6 +79,14 @@ class ProjectCalculationItem {
   }
 }
 
+class PaywallGateException implements Exception {
+  final String message;
+  const PaywallGateException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 class ApiClient {
   // 1. 单例模式：确保全局只生成一个 ApiClient 实例
   static final ApiClient _instance = ApiClient._internal();
@@ -328,12 +336,39 @@ class ApiClient {
     String? clientName,
     String? location,
   }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final userTier = prefs.getString('user_tier') ?? 'FREE';
+    if (userTier != 'PRO') {
+      final projects = await getProjects();
+      if (projects.length >= 2) {
+        throw const PaywallGateException(
+          "You've reached the free limit of 2 projects. Upgrade to Pro to manage your entire sales pipeline.",
+        );
+      }
+    }
     final response = await dio.post<Map<String, dynamic>>(
       '/projects',
       data: {
         'project_name': projectName,
         'client_name': clientName,
         'location': location,
+      },
+    );
+    return ProjectItem.fromJson(response.data ?? const {});
+  }
+
+  Future<ProjectItem> updateProject({
+    required String projectId,
+    String? projectName,
+    String? clientName,
+    String? location,
+  }) async {
+    final response = await dio.patch<Map<String, dynamic>>(
+      '/projects/$projectId',
+      data: {
+        if (projectName != null) 'project_name': projectName,
+        if (clientName != null) 'client_name': clientName,
+        if (location != null) 'location': location,
       },
     );
     return ProjectItem.fromJson(response.data ?? const {});
@@ -363,6 +398,13 @@ class ApiClient {
       },
     );
     return ProjectCalculationItem.fromJson(response.data ?? const {});
+  }
+
+  Future<void> deleteProjectCalculation({
+    required String projectId,
+    required String calculationId,
+  }) async {
+    await dio.delete('/projects/$projectId/calculations/$calculationId');
   }
 
 }

@@ -155,11 +155,6 @@ class _LoginScreenState extends State<LoginScreen> {
       await RevenueCatService.initializeForAppUser(userId);
     }
     if (!mounted) return;
-    await SystemChrome.setPreferredOrientations(const [
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const ProjectListScreen()),
     );

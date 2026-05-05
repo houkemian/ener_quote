@@ -10,6 +10,7 @@ import '../core/network/api_client.dart';
 import '../core/billing/revenuecat_service.dart';
 import '../theme/app_colors.dart';
 import '../utils/pdf_export.dart';
+import '../widgets/pro_paywall_sheet.dart';
 import 'paddle_checkout_webview.dart';
 
 class PdfPreviewScreen extends StatefulWidget {
@@ -51,6 +52,14 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
   void initState() {
     super.initState();
     _isProUser = widget.isProUser;
+    Purchases.addCustomerInfoUpdateListener(_onCustomerInfoUpdated);
+  }
+
+  void _onCustomerInfoUpdated(CustomerInfo info) {
+    final isPro = info.entitlements.all['pro']?.isActive == true;
+    if (!isPro || !mounted) return;
+    SharedPreferences.getInstance().then((prefs) => prefs.setString('user_tier', 'PRO'));
+    setState(() => _isProUser = true);
   }
 
   String _currency(dynamic value) {
@@ -72,7 +81,7 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
         elevation: 0,
         actions: [
           TextButton.icon(
-            onPressed: _isProUser ? () => _exportPdf() : _showExportOptions,
+            onPressed: _handleExportTapped,
             icon: const Icon(Icons.download_rounded, color: AppColors.secondary),
             label: Text(l10n.exportProposal, style: const TextStyle(color: AppColors.secondary)),
           ),
@@ -232,46 +241,13 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
     );
   }
 
-  Future<void> _showExportOptions() async {
-    final l10n = AppLocalizations.of(context)!;
-    await showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.background,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.picture_as_pdf, color: AppColors.onSurfaceVariant),
-                  title: Text(l10n.pdfExportFreeOptionTitle),
-                  subtitle: Text(l10n.pdfExportFreeOptionSubtitle),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    await _exportPdf();
-                  },
-                ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.workspace_premium, color: AppColors.secondary),
-                  title: Text(l10n.pdfExportProOptionTitle),
-                  subtitle: Text(l10n.pdfExportProOptionSubtitle),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _showProPaywall();
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  Future<void> _handleExportTapped() async {
+    if (_isProUser) {
+      await _exportPdf();
+      return;
+    }
+    HapticFeedback.mediumImpact();
+    _showProPaywall();
   }
 
   Future<void> _exportPdf() async {
@@ -295,107 +271,22 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
     );
   }
 
-  void _showProPaywall() {
+  Future<void> _showProPaywall() async {
     final l10n = AppLocalizations.of(context)!;
-    showModalBottomSheet(
+    await showProPaywallSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.background,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (buildContext) {
-        return SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.workspace_premium, size: 28, color: AppColors.secondary),
-                      const SizedBox(width: 10),
-                      Text(
-                        l10n.upgradeToProTitle,
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.onSurface),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.upgradeToProSubtitle,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 24),
-                  _buildProFeatureRow(l10n.proFeatureLogo),
-                  _buildProFeatureRow(l10n.proFeatureCost),
-                  _buildProFeatureRow(l10n.proFeatureROI),
-                  _buildProFeatureRow(l10n.proFeatureNoWatermark),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: (_isUpgrading || _isPurchasing)
-                        ? null
-                        : () => _startCheckoutFromPaywall(buildContext),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.secondary,
-                      foregroundColor: AppColors.onSecondary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: _isPurchasing
-                        ? Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              const Text('Connecting Secure Pay...'),
-                            ],
-                          )
-                        : Text(
-                            l10n.unlockProBtn,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+      triggerSource: PaywallTriggerSource.exportPdf,
+      ctaBaseText: l10n.unlockProBtn,
+      isPurchasing: _isUpgrading || _isPurchasing,
+      onPurchase: _startCheckoutFromPaywall,
+      debugTag: 'PdfPreview',
     );
   }
 
-  Widget _buildProFeatureRow(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        children: [
-          const Icon(Icons.check_circle, color: AppColors.success, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(text, style: const TextStyle(color: AppColors.onSurface, fontSize: 14)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _startCheckoutFromPaywall(BuildContext bottomSheetContext) async {
+  Future<void> _startCheckoutFromPaywall(BuildContext bottomSheetContext, Package? selectedPackage) async {
     final l10n = AppLocalizations.of(context)!;
     if (!kIsWeb && Platform.isAndroid) {
-      await _purchaseWithRevenueCatOnAndroid(bottomSheetContext);
+      await _purchaseWithRevenueCatOnAndroid(bottomSheetContext, selectedPackage);
       return;
     }
     if (!kIsWeb) {
@@ -454,7 +345,7 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
     }
   }
 
-  Future<void> _purchaseWithRevenueCatOnAndroid(BuildContext paywallContext) async {
+  Future<void> _purchaseWithRevenueCatOnAndroid(BuildContext paywallContext, Package? selectedPackage) async {
     if (_isPurchasing) {
       return;
     }
@@ -477,7 +368,8 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
         return;
       }
 
-      final purchaseResult = await Purchases.purchasePackage(packages.first);
+      final packageToBuy = selectedPackage ?? packages.first;
+      final purchaseResult = await Purchases.purchasePackage(packageToBuy);
       final isProActive =
           purchaseResult.customerInfo.entitlements.all['pro']?.isActive == true;
       if (!isProActive) {
@@ -525,10 +417,6 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
           _isPurchasing = false;
         });
       }
-      await SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
     }
   }
 }

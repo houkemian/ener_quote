@@ -10,6 +10,7 @@ from app.schemas.project import (
     ProjectCalculationResponse,
     ProjectCreateRequest,
     ProjectResponse,
+    ProjectUpdateRequest,
 )
 
 router = APIRouter(prefix="/projects", tags=["Project Management"])
@@ -51,6 +52,38 @@ def create_project(
         client_name=payload.client_name.strip() if payload.client_name else None,
         location=payload.location.strip() if payload.location else None,
     )
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+    return project
+
+
+@router.patch("/{project_id}", response_model=ProjectResponse)
+def update_project(
+    project_id: UUID,
+    payload: ProjectUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(get_current_user_payload),
+):
+    project = _get_user_project_or_404(db, project_id, current_user.user_id)
+
+    updates = 0
+    if payload.project_name is not None:
+        project_name = payload.project_name.strip()
+        if not project_name:
+            raise HTTPException(status_code=422, detail="project_name cannot be empty")
+        project.project_name = project_name
+        updates += 1
+    if payload.client_name is not None:
+        project.client_name = payload.client_name.strip() if payload.client_name.strip() else None
+        updates += 1
+    if payload.location is not None:
+        project.location = payload.location.strip() if payload.location.strip() else None
+        updates += 1
+
+    if updates == 0:
+        raise HTTPException(status_code=422, detail="No updatable fields provided")
+
     db.add(project)
     db.commit()
     db.refresh(project)
@@ -115,3 +148,28 @@ def create_project_calculation(
     db.commit()
     db.refresh(calc)
     return calc
+
+
+@router.delete(
+    "/{project_id}/calculations/{calculation_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_project_calculation(
+    project_id: UUID,
+    calculation_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(get_current_user_payload),
+):
+    _get_user_project_or_404(db, project_id, current_user.user_id)
+    calc = (
+        db.query(ProjectCalculation)
+        .filter(
+            ProjectCalculation.id == calculation_id,
+            ProjectCalculation.project_id == project_id,
+        )
+        .first()
+    )
+    if not calc:
+        raise HTTPException(status_code=404, detail="Calculation not found")
+    db.delete(calc)
+    db.commit()

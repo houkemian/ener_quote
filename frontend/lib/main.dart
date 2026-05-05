@@ -30,17 +30,10 @@ void main() async {
     await RevenueCatService.initializeFromJwt(token);
   }
 
-  // 未登录时展示登录页，强制竖屏；登录后业务页保持横屏。
-  await SystemChrome.setPreferredOrientations(
-    isLoggedIn
-        ? const [
-            DeviceOrientation.landscapeLeft,
-            DeviceOrientation.landscapeRight,
-          ]
-        : const [
-            DeviceOrientation.portraitUp,
-          ],
-  );
+  // 全局统一竖屏，避免路由切换时先横再竖的闪动。
+  await SystemChrome.setPreferredOrientations(const [
+    DeviceOrientation.portraitUp,
+  ]);
 
   // 🌟 启动 Sentry 监控探针
   await SentryFlutter.init(

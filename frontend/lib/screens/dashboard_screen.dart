@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode, debugPrint;
 import 'package:flutter/services.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -63,6 +63,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isProUser = false;
   String _errorMessage = '';
   Timer? _debounce;
+  Package? _selectedPaywallPackage;
 
   @override
   void initState() {
@@ -699,8 +700,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // 🌟 核心：触发国际化版本的付费墙弹窗 (已修复溢出问题)
-  void _showProPaywall() {
+  Future<void> _showProPaywall() async {
     final l10n = AppLocalizations.of(context)!; // 召唤多语言
+    await RevenueCatService.ensureInitialized();
+    final offerings = await Purchases.getOfferings();
+    final packages = offerings.current?.availablePackages ?? const <Package>[];
+    if (kDebugMode) {
+      debugPrint('[Paywall][Dashboard] offering=${offerings.current?.identifier} packageCount=${packages.length}');
+      for (final p in packages) {
+        debugPrint(
+          '[Paywall][Dashboard] id=${p.identifier} type=${p.packageType.name} '
+          'storeId=${p.storeProduct.identifier} price=${p.storeProduct.priceString}',
+        );
+      }
+    }
+    Package? byType(PackageType type) {
+      for (final p in packages) {
+        if (p.packageType == type) return p;
+      }
+      return null;
+    }
+
+    Package? byIdentifierKeywords(List<String> keywords) {
+      for (final p in packages) {
+        final id = p.identifier.toLowerCase();
+        final storeId = p.storeProduct.identifier.toLowerCase();
+        final title = p.storeProduct.title.toLowerCase();
+        final matched = keywords.any((k) => id.contains(k) || storeId.contains(k) || title.contains(k));
+        if (matched) return p;
+      }
+      return null;
+    }
+
+    final Package? annual = byType(PackageType.annual) ?? byIdentifierKeywords(const ['annual', 'year', 'yearly']);
+    final Package? monthly = byType(PackageType.monthly) ?? byIdentifierKeywords(const ['month', 'monthly']);
+    _selectedPaywallPackage = annual ?? monthly;
 
     showModalBottomSheet(
       context: context,
@@ -714,75 +748,157 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return SafeArea(
           // 🌟 3. 套上 SingleChildScrollView，高度不够时自动变成可滑动，彻底告别溢出！
           child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.workspace_premium, size: 28, color: AppColors.secondary),
-                      const SizedBox(width: 10),
-                      Text(
-                        l10n.upgradeToProTitle, // 🌟 动态标题
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+            child: StatefulBuilder(
+              builder: (context, setModalState) {
+                Widget buildPackageCard({
+                  required Package pkg,
+                  required bool selected,
+                  required String title,
+                  String? badge,
+                  String? subline,
+                }) {
+                  return InkWell(
+                    onTap: () => setModalState(() => _selectedPaywallPackage = pkg),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: selected ? const Color(0xFFEFF6FF) : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: selected ? const Color(0xFF1F6FEB) : AppColors.border,
+                          width: selected ? 2 : 1,
+                        ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.upgradeToProSubtitle, // 🌟 动态副标题
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // 🌟 动态权益列表
-                  _buildProFeatureRow(Icons.check_circle, l10n.proFeatureLogo, AppColors.success),
-                  _buildProFeatureRow(Icons.check_circle, l10n.proFeatureCost, AppColors.success),
-                  _buildProFeatureRow(Icons.check_circle, l10n.proFeatureROI, AppColors.success),
-                  _buildProFeatureRow(Icons.check_circle, l10n.proFeatureNoWatermark, AppColors.success),
-                  // _buildProFeatureRow(Icons.check_circle, l10n.proFeaturePvgis, Colors.amber),
-
-                  const SizedBox(height: 32),
-                  ElevatedButton(
-                    // 🌟 核心修复：注入 Paddle 托管结账唤起逻辑
-                    onPressed: (_isUpgrading || _isPurchasing)
-                        ? null
-                        : () => _startUpgradeFlowFromPaywall(buildContext),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.secondary,
-                      foregroundColor: AppColors.onSecondary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: _isPurchasing
-                        ? Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              Expanded(
+                                child: Text(
+                                  title,
+                                  style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.onSurface),
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              const Text('Connecting Secure Pay...'),
+                              if (badge != null)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1F6FEB),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    badge,
+                                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                                  ),
+                                ),
                             ],
-                          )
-                        : Text(
-                            l10n.unlockProBtn, // 🌟 动态按钮文字
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
+                          const SizedBox(height: 6),
+                          Text(
+                            pkg.storeProduct.priceString,
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                          if (subline != null) ...[
+                            const SizedBox(height: 4),
+                            Text(subline, style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                final selectedPackage = _selectedPaywallPackage;
+                final hasTwoPlans = monthly != null && annual != null;
+                final annualMonthlyEquivalent = annual != null ? (annual.storeProduct.price / 12.0) : null;
+                final annualEquivalentText = annualMonthlyEquivalent == null
+                    ? null
+                    : '\$${annualMonthlyEquivalent.toStringAsFixed(2)} / mo, billed annually';
+
+                return Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.workspace_premium, size: 28, color: AppColors.secondary),
+                          const SizedBox(width: 10),
+                          Text(
+                            l10n.upgradeToProTitle,
+                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n.upgradeToProSubtitle,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
+                      ),
+                      const SizedBox(height: 16),
+                      if (hasTwoPlans) ...[
+                        buildPackageCard(
+                          pkg: annual!,
+                          selected: selectedPackage?.identifier == annual.identifier,
+                          title: 'Annual Plan',
+                          badge: 'BEST VALUE',
+                          subline: annualEquivalentText,
+                        ),
+                        const SizedBox(height: 10),
+                        buildPackageCard(
+                          pkg: monthly!,
+                          selected: selectedPackage?.identifier == monthly.identifier,
+                          title: 'Monthly Plan',
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      _buildProFeatureRow(Icons.check_circle, l10n.proFeatureLogo, AppColors.success),
+                      _buildProFeatureRow(Icons.check_circle, l10n.proFeatureCost, AppColors.success),
+                      _buildProFeatureRow(Icons.check_circle, l10n.proFeatureROI, AppColors.success),
+                      _buildProFeatureRow(Icons.check_circle, l10n.proFeatureNoWatermark, AppColors.success),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: (_isUpgrading || _isPurchasing)
+                            ? null
+                            : () => _startUpgradeFlowFromPaywall(buildContext, selectedPackage),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.secondary,
+                          foregroundColor: AppColors.onSecondary,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: _isPurchasing
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text('Connecting Secure Pay...'),
+                                ],
+                              )
+                            : Text(
+                                l10n.unlockProBtn,
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                ],
-              ),
+                );
+              },
             ),
           ),
         );
@@ -790,10 +906,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Future<void> _startUpgradeFlowFromPaywall(BuildContext bottomSheetContext) async {
+  Future<void> _startUpgradeFlowFromPaywall(BuildContext bottomSheetContext, Package? selectedPackage) async {
     final l10n = AppLocalizations.of(context)!;
     if (!kIsWeb && Platform.isAndroid) {
-      await _purchaseWithRevenueCatOnAndroid(bottomSheetContext);
+      await _purchaseWithRevenueCatOnAndroid(bottomSheetContext, selectedPackage);
       return;
     }
     if (!kIsWeb) {
@@ -856,7 +972,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Future<void> _purchaseWithRevenueCatOnAndroid(BuildContext paywallContext) async {
+  Future<void> _purchaseWithRevenueCatOnAndroid(BuildContext paywallContext, Package? selectedPackage) async {
     if (_isPurchasing) {
       return;
     }
@@ -879,7 +995,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return;
       }
 
-      final purchaseResult = await Purchases.purchasePackage(packages.first);
+      final packageToBuy = selectedPackage ?? packages.first;
+      final purchaseResult = await Purchases.purchasePackage(packageToBuy);
       final isProActive =
           purchaseResult.customerInfo.entitlements.all['pro']?.isActive == true;
       if (!isProActive) {
@@ -927,10 +1044,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _isPurchasing = false;
         });
       }
-      await SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
     }
   }
 

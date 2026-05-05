@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io' show Platform;
 
+import '../core/billing/revenuecat_service.dart';
 import '../core/network/api_client.dart';
+import '../theme/app_colors.dart';
+import '../widgets/pro_paywall_sheet.dart';
 import 'project_detail_screen.dart';
+import 'settings_screen.dart';
 
 class ProjectListScreen extends StatefulWidget {
   const ProjectListScreen({super.key});
@@ -13,13 +22,22 @@ class ProjectListScreen extends StatefulWidget {
 class _ProjectListScreenState extends State<ProjectListScreen> {
   final ApiClient _api = ApiClient();
   bool _loading = true;
+  bool _purchasing = false;
   String _error = '';
   List<ProjectItem> _projects = const [];
 
   @override
   void initState() {
     super.initState();
+    SystemChrome.setPreferredOrientations(const [DeviceOrientation.portraitUp]);
+    Purchases.addCustomerInfoUpdateListener(_onCustomerInfoUpdated);
     _loadProjects();
+  }
+
+  void _onCustomerInfoUpdated(CustomerInfo info) {
+    final isPro = info.entitlements.all['pro']?.isActive == true;
+    if (!isPro) return;
+    SharedPreferences.getInstance().then((prefs) => prefs.setString('user_tier', 'PRO'));
   }
 
   Future<void> _loadProjects() async {
@@ -175,11 +193,18 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                             if (projectName.isEmpty) {
                               return;
                             }
-                            await _api.createProject(
-                              projectName: projectName,
-                              clientName: clientController.text.trim().isEmpty ? null : clientController.text.trim(),
-                              location: locationController.text.trim().isEmpty ? null : locationController.text.trim(),
-                            );
+                            try {
+                              await _api.createProject(
+                                projectName: projectName,
+                                clientName: clientController.text.trim().isEmpty ? null : clientController.text.trim(),
+                                location: locationController.text.trim().isEmpty ? null : locationController.text.trim(),
+                              );
+                            } on PaywallGateException catch (e) {
+                              if (!context.mounted) return;
+                              Navigator.pop(context, false);
+                              await _showCapacityWallPaywall(PaywallTriggerSource.projectLimit);
+                              return;
+                            }
                             if (!context.mounted) return;
                             Navigator.pop(context, true);
                           },
@@ -214,14 +239,51 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     // 3) Promote project name, demote metadata with muted subtitle color.
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Projects'),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/images/logo.png',
+              height: 24,
+              width: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text('EnerQuote'),
+          ],
+        ),
         actions: [
+          IconButton(
+            tooltip: 'Upgrade PRO',
+            onPressed: () => _showCapacityWallPaywall(PaywallTriggerSource.general),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            icon: const Icon(Icons.workspace_premium, color: Colors.amber, size: 20),
+          ),
+          IconButton(
+            tooltip: 'Settings',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
+            },
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            icon: const Icon(Icons.settings_outlined, size: 20),
+          ),
           Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilledButton.icon(
+            padding: const EdgeInsets.only(right: 6, left: 4),
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                visualDensity: VisualDensity.compact,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
               onPressed: _createProjectDialog,
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('New Project'),
+              child: const Text(
+                'New Project',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ],
@@ -288,5 +350,57 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                   ),
                 ),
     );
+  }
+
+  Future<void> _showCapacityWallPaywall(PaywallTriggerSource source) async {
+    HapticFeedback.mediumImpact();
+    await showProPaywallSheet(
+      context: context,
+      triggerSource: source,
+      ctaBaseText: 'Upgrade to Pro',
+      isPurchasing: _purchasing,
+      onPurchase: _purchaseProFromPaywall,
+      debugTag: 'ProjectList',
+    );
+  }
+
+  Future<void> _purchaseProFromPaywall(BuildContext bottomSheetContext, Package? selectedPackage) async {
+    if (_purchasing) return;
+    if (kIsWeb || !Platform.isAndroid) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Use Android app purchase flow to upgrade.')),
+      );
+      return;
+    }
+    setState(() => _purchasing = true);
+    try {
+      await RevenueCatService.ensureInitialized();
+      final offerings = await Purchases.getOfferings();
+      final packages = offerings.current?.availablePackages ?? const <Package>[];
+      if (packages.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No Android subscription package is currently available.')),
+        );
+        return;
+      }
+      final packageToBuy = selectedPackage ?? packages.first;
+      final result = await Purchases.purchasePackage(packageToBuy);
+      final isPro = result.customerInfo.entitlements.all['pro']?.isActive == true;
+      if (!isPro) return;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_tier', 'PRO');
+      if (mounted) Navigator.pop(bottomSheetContext);
+    } on PlatformException catch (e) {
+      final code = PurchasesErrorHelper.getErrorCode(e);
+      if (code != PurchasesErrorCode.purchaseCancelledError && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? e.toString())),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _purchasing = false);
+    }
   }
 }
