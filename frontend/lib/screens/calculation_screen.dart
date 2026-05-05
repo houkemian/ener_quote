@@ -190,6 +190,10 @@ class _CalculationScreenState extends State<CalculationScreen> {
   @override
   Widget build(BuildContext context) {
     final finance = (_latestResult?['finance_result'] as Map?)?.cast<String, dynamic>() ?? const {};
+    // Visual hierarchy optimization:
+    // 1) Separate page into parameter card and result card.
+    // 2) Use clear section title + semantic icons for quick scanning.
+    // 3) Preserve all interactions while improving density and readability.
     return Scaffold(
       appBar: AppBar(
         title: const Text('Calculation'),
@@ -203,55 +207,171 @@ class _CalculationScreenState extends State<CalculationScreen> {
       ),
       body: _restoring
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextField(
-                    decoration: const InputDecoration(labelText: 'Version Name'),
-                    controller: _versionController,
-                    onChanged: (v) => _versionName = v,
-                  ),
-                  const SizedBox(height: 12),
-                  Text('PV Capacity: ${_pvCapacity.toStringAsFixed(0)} kWp'),
-                  Slider(
-                    value: _pvCapacity,
-                    min: 0,
-                    max: 200,
-                    divisions: 40,
-                    onChanged: (v) => setState(() => _pvCapacity = v),
-                  ),
-                  Text('ESS Capacity: ${_batteryCapacity.toStringAsFixed(0)} kWh'),
-                  Slider(
-                    value: _batteryCapacity,
-                    min: 0,
-                    max: 200,
-                    divisions: 40,
-                    onChanged: (v) => setState(() => _batteryCapacity = v),
-                  ),
-                  Text('Factory Peak Load: ${_factoryPeakLoad.toStringAsFixed(0)} kW'),
-                  Slider(
-                    value: _factoryPeakLoad,
-                    min: 10,
-                    max: 200,
-                    divisions: 38,
-                    onChanged: (v) => setState(() => _factoryPeakLoad = v),
-                  ),
-                  const SizedBox(height: 8),
-                  FilledButton(
-                    onPressed: _loading ? null : _runSimulation,
-                    child: Text(_loading ? 'Calculating...' : 'Run Simulation'),
-                  ),
-                  if (_error.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(_error, style: const TextStyle(color: Colors.red)),
-                  ],
-                  const SizedBox(height: 12),
-                  Text('IRR: ${finance['irr'] ?? '-'}'),
-                  Text('NPV: ${finance['npv'] ?? '-'}'),
-                  Text('Payback: ${finance['payback_period_years'] ?? '-'}'),
-                ],
+          : SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.all(16),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: CircleAvatar(
+                                      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+                                      child: Icon(
+                                        Icons.tune_outlined,
+                                        color: Theme.of(context).colorScheme.primary,
+                                      ),
+                                    ),
+                                    title: const Text(
+                                      'Input Parameters',
+                                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                    ),
+                                    subtitle: Text(
+                                      'Adjust capacities and load assumptions',
+                                      style: TextStyle(color: Colors.grey[600]),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextField(
+                                    decoration: const InputDecoration(labelText: 'Version Name'),
+                                    controller: _versionController,
+                                    onChanged: (v) => _versionName = v,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'PV Capacity: ${_pvCapacity.toStringAsFixed(0)} kWp',
+                                    style: const TextStyle(fontWeight: FontWeight.w600),
+                                  ),
+                                  Slider(
+                                    value: _pvCapacity,
+                                    min: 0,
+                                    max: 200,
+                                    divisions: 40,
+                                    onChanged: (v) => setState(() => _pvCapacity = v),
+                                  ),
+                                  Text(
+                                    'ESS Capacity: ${_batteryCapacity.toStringAsFixed(0)} kWh',
+                                    style: const TextStyle(fontWeight: FontWeight.w600),
+                                  ),
+                                  Slider(
+                                    value: _batteryCapacity,
+                                    min: 0,
+                                    max: 200,
+                                    divisions: 40,
+                                    onChanged: (v) => setState(() => _batteryCapacity = v),
+                                  ),
+                                  Text(
+                                    'Factory Peak Load: ${_factoryPeakLoad.toStringAsFixed(0)} kW',
+                                    style: const TextStyle(fontWeight: FontWeight.w600),
+                                  ),
+                                  Slider(
+                                    value: _factoryPeakLoad,
+                                    min: 10,
+                                    max: 200,
+                                    divisions: 38,
+                                    onChanged: (v) => setState(() => _factoryPeakLoad = v),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  FilledButton.icon(
+                                    onPressed: _loading ? null : _runSimulation,
+                                    icon: const Icon(Icons.play_arrow_rounded),
+                                    label: Text(_loading ? 'Calculating...' : 'Run Simulation'),
+                                  ),
+                                  if (_error.isNotEmpty) ...[
+                                    const SizedBox(height: 10),
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withValues(alpha: 0.08),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        _error,
+                                        style: const TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: CircleAvatar(
+                                      backgroundColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.14),
+                                      child: Icon(
+                                        Icons.assessment_outlined,
+                                        color: Theme.of(context).colorScheme.secondary,
+                                      ),
+                                    ),
+                                    title: const Text(
+                                      'Simulation Results',
+                                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                    ),
+                                    subtitle: Text(
+                                      'Latest financial KPIs',
+                                      style: TextStyle(color: Colors.grey[600]),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Card(
+                                    elevation: 0,
+                                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(14),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'IRR: ${finance['irr'] ?? '-'}',
+                                            style: const TextStyle(fontWeight: FontWeight.w600),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            'NPV: ${finance['npv'] ?? '-'}',
+                                            style: const TextStyle(fontWeight: FontWeight.w600),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            'Payback: ${finance['payback_period_years'] ?? '-'}',
+                                            style: const TextStyle(fontWeight: FontWeight.w600),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
     );

@@ -87,9 +87,27 @@ def create_project_calculation(
     current_user: TokenPayload = Depends(get_current_user_payload),
 ):
     _get_user_project_or_404(db, project_id, current_user.user_id)
+    version_name = payload.version_name.strip()
+    if not version_name:
+        raise HTTPException(status_code=422, detail="version_name cannot be empty")
+
+    existing = (
+        db.query(ProjectCalculation)
+        .filter(
+            ProjectCalculation.project_id == project_id,
+            ProjectCalculation.version_name == version_name,
+        )
+        .first()
+    )
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail="A calculation with the same version_name already exists in this project",
+        )
+
     calc = ProjectCalculation(
         project_id=project_id,
-        version_name=payload.version_name.strip(),
+        version_name=version_name,
         parameters=payload.parameters,
         results=payload.results,
     )

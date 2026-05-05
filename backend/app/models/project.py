@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, String
+from sqlalchemy import Column, DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
@@ -34,6 +34,9 @@ class Project(Base):
 
 class ProjectCalculation(Base):
     __tablename__ = "project_calculations"
+    __table_args__ = (
+        UniqueConstraint("project_id", "version_name", name="uq_project_calc_project_version"),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(
