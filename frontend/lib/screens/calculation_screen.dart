@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, debugPrint;
 import 'package:flutter/services.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -41,11 +41,15 @@ class _CalculationScreenState extends State<CalculationScreen> {
   bool _independentCosts = false;
   bool _isEditingIndependentCosts = false;
   bool _isPurchasing = false;
+  bool _geoResolving = false;
   String _error = '';
   Map<String, dynamic>? _latestResult;
   double _pvCostPerKw = 800.0;
   double _essCostPerKwh = 350.0;
   double _marginPct = 20.0;
+  String _projectLocation = '';
+  double? _projectLat;
+  double? _projectLon;
 
   @override
   void initState() {
@@ -53,8 +57,61 @@ class _CalculationScreenState extends State<CalculationScreen> {
     SystemChrome.setPreferredOrientations(const [DeviceOrientation.portraitUp]);
     Purchases.addCustomerInfoUpdateListener(_onCustomerInfoUpdated);
     _loadTierAndCostDefaults();
+    _loadProjectGeoContext();
     if (widget.calculationId != null && widget.projectId != null) {
       _restoreFromCalculation();
+    }
+  }
+
+  Future<void> _loadProjectGeoContext() async {
+    if (widget.projectId == null) return;
+    setState(() => _geoResolving = true);
+    try {
+      final projects = await _api.getProjects();
+      ProjectItem? project;
+      for (final item in projects) {
+        if (item.id == widget.projectId) {
+          project = item;
+          break;
+        }
+      }
+      if (project == null) return;
+      final location = (project.location ?? '').trim();
+      if (location.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _projectLocation = '';
+          _projectLat = null;
+          _projectLon = null;
+        });
+        return;
+      }
+      final cities = await _api.getSupportedCities();
+      double? resolvedLat;
+      double? resolvedLon;
+      for (final city in cities) {
+        final cityMap = (city as Map).cast<String, dynamic>();
+        final cityId = (cityMap['id'] ?? '').toString().trim();
+        final nameMap = (cityMap['name'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+        final localizedNames = nameMap.values.map((e) => e.toString().trim()).toSet();
+        final matched = cityId == location || localizedNames.contains(location);
+        if (!matched) continue;
+        resolvedLat = (cityMap['lat'] as num?)?.toDouble();
+        resolvedLon = (cityMap['lon'] as num?)?.toDouble();
+        break;
+      }
+      if (!mounted) return;
+      setState(() {
+        _projectLocation = location;
+        _projectLat = resolvedLat;
+        _projectLon = resolvedLon;
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Calculation geo resolve failed: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _geoResolving = false);
     }
   }
 
@@ -146,13 +203,17 @@ class _CalculationScreenState extends State<CalculationScreen> {
   }
 
   Map<String, dynamic> _buildPayload() {
+    final lat = _projectLat ?? 0.0;
+    final lon = _projectLon ?? 0.0;
     final baseCost = (_pvCapacity * _pvCostPerKw) + (_batteryCapacity * _essCostPerKwh) + 5000.0;
     final totalCapex = baseCost * (1 + (_marginPct / 100.0));
     return {
       "physics_params": {
         "env": {
-          "lat": -23.5505,
-          "lon": -46.6333,
+          "lat": lat,
+          "lon": lon,
+          // Backend will replace this with PVGIS hourly data when lat/lon are valid.
+          // Keep a deterministic fallback for missing location mapping.
           "irradiance_8760": List.filled(8760, 600.0),
           "load_profile_8760": _generateFactoryLoadProfile(_factoryPeakLoad),
           "grid_status_8760": List.generate(8760, (index) => index % 24 == 18 ? 0 : 1),
@@ -209,7 +270,19 @@ class _CalculationScreenState extends State<CalculationScreen> {
       _error = '';
     });
     try {
+      if (!_geoResolving && widget.projectId != null && (_projectLat == null || _projectLon == null)) {
+        await _loadProjectGeoContext();
+      }
       final payload = _buildPayload();
+      if (kDebugMode) {
+        final env = ((payload['physics_params'] as Map<String, dynamic>)['env'] as Map<String, dynamic>);
+        debugPrint(
+          '[Calculation] simulate request '
+          'projectId=${widget.projectId ?? '-'} '
+          'location=${_projectLocation.isEmpty ? '-' : _projectLocation} '
+          'lat=${env['lat']} lon=${env['lon']}',
+        );
+      }
       final response = await _api.dio.post('/simulate', data: payload);
       if (!mounted) return;
       setState(() {

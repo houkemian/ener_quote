@@ -265,32 +265,42 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Column(
                 children: [
-                  ListTile(
-                    dense: true,
-                    visualDensity: const VisualDensity(vertical: -2),
-                    contentPadding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                    leading: CircleAvatar(
-                      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
-                      child: Icon(
-                        Icons.business_center_outlined,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                    title: const Text(
-                      'Project Overview',
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                    ),
-                    trailing: IconButton(
-                      tooltip: 'Edit project',
-                      onPressed: _editProjectInfo,
-                      icon: const Icon(Icons.edit_outlined, size: 20),
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        project.projectName,
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 12, 0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+                          child: Icon(
+                            Icons.business_center_outlined,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Project Overview',
+                                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                project.projectName,
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Edit project',
+                          onPressed: _editProjectInfo,
+                          icon: const Icon(Icons.edit_outlined, size: 20),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
                     ),
                   ),
                   Padding(
@@ -299,9 +309,17 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Client: ${project.clientName ?? '-'}  •  Location: ${project.location ?? '-'}  •  Created: $createdShort',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          'Client: ${project.clientName ?? '-'}',
+                          style: TextStyle(color: Colors.grey[700]),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Location: ${project.location ?? '-'}',
+                          style: TextStyle(color: Colors.grey[700]),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Created: $createdShort',
                           style: TextStyle(color: Colors.grey[700]),
                         ),
                       ],
