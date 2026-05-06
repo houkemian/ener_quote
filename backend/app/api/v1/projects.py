@@ -159,6 +159,59 @@ def create_project_calculation(
     return calc
 
 
+@router.patch(
+    "/{project_id}/calculations/{calculation_id}",
+    response_model=ProjectCalculationResponse,
+)
+def update_project_calculation(
+    project_id: UUID,
+    calculation_id: UUID,
+    payload: ProjectCalculationCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: TokenPayload = Depends(get_current_user_payload),
+):
+    _get_user_project_or_404(db, project_id, current_user.user_id)
+    calc = (
+        db.query(ProjectCalculation)
+        .filter(
+            ProjectCalculation.id == calculation_id,
+            ProjectCalculation.project_id == project_id,
+        )
+        .first()
+    )
+    if not calc:
+        raise HTTPException(status_code=404, detail="Calculation not found")
+
+    version_name = payload.version_name.strip()
+    if not version_name:
+        raise HTTPException(status_code=422, detail="version_name cannot be empty")
+
+    duplicate = (
+        db.query(ProjectCalculation)
+        .filter(
+            ProjectCalculation.project_id == project_id,
+            ProjectCalculation.version_name == version_name,
+            ProjectCalculation.id != calculation_id,
+        )
+        .first()
+    )
+    if duplicate:
+        raise HTTPException(
+            status_code=409,
+            detail="A calculation with the same version_name already exists in this project",
+        )
+
+    cleaned_parameters = clean_project_parameters(payload.parameters)
+    optimized_results = optimize_results_for_db(payload.results)
+    calc.version_name = version_name
+    calc.parameters = cleaned_parameters
+    calc.results = optimized_results
+    db.add(calc)
+    db.commit()
+    db.refresh(calc)
+    return calc
+
+
 @router.delete(
     "/{project_id}/calculations/{calculation_id}",
     status_code=status.HTTP_204_NO_CONTENT,
