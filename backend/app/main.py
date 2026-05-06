@@ -1,6 +1,7 @@
 import logging
 import os
 import random
+import time
 from pathlib import Path
 
 import redis
@@ -56,6 +57,7 @@ def _setup_logging() -> logging.Logger:
 
 logger = _setup_logging()
 logger.info("App logger initialized.")
+SLOW_REQUEST_THRESHOLD_MS = 1000
 
 TEMPLATES = Jinja2Templates(
     directory=str(Path(__file__).resolve().parents[1] / "templates")
@@ -97,6 +99,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def log_request_timing(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    elapsed_ms = (time.perf_counter() - start) * 1000
+    message = (
+        f"[REQ] {request.method} {request.url.path} "
+        f"status={response.status_code} duration_ms={elapsed_ms:.1f}"
+    )
+    if elapsed_ms >= SLOW_REQUEST_THRESHOLD_MS:
+        logger.warning(f"{message} slow=true")
+    else:
+        logger.info(message)
+    return response
 
 
 app.include_router(iam_router, prefix="/api/v1")
