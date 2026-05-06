@@ -336,16 +336,6 @@ class ApiClient {
     String? clientName,
     String? location,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final userTier = prefs.getString('user_tier') ?? 'FREE';
-    if (userTier != 'PRO') {
-      final projects = await getProjects();
-      if (projects.length >= 2) {
-        throw const PaywallGateException(
-          "You've reached the free limit of 2 projects. Upgrade to Pro to manage your entire sales pipeline.",
-        );
-      }
-    }
     final response = await dio.post<Map<String, dynamic>>(
       '/projects',
       data: {
@@ -391,6 +381,24 @@ class ApiClient {
   }) async {
     final response = await dio.post<Map<String, dynamic>>(
       '/projects/$projectId/calculations',
+      data: {
+        'version_name': versionName,
+        'parameters': parameters,
+        'results': results,
+      },
+    );
+    return ProjectCalculationItem.fromJson(response.data ?? const {});
+  }
+
+  Future<ProjectCalculationItem> updateProjectCalculation({
+    required String projectId,
+    required String calculationId,
+    required String versionName,
+    required Map<String, dynamic> parameters,
+    required Map<String, dynamic> results,
+  }) async {
+    final response = await dio.patch<Map<String, dynamic>>(
+      '/projects/$projectId/calculations/$calculationId',
       data: {
         'version_name': versionName,
         'parameters': parameters,

@@ -1,17 +1,11 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
-import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, debugPrint;
 import 'package:flutter/services.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../core/billing/revenuecat_service.dart';
 import '../core/network/api_client.dart';
-import '../l10n/app_localizations.dart';
-import '../theme/app_colors.dart';
-import '../widgets/pro_paywall_sheet.dart';
 import 'pdf_preview_screen.dart';
 
 class CalculationScreen extends StatefulWidget {
@@ -27,9 +21,6 @@ class CalculationScreen extends StatefulWidget {
 class _CalculationScreenState extends State<CalculationScreen> {
   final ApiClient _api = ApiClient();
   final TextEditingController _versionController = TextEditingController();
-  final TextEditingController _pvCostController = TextEditingController();
-  final TextEditingController _essCostController = TextEditingController();
-  final TextEditingController _marginController = TextEditingController();
 
   double _pvCapacity = 60;
   double _batteryCapacity = 50;
@@ -37,108 +28,16 @@ class _CalculationScreenState extends State<CalculationScreen> {
   String _versionName = '';
   bool _loading = false;
   bool _restoring = false;
-  bool _isProUser = false;
-  bool _independentCosts = false;
-  bool _isEditingIndependentCosts = false;
-  bool _isPurchasing = false;
-  bool _geoResolving = false;
   String _error = '';
   Map<String, dynamic>? _latestResult;
-  double _pvCostPerKw = 800.0;
-  double _essCostPerKwh = 350.0;
-  double _marginPct = 20.0;
-  String _projectLocation = '';
-  double? _projectLat;
-  double? _projectLon;
 
   @override
   void initState() {
     super.initState();
     SystemChrome.setPreferredOrientations(const [DeviceOrientation.portraitUp]);
-    Purchases.addCustomerInfoUpdateListener(_onCustomerInfoUpdated);
-    _loadTierAndCostDefaults();
-    _loadProjectGeoContext();
     if (widget.calculationId != null && widget.projectId != null) {
       _restoreFromCalculation();
     }
-  }
-
-  Future<void> _loadProjectGeoContext() async {
-    if (widget.projectId == null) return;
-    setState(() => _geoResolving = true);
-    try {
-      final projects = await _api.getProjects();
-      ProjectItem? project;
-      for (final item in projects) {
-        if (item.id == widget.projectId) {
-          project = item;
-          break;
-        }
-      }
-      if (project == null) return;
-      final location = (project.location ?? '').trim();
-      if (location.isEmpty) {
-        if (!mounted) return;
-        setState(() {
-          _projectLocation = '';
-          _projectLat = null;
-          _projectLon = null;
-        });
-        return;
-      }
-      final cities = await _api.getSupportedCities();
-      double? resolvedLat;
-      double? resolvedLon;
-      for (final city in cities) {
-        final cityMap = (city as Map).cast<String, dynamic>();
-        final cityId = (cityMap['id'] ?? '').toString().trim();
-        final nameMap = (cityMap['name'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
-        final localizedNames = nameMap.values.map((e) => e.toString().trim()).toSet();
-        final matched = cityId == location || localizedNames.contains(location);
-        if (!matched) continue;
-        resolvedLat = (cityMap['lat'] as num?)?.toDouble();
-        resolvedLon = (cityMap['lon'] as num?)?.toDouble();
-        break;
-      }
-      if (!mounted) return;
-      setState(() {
-        _projectLocation = location;
-        _projectLat = resolvedLat;
-        _projectLon = resolvedLon;
-      });
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('Calculation geo resolve failed: $e');
-      }
-    } finally {
-      if (mounted) setState(() => _geoResolving = false);
-    }
-  }
-
-  void _onCustomerInfoUpdated(CustomerInfo info) {
-    final isPro = info.entitlements.all['pro']?.isActive == true;
-    if (!isPro || !mounted) return;
-    SharedPreferences.getInstance().then((prefs) => prefs.setString('user_tier', 'PRO'));
-    setState(() => _isProUser = true);
-  }
-
-  Future<void> _loadTierAndCostDefaults() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      _isProUser = (prefs.getString('user_tier') ?? 'FREE') == 'PRO';
-      _pvCostPerKw = prefs.getDouble('pv_cost') ?? 800.0;
-      _essCostPerKwh = prefs.getDouble('ess_cost') ?? 350.0;
-      _marginPct = prefs.getDouble('margin_pct') ?? 20.0;
-    });
-    _syncCostControllers();
-  }
-
-  Future<void> _saveGlobalCosts() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('pv_cost', _pvCostPerKw);
-    await prefs.setDouble('ess_cost', _essCostPerKwh);
-    await prefs.setDouble('margin_pct', _marginPct);
   }
 
   Future<void> _restoreFromCalculation() async {
@@ -159,15 +58,6 @@ class _CalculationScreenState extends State<CalculationScreen> {
       final pv = (physics['pv'] as Map?)?.cast<String, dynamic>() ?? const {};
       final ess = (physics['ess'] as Map?)?.cast<String, dynamic>() ?? const {};
       final env = (physics['env'] as Map?)?.cast<String, dynamic>() ?? const {};
-      final projectCost = (params['project_cost_settings'] as Map?)?.cast<String, dynamic>() ?? const {};
-      final prefs = await SharedPreferences.getInstance();
-      final globalPv = prefs.getDouble('pv_cost') ?? 800.0;
-      final globalEss = prefs.getDouble('ess_cost') ?? 350.0;
-      final globalMargin = prefs.getDouble('margin_pct') ?? 20.0;
-      final useProjectCosts = _isProUser && (projectCost['independent'] == true);
-      final restoredPv = (projectCost['pv_cost'] as num?)?.toDouble() ?? globalPv;
-      final restoredEss = (projectCost['ess_cost'] as num?)?.toDouble() ?? globalEss;
-      final restoredMargin = (projectCost['margin_pct'] as num?)?.toDouble() ?? globalMargin;
 
       setState(() {
         _versionName = currentCalc.versionName;
@@ -177,13 +67,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
         final load = (env['load_profile_8760'] as List?)?.cast<num>();
         _factoryPeakLoad = load == null || load.isEmpty ? _factoryPeakLoad : load.reduce((a, b) => a > b ? a : b).toDouble();
         _latestResult = currentCalc.results;
-        _independentCosts = useProjectCosts;
-        _isEditingIndependentCosts = false;
-        _pvCostPerKw = restoredPv;
-        _essCostPerKwh = restoredEss;
-        _marginPct = restoredMargin;
       });
-      _syncCostControllers();
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = 'Failed to restore calculation: $e');
@@ -203,17 +87,11 @@ class _CalculationScreenState extends State<CalculationScreen> {
   }
 
   Map<String, dynamic> _buildPayload() {
-    final lat = _projectLat ?? 0.0;
-    final lon = _projectLon ?? 0.0;
-    final baseCost = (_pvCapacity * _pvCostPerKw) + (_batteryCapacity * _essCostPerKwh) + 5000.0;
-    final totalCapex = baseCost * (1 + (_marginPct / 100.0));
     return {
       "physics_params": {
         "env": {
-          "lat": lat,
-          "lon": lon,
-          // Backend will replace this with PVGIS hourly data when lat/lon are valid.
-          // Keep a deterministic fallback for missing location mapping.
+          "lat": -23.5505,
+          "lon": -46.6333,
           "irradiance_8760": List.filled(8760, 600.0),
           "load_profile_8760": _generateFactoryLoadProfile(_factoryPeakLoad),
           "grid_status_8760": List.generate(8760, (index) => index % 24 == 18 ? 0 : 1),
@@ -241,7 +119,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
         }
       },
       "financial_params": {
-        "total_capex": totalCapex,
+        "total_capex": (_pvCapacity * 1000) + (_batteryCapacity * 400),
         "annual_opex": 150.0 + (_pvCapacity * 2),
         "battery_replacement_cost": _batteryCapacity * 200,
         "battery_replacement_year": 10,
@@ -255,12 +133,6 @@ class _CalculationScreenState extends State<CalculationScreen> {
         "discount_rate": 0.10,
         "project_lifespan": 20,
       },
-      "project_cost_settings": {
-        "independent": _isProUser && _independentCosts,
-        "pv_cost": _pvCostPerKw,
-        "ess_cost": _essCostPerKwh,
-        "margin_pct": _marginPct,
-      },
     };
   }
 
@@ -270,24 +142,21 @@ class _CalculationScreenState extends State<CalculationScreen> {
       _error = '';
     });
     try {
-      if (!_geoResolving && widget.projectId != null && (_projectLat == null || _projectLon == null)) {
-        await _loadProjectGeoContext();
-      }
       final payload = _buildPayload();
-      if (kDebugMode) {
-        final env = ((payload['physics_params'] as Map<String, dynamic>)['env'] as Map<String, dynamic>);
-        debugPrint(
-          '[Calculation] simulate request '
-          'projectId=${widget.projectId ?? '-'} '
-          'location=${_projectLocation.isEmpty ? '-' : _projectLocation} '
-          'lat=${env['lat']} lon=${env['lon']}',
-        );
-      }
-      final response = await _api.dio.post('/simulate', data: payload);
+      final response = await _api.dio
+          .post('/simulate', data: payload)
+          .timeout(const Duration(seconds: 30));
       if (!mounted) return;
+      final rawData = response.data;
+      final result = rawData is Map
+          ? rawData.cast<String, dynamic>()
+          : <String, dynamic>{'raw_result': rawData};
       setState(() {
-        _latestResult = (response.data as Map).cast<String, dynamic>();
+        _latestResult = result;
       });
+    } on TimeoutException {
+      if (!mounted) return;
+      setState(() => _error = 'Simulation timeout after 30s, please retry.');
     } on DioException catch (e) {
       if (!mounted) return;
       setState(() => _error = 'Simulation failed: ${e.response?.data ?? e.message}');
@@ -315,15 +184,41 @@ class _CalculationScreenState extends State<CalculationScreen> {
     final version = _versionName.trim().isEmpty
         ? 'V${DateTime.now().millisecondsSinceEpoch}'
         : _versionName.trim();
-    await _api.createProjectCalculation(
-      projectId: widget.projectId!,
-      versionName: version,
-      parameters: _buildPayload(),
-      results: _latestResult!,
-    );
+    final payload = _buildPayload();
+    try {
+      if (widget.calculationId != null) {
+        await _api.updateProjectCalculation(
+          projectId: widget.projectId!,
+          calculationId: widget.calculationId!,
+          versionName: version,
+          parameters: payload,
+          results: _latestResult!,
+        );
+      } else {
+        await _api.createProjectCalculation(
+          projectId: widget.projectId!,
+          versionName: version,
+          parameters: payload,
+          results: _latestResult!,
+        );
+      }
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final status = e.response?.statusCode;
+      if (status == 409) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Version name already exists in this project.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Save failed: ${e.response?.data ?? e.message}')),
+        );
+      }
+      return;
+    }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Calculation saved.')),
+      SnackBar(content: Text(widget.calculationId != null ? 'Calculation updated.' : 'Calculation saved.')),
     );
   }
 
@@ -349,132 +244,22 @@ class _CalculationScreenState extends State<CalculationScreen> {
           logoUrl: logoUrl,
           pvCapacity: _pvCapacity,
           batteryCapacity: _batteryCapacity,
-          totalCapex: (finance['total_capex'] as num?)?.toDouble() ?? 0.0,
-          npv: (finance['npv'] as num?)?.toDouble() ?? 0.0,
-          irr: (finance['irr'] as num?)?.toDouble() ?? 0.0,
-          payback: (finance['payback_period_years'] as num?)?.toDouble() ?? 0.0,
+          totalCapex: (_buildPayload()['financial_params']?['total_capex'] as num?)?.toDouble() ?? 0.0,
+          npv: (finance['project_npv'] as num?)?.toDouble() ?? (finance['npv'] as num?)?.toDouble() ?? 0.0,
+          irr: (finance['project_irr'] as num?)?.toDouble() ?? (finance['irr'] as num?)?.toDouble() ?? 0.0,
+          payback: (finance['project_payback_years'] as num?)?.toDouble() ??
+              (finance['payback_period_years'] as num?)?.toDouble() ??
+              0.0,
           fullCashFlowData: cashFlowData,
         ),
       ),
     );
   }
 
-  Future<bool> _runProGuard({required PaywallTriggerSource triggerSource}) async {
-    final prefs = await SharedPreferences.getInstance();
-    final isPro = (prefs.getString('user_tier') ?? 'FREE') == 'PRO';
-    if (isPro) {
-      if (!_isProUser && mounted) {
-        setState(() => _isProUser = true);
-      }
-      return true;
-    }
-    HapticFeedback.mediumImpact();
-    await _showPaywall(triggerSource);
-    return false;
-  }
-
-  Future<void> _showPaywall(PaywallTriggerSource triggerSource) async {
-    final l10n = AppLocalizations.of(context)!;
-    await showProPaywallSheet(
-      context: context,
-      triggerSource: triggerSource,
-      ctaBaseText: l10n.unlockProBtn,
-      isPurchasing: _isPurchasing,
-      onPurchase: _purchasePro,
-      debugTag: 'Calculation',
-    );
-  }
-
-  Future<void> _purchasePro(BuildContext paywallContext, Package? selectedPackage) async {
-    if (_isPurchasing) return;
-    if (kIsWeb || !Platform.isAndroid) return;
-    setState(() => _isPurchasing = true);
-    try {
-      await RevenueCatService.ensureInitialized();
-      final offerings = await Purchases.getOfferings();
-      final packages = offerings.current?.availablePackages ?? const <Package>[];
-      if (packages.isEmpty) return;
-      final packageToBuy = selectedPackage ?? packages.first;
-      final purchaseResult = await Purchases.purchasePackage(packageToBuy);
-      final isPro = purchaseResult.customerInfo.entitlements.all['pro']?.isActive == true;
-      if (!isPro) return;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_tier', 'PRO');
-      if (!mounted) return;
-      setState(() => _isProUser = true);
-      Navigator.pop(paywallContext);
-    } on PlatformException catch (e) {
-      final code = PurchasesErrorHelper.getErrorCode(e);
-      if (code != PurchasesErrorCode.purchaseCancelledError && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? e.toString())));
-      }
-    } finally {
-      if (mounted) setState(() => _isPurchasing = false);
-    }
-  }
-
   @override
   void dispose() {
     _versionController.dispose();
-    _pvCostController.dispose();
-    _essCostController.dispose();
-    _marginController.dispose();
     super.dispose();
-  }
-
-  void _syncCostControllers() {
-    _pvCostController.text = _pvCostPerKw.toStringAsFixed(2);
-    _essCostController.text = _essCostPerKwh.toStringAsFixed(2);
-    _marginController.text = _marginPct.toStringAsFixed(2);
-  }
-
-  static const double _pvCostMin = 300.0;
-  static const double _pvCostMax = 2000.0;
-  static const double _essCostMin = 100.0;
-  static const double _essCostMax = 1200.0;
-  static const double _marginMin = 0.0;
-  static const double _marginMax = 60.0;
-
-  double _clamp(double value, double min, double max) {
-    if (value < min) return min;
-    if (value > max) return max;
-    return value;
-  }
-
-  void _showInputValidationMessage(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
-    );
-  }
-
-  Future<void> _applyCostInputChanges() async {
-    final pv = double.tryParse(_pvCostController.text.trim());
-    final ess = double.tryParse(_essCostController.text.trim());
-    final margin = double.tryParse(_marginController.text.trim());
-    if (pv == null || ess == null || margin == null) {
-      _showInputValidationMessage('Please enter valid numbers for PV Cost, ESS Cost, and Margin.');
-      _syncCostControllers();
-      return;
-    }
-    final validatedPv = _clamp(pv, _pvCostMin, _pvCostMax);
-    final validatedEss = _clamp(ess, _essCostMin, _essCostMax);
-    final validatedMargin = _clamp(margin, _marginMin, _marginMax);
-    final wasClamped = validatedPv != pv || validatedEss != ess || validatedMargin != margin;
-    setState(() {
-      _pvCostPerKw = validatedPv;
-      _essCostPerKwh = validatedEss;
-      _marginPct = validatedMargin;
-    });
-    _syncCostControllers();
-    if (wasClamped) {
-      _showInputValidationMessage(
-        'Costs adjusted to valid ranges: PV $_pvCostMin-$_pvCostMax, ESS $_essCostMin-$_essCostMax, Margin $_marginMin-$_marginMax.',
-      );
-    }
-    if (!_isProUser || !_independentCosts) {
-      await _saveGlobalCosts();
-    }
   }
 
   @override
@@ -574,72 +359,6 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                     divisions: 38,
                                     onChanged: (v) => setState(() => _factoryPeakLoad = v),
                                   ),
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    children: [
-                                      const Expanded(
-                                        child: Text(
-                                          'Independent Costs',
-                                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                                        ),
-                                      ),
-                                      if (_isProUser)
-                                        TextButton.icon(
-                                          onPressed: () async {
-                                            if (_isEditingIndependentCosts) {
-                                              await _applyCostInputChanges();
-                                            }
-                                            if (!mounted) return;
-                                            setState(() => _isEditingIndependentCosts = !_isEditingIndependentCosts);
-                                          },
-                                          icon: Icon(_isEditingIndependentCosts ? Icons.check : Icons.edit_outlined, size: 18),
-                                          label: Text(_isEditingIndependentCosts ? 'Done' : 'Edit'),
-                                        )
-                                      else
-                                        IconButton(
-                                          tooltip: 'Upgrade to edit',
-                                          onPressed: () async {
-                                            await _runProGuard(
-                                              triggerSource: PaywallTriggerSource.customCost,
-                                            );
-                                          },
-                                          icon: const Icon(Icons.workspace_premium, color: Colors.amber),
-                                        ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  TextField(
-                                    controller: _pvCostController,
-                                    enabled: _isProUser && _isEditingIndependentCosts,
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    decoration: const InputDecoration(
-                                      labelText: 'PV Cost (\$ / kW)',
-                                      prefixIcon: Icon(Icons.solar_power_outlined),
-                                    ),
-                                    onEditingComplete: () async => _applyCostInputChanges(),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  TextField(
-                                    controller: _essCostController,
-                                    enabled: _isProUser && _isEditingIndependentCosts,
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    decoration: const InputDecoration(
-                                      labelText: 'ESS Cost (\$ / kWh)',
-                                      prefixIcon: Icon(Icons.battery_charging_full_outlined),
-                                    ),
-                                    onEditingComplete: () async => _applyCostInputChanges(),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  TextField(
-                                    controller: _marginController,
-                                    enabled: _isProUser && _isEditingIndependentCosts,
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    decoration: const InputDecoration(
-                                      labelText: 'Margin (%)',
-                                      prefixIcon: Icon(Icons.percent_outlined),
-                                    ),
-                                    onEditingComplete: () async => _applyCostInputChanges(),
-                                  ),
                                   const SizedBox(height: 10),
                                   Row(
                                     children: [
@@ -655,7 +374,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                         child: OutlinedButton.icon(
                                           onPressed: _loading ? null : _saveCalculation,
                                           icon: const Icon(Icons.save_outlined),
-                                          label: const Text('Save'),
+                                          label: Text(widget.calculationId != null ? 'Update' : 'Save'),
                                         ),
                                       ),
                                     ],
