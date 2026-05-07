@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, requests # 引入 Depends
 from pydantic import BaseModel
+import logging
 import time
 import traceback
+from pprint import pformat
 
 from app.engine.schemas import SimulationInput, SimulationOutput
 from app.engine.finance import FinancialInput, FinancialOutput, run_financial_simulation
@@ -13,6 +15,7 @@ from app.api.deps import get_current_user_payload, TokenPayload # 引入安检�
 from app.services.pvgis import fetch_pvgis_hourly_irradiance
 
 router = APIRouter()
+logger = logging.getLogger("app.simulation")
 
 class FinancialBaseConfig(BaseModel):
     total_capex: float 
@@ -43,25 +46,37 @@ async def simulate_pv_ess_project(
     current_user: TokenPayload = Depends(get_current_user_payload) # 👈 保安就位！
 ):
     try:
-
-        print(f"🔒 安全拦截通过：操作人角色 {current_user.role}, 所属公司ID {current_user.company_id}")
+        logger.info(
+            "[SIM] auth_pass role=%s company_id=%s user_id=%s",
+            current_user.role,
+            current_user.company_id,
+            current_user.user_id,
+        )
+        logger.info(
+            "[SIM] full_request payload=\n%s",
+            pformat(request.model_dump(), width=120, sort_dicts=True),
+        )
         
         env = request.physics_params.env
         
         # 🌟 监控雷达 1：确认是否收到了坐标
-        print(f"\n👉 收到前端请求 | 目标城市: 纬度 {env.lat}, 经度 {env.lon}")
+        logger.info("[SIM] request_location lat=%s lon=%s", env.lat, env.lon)
 
         # 🟢 核心拦截：如果有真实坐标，狸猫换太子
         if env.lat != 0.0 and env.lon != 0.0:
-            print("📡 正在跨国连接欧盟 PVGIS 气象卫星...")
+            logger.info("[SIM] fetching_pvgis_irradiance start")
             start_t = time.time()
             # 呼叫欧盟服务器拉取真实数据
             real_irradiance = await fetch_pvgis_hourly_irradiance(lat=env.lat, lon=env.lon)
             # 覆盖前端传来的假数据
             request.physics_params.env.irradiance_8760 = real_irradiance
-            print(f"✅ 成功获取 8760 小时真实光照！耗时: {time.time() - start_t:.2f}s")
+            logger.info(
+                "[SIM] fetching_pvgis_irradiance done hours=%s duration_s=%.2f",
+                len(real_irradiance),
+                time.time() - start_t,
+            )
         else:
-            print("⚠️ 未收到有效坐标，继续使用本地完美假太阳进行测算。")
+            logger.info("[SIM] missing_coordinates fallback_to_request_irradiance=true")
 
         # 1. 运行物理引擎
         phys_out = run_physics_simulation(request.physics_params)
@@ -101,8 +116,6 @@ async def simulate_pv_ess_project(
         avoided_loss_kwh = total_potential_loss - actual_loss
         backup_revenue = avoided_loss_kwh * request.financial_params.voll_price
 
-
-
         # 4. 运行金融引擎
         fin_input = FinancialInput(
             first_year_tou_savings=tou_savings,
@@ -112,22 +125,45 @@ async def simulate_pv_ess_project(
         )
         fin_out = run_financial_simulation(fin_input)
 
-        # print(f"金融数据:{fin_out}")
-        # print(f"物理数据:{phys_out}")
+        logger.info(
+            "[SIM] intermediate_metrics tou_savings=%.4f demand_savings=%.4f "
+            "avoided_loss_kwh=%.4f backup_revenue=%.4f annual_load_kwh=%.4f",
+            tou_savings,
+            demand_savings,
+            avoided_loss_kwh,
+            backup_revenue,
+            sum(env.load_profile_8760),
+        )
+        logger.info(
+            "[SIM] financial_input payload=\n%s",
+            pformat(fin_input.model_dump(), width=120, sort_dicts=True),
+        )
+        logger.info(
+            "[SIM] financial_output payload=\n%s",
+            pformat(fin_out.model_dump(), width=120, sort_dicts=True),
+        )
+        if fin_out.irr >= 40 or fin_out.payback_period_years <= 3:
+            logger.warning(
+                "[SIM] suspicious_result irr=%.2f npv=%.2f payback=%.2f "
+                "(check tariff/voll/load profile/capex units)",
+                fin_out.irr,
+                fin_out.npv,
+                fin_out.payback_period_years,
+            )
         
         return FullQuoteResponse(physics_result=phys_out, finance_result=fin_out)
     # 🌟 进阶捕获 1：专门捕获第三方 API 的 HTTP 错误 (如果你用的是 requests)
     except requests.exceptions.HTTPError as e:
         # 这样可以直接提取气象局服务器返回的真实错误 JSON
         error_detail = f"气象 API 拒绝请求, 状态码: {e.response.status_code}, 详情: {e.response.text}"
-        print(f"🔴 [外部 API 错误] {error_detail}") # 打印到后端控制台
+        logger.exception("[SIM] external_api_error %s", error_detail)
         raise HTTPException(status_code=502, detail=error_detail) # 502 Bad Gateway 更符合语意    
     except Exception as e:
         # 获取包含具体报错代码行数的完整追踪信息
         error_trace = traceback.format_exc()
         
         # ⚠️ 核心原则：详细堆栈留在后端自己看，精简信息返回给前端
-        print(f"🔥 [致命异常崩溃] 完整堆栈如下:\n{error_trace}")
+        logger.error("[SIM] fatal_exception trace=\n%s", error_trace)
         
         # repr(e) 会比 str(e) 打印出异常的类型，比如 KeyError('temp') 而不只是 'temp'
         raise HTTPException(status_code=500, detail=f"内部系统崩溃: {repr(e)}")
