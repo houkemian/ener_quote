@@ -25,9 +25,14 @@ class _CalculationScreenState extends State<CalculationScreen> {
   double _pvCapacity = 60;
   double _batteryCapacity = 50;
   double _factoryPeakLoad = 80;
+  double _pvBaseCost = 800.0;
+  double _essBaseCost = 350.0;
+  double _targetMargin = 20.0;
   String _versionName = '';
   bool _loading = false;
   bool _restoring = false;
+  bool _isProUser = false;
+  bool _isEditingVersionCosts = false;
   String _error = '';
   Map<String, dynamic>? _latestResult;
 
@@ -35,9 +40,18 @@ class _CalculationScreenState extends State<CalculationScreen> {
   void initState() {
     super.initState();
     SystemChrome.setPreferredOrientations(const [DeviceOrientation.portraitUp]);
+    _loadUserTier();
     if (widget.calculationId != null && widget.projectId != null) {
       _restoreFromCalculation();
     }
+  }
+
+  Future<void> _loadUserTier() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _isProUser = (prefs.getString('user_tier') ?? 'FREE') == 'PRO';
+    });
   }
 
   Future<void> _restoreFromCalculation() async {
@@ -58,6 +72,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
       final pv = (physics['pv'] as Map?)?.cast<String, dynamic>() ?? const {};
       final ess = (physics['ess'] as Map?)?.cast<String, dynamic>() ?? const {};
       final env = (physics['env'] as Map?)?.cast<String, dynamic>() ?? const {};
+      final projectCost = (params['project_cost_settings'] as Map?)?.cast<String, dynamic>() ?? const {};
 
       setState(() {
         _versionName = currentCalc.versionName;
@@ -66,6 +81,9 @@ class _CalculationScreenState extends State<CalculationScreen> {
         _batteryCapacity = (ess['batt_nominal_capacity_kwh'] as num?)?.toDouble() ?? _batteryCapacity;
         final load = (env['load_profile_8760'] as List?)?.cast<num>();
         _factoryPeakLoad = load == null || load.isEmpty ? _factoryPeakLoad : load.reduce((a, b) => a > b ? a : b).toDouble();
+        _pvBaseCost = (projectCost['pv_cost'] as num?)?.toDouble() ?? _pvBaseCost;
+        _essBaseCost = (projectCost['ess_cost'] as num?)?.toDouble() ?? _essBaseCost;
+        _targetMargin = (projectCost['margin_pct'] as num?)?.toDouble() ?? _targetMargin;
         _latestResult = currentCalc.results;
       });
     } catch (e) {
@@ -87,6 +105,8 @@ class _CalculationScreenState extends State<CalculationScreen> {
   }
 
   Map<String, dynamic> _buildPayload() {
+    final baseCost = (_pvCapacity * _pvBaseCost) + (_batteryCapacity * _essBaseCost) + 5000.0;
+    final totalCapex = baseCost * (1 + (_targetMargin / 100.0));
     return {
       "physics_params": {
         "env": {
@@ -119,7 +139,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
         }
       },
       "financial_params": {
-        "total_capex": (_pvCapacity * 1000) + (_batteryCapacity * 400),
+        "total_capex": totalCapex,
         "annual_opex": 150.0 + (_pvCapacity * 2),
         "battery_replacement_cost": _batteryCapacity * 200,
         "battery_replacement_year": 10,
@@ -132,6 +152,11 @@ class _CalculationScreenState extends State<CalculationScreen> {
         "loan_interest_rate": 0.12,
         "discount_rate": 0.10,
         "project_lifespan": 20,
+      },
+      "project_cost_settings": {
+        "pv_cost": _pvBaseCost,
+        "ess_cost": _essBaseCost,
+        "margin_pct": _targetMargin,
       },
     };
   }
@@ -358,6 +383,84 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                     max: 200,
                                     divisions: 38,
                                     onChanged: (v) => setState(() => _factoryPeakLoad = v),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      const Expanded(
+                                        child: Text(
+                                          'Version Cost Settings',
+                                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                                        ),
+                                      ),
+                                      if (_isProUser)
+                                        TextButton.icon(
+                                          onPressed: () {
+                                            setState(() => _isEditingVersionCosts = !_isEditingVersionCosts);
+                                          },
+                                          icon: Icon(
+                                            _isEditingVersionCosts ? Icons.check : Icons.edit_outlined,
+                                            size: 18,
+                                          ),
+                                          label: Text(_isEditingVersionCosts ? 'Done' : 'Edit'),
+                                        )
+                                      else
+                                        Text(
+                                          'PRO only',
+                                          style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w600),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  TextFormField(
+                                    key: ValueKey('pv_base_${_pvBaseCost.toStringAsFixed(2)}'),
+                                    initialValue: _pvBaseCost.toStringAsFixed(2),
+                                    enabled: _isProUser && _isEditingVersionCosts,
+                                    decoration: const InputDecoration(
+                                      labelText: 'PV Base Cost (\$ / kW)',
+                                    ),
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                                    ],
+                                    onChanged: (v) {
+                                      final parsed = double.tryParse(v);
+                                      if (parsed != null) setState(() => _pvBaseCost = parsed);
+                                    },
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextFormField(
+                                    key: ValueKey('ess_base_${_essBaseCost.toStringAsFixed(2)}'),
+                                    initialValue: _essBaseCost.toStringAsFixed(2),
+                                    enabled: _isProUser && _isEditingVersionCosts,
+                                    decoration: const InputDecoration(
+                                      labelText: 'ESS Base Cost (\$ / kWh)',
+                                    ),
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                                    ],
+                                    onChanged: (v) {
+                                      final parsed = double.tryParse(v);
+                                      if (parsed != null) setState(() => _essBaseCost = parsed);
+                                    },
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextFormField(
+                                    key: ValueKey('margin_${_targetMargin.toStringAsFixed(2)}'),
+                                    initialValue: _targetMargin.toStringAsFixed(2),
+                                    enabled: _isProUser && _isEditingVersionCosts,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Target Margin (%)',
+                                    ),
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                                    ],
+                                    onChanged: (v) {
+                                      final parsed = double.tryParse(v);
+                                      if (parsed != null) setState(() => _targetMargin = parsed);
+                                    },
                                   ),
                                   const SizedBox(height: 10),
                                   Row(
