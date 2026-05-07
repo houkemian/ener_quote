@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 from app.api.deps import TokenPayload, get_current_user_payload, get_db
 from app.models.project import Project, ProjectCalculation
 from app.services.parameter_cleaner import clean_project_parameters
-from app.services.pvgis import fetch_pvgis_hourly_irradiance
 from app.services.result_optimizer import optimize_results_for_db
 from app.schemas.project import (
     ProjectCalculationCreateRequest,
@@ -97,20 +96,18 @@ def update_project(
     "/{project_id}/calculations",
     response_model=list[ProjectCalculationResponse],
 )
-async def list_project_calculations(
+def list_project_calculations(
     project_id: UUID,
     db: Session = Depends(get_db),
     current_user: TokenPayload = Depends(get_current_user_payload),
 ):
     _get_user_project_or_404(db, project_id, current_user.user_id)
-    calculations = (
+    return (
         db.query(ProjectCalculation)
         .filter(ProjectCalculation.project_id == project_id)
         .order_by(ProjectCalculation.created_at.desc())
         .all()
     )
-    await _hydrate_irradiance_for_history(calculations)
-    return calculations
 
 
 @router.post(
@@ -235,36 +232,3 @@ def delete_project_calculation(
         raise HTTPException(status_code=404, detail="Calculation not found")
     db.delete(calc)
     db.commit()
-
-
-async def _hydrate_irradiance_for_history(calculations: list[ProjectCalculation]) -> None:
-    """Fill missing irradiance_8760 using saved lat/lon for read-time compatibility."""
-    cache: dict[tuple[float, float], list[float]] = {}
-    for calc in calculations:
-        parameters = calc.parameters if isinstance(calc.parameters, dict) else None
-        if parameters is None:
-            continue
-
-        physics = parameters.get("physics_params")
-        if not isinstance(physics, dict):
-            continue
-        env = physics.get("env")
-        if not isinstance(env, dict):
-            continue
-        if env.get("irradiance_8760"):
-            continue
-
-        lat = env.get("lat")
-        lon = env.get("lon")
-        if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
-            continue
-        if lat == 0.0 and lon == 0.0:
-            continue
-
-        key = (float(lat), float(lon))
-        if key not in cache:
-            try:
-                cache[key] = await fetch_pvgis_hourly_irradiance(lat=key[0], lon=key[1])
-            except Exception:
-                continue
-        env["irradiance_8760"] = cache[key]
