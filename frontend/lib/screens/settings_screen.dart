@@ -41,6 +41,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _pvCostController = TextEditingController();
   final TextEditingController _essCostController = TextEditingController();
   final TextEditingController _marginController = TextEditingController();
+  final TextEditingController _peakPriceController = TextEditingController();
+  final TextEditingController _midPriceController = TextEditingController();
+  final TextEditingController _valleyPriceController = TextEditingController();
+  final TextEditingController _demandChargeController = TextEditingController();
 
   bool _isLoading = true;
   bool get _canEditCosts => _userTier == "PRO";
@@ -117,6 +121,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _pvCostController.text = data['pv_cost_per_kw']?.toString() ?? '800.0';
         _essCostController.text = data['ess_cost_per_kwh']?.toString() ?? '350.0';
         _marginController.text = data['margin_pct']?.toString() ?? '25.0';
+        _peakPriceController.text = (prefs.getDouble('tariff_peak_price') ?? 0.35).toString();
+        _midPriceController.text = (prefs.getDouble('tariff_mid_price') ?? 0.25).toString();
+        _valleyPriceController.text = (prefs.getDouble('tariff_valley_price') ?? 0.12).toString();
+        _demandChargeController.text = (prefs.getDouble('tariff_demand_charge_per_kw') ?? 10.0).toString();
         _isLoading = false;
       });
 
@@ -126,6 +134,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await prefs.setDouble('pv_cost', double.tryParse(_pvCostController.text) ?? 800.0);
       await prefs.setDouble('ess_cost', double.tryParse(_essCostController.text) ?? 350.0);
       await prefs.setDouble('margin_pct', double.tryParse(_marginController.text) ?? 25.0);
+      await prefs.setDouble('tariff_peak_price', double.tryParse(_peakPriceController.text) ?? 0.35);
+      await prefs.setDouble('tariff_mid_price', double.tryParse(_midPriceController.text) ?? 0.25);
+      await prefs.setDouble('tariff_valley_price', double.tryParse(_valleyPriceController.text) ?? 0.12);
+      await prefs.setDouble('tariff_demand_charge_per_kw', double.tryParse(_demandChargeController.text) ?? 10.0);
       _showBillingIssueNoticeIfNeeded(billingIssueGraceUntilRaw);
 
     } catch (e) {
@@ -140,6 +152,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _logoUrlController.text = prefs.getString('logo_url') ?? '';
         _essCostController.text = prefs.getDouble('ess_cost')?.toString() ?? '350.0'; // 默认 350
         _marginController.text = prefs.getDouble('margin_pct')?.toString() ?? '25.0'; // 默认 25%
+        _peakPriceController.text = (prefs.getDouble('tariff_peak_price') ?? 0.35).toString();
+        _midPriceController.text = (prefs.getDouble('tariff_mid_price') ?? 0.25).toString();
+        _valleyPriceController.text = (prefs.getDouble('tariff_valley_price') ?? 0.12).toString();
+        _demandChargeController.text = (prefs.getDouble('tariff_demand_charge_per_kw') ?? 10.0).toString();
         _isLoading = false;
       });
     }
@@ -197,6 +213,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await prefs.setDouble('pv_cost', double.tryParse(_pvCostController.text) ?? 800.0);
     await prefs.setDouble('ess_cost', double.tryParse(_essCostController.text) ?? 350.0);
     await prefs.setDouble('margin_pct', double.tryParse(_marginController.text) ?? 25.0);
+    await prefs.setDouble('tariff_peak_price', double.tryParse(_peakPriceController.text) ?? 0.35);
+    await prefs.setDouble('tariff_mid_price', double.tryParse(_midPriceController.text) ?? 0.25);
+    await prefs.setDouble('tariff_valley_price', double.tryParse(_valleyPriceController.text) ?? 0.12);
+    await prefs.setDouble('tariff_demand_charge_per_kw', double.tryParse(_demandChargeController.text) ?? 10.0);
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -413,6 +433,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildTextField(_essCostController, l10n.essCostLabel, Icons.battery_charging_full, isNumber: true, enabled: _canEditCosts),
                   const SizedBox(height: 16),
                   _buildTextField(_marginController, l10n.marginLabel, Icons.percent, isNumber: true, enabled: _canEditCosts),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    _peakPriceController,
+                    'Peak Price (\$ / kWh)',
+                    Icons.trending_up,
+                    isNumber: true,
+                    enabled: _canEditCosts,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    _midPriceController,
+                    'Mid Price (\$ / kWh)',
+                    Icons.trending_flat,
+                    isNumber: true,
+                    enabled: _canEditCosts,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    _valleyPriceController,
+                    'Valley Price (\$ / kWh)',
+                    Icons.trending_down,
+                    isNumber: true,
+                    enabled: _canEditCosts,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    _demandChargeController,
+                    'Demand Charge (\$ / kW)',
+                    Icons.bolt,
+                    isNumber: true,
+                    enabled: _canEditCosts,
+                  ),
                 ],
               ]),
 
@@ -431,17 +483,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: _showLogoutConfirmDialog,
+                icon: const Icon(Icons.logout),
+                label: Text(l10n.logoutTitle),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.border),
+                  foregroundColor: AppColors.onSurfaceVariant,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               OutlinedButton(
                 onPressed: _showDeleteAccountDialog,
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.redAccent),
-                  foregroundColor: Colors.redAccent,
+                  side: const BorderSide(color: AppColors.border),
+                  foregroundColor: AppColors.onSurfaceVariant,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 child: const Text(
                   'Delete Account',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
               ),
               const SizedBox(height: 24),
@@ -1046,5 +1111,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _showLogoutConfirmDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(l10n.logoutTitle),
+          content: Text(l10n.logoutMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(
+                l10n.confirmLogout,
+                style: const TextStyle(color: Colors.redAccent),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    if (shouldLogout != true) {
+      return;
+    }
+    await _logoutAndRedirect();
+  }
+
+  Future<void> _logoutAndRedirect() async {
+    await TokenManager.clearAccessToken();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user_tier');
+    await prefs.remove('company_name');
+    await prefs.remove('logo_url');
+    await prefs.remove('pv_cost');
+    await prefs.remove('ess_cost');
+    await prefs.remove('margin_pct');
+    try {
+      await Purchases.logOut();
+    } catch (_) {}
+    if (!mounted) {
+      return;
+    }
+    Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
   }
 }

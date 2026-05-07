@@ -142,13 +142,17 @@ async def simulate_pv_ess_project(
             "[SIM] financial_output payload=\n%s",
             pformat(fin_out.model_dump(), width=120, sort_dicts=True),
         )
-        if fin_out.irr >= 40 or fin_out.payback_period_years <= 3:
+        if fin_out.project_irr >= 40 or fin_out.project_payback_years <= 3:
             logger.warning(
-                "[SIM] suspicious_result irr=%.2f npv=%.2f payback=%.2f "
+                "[SIM] suspicious_result project_irr=%.2f project_npv=%.2f project_payback=%.2f "
+                "equity_irr=%.2f equity_npv=%.2f equity_payback=%.2f "
                 "(check tariff/voll/load profile/capex units)",
-                fin_out.irr,
-                fin_out.npv,
-                fin_out.payback_period_years,
+                fin_out.project_irr,
+                fin_out.project_npv,
+                fin_out.project_payback_years,
+                fin_out.equity_irr,
+                fin_out.equity_npv,
+                fin_out.equity_payback_years,
             )
         
         return FullQuoteResponse(physics_result=phys_out, finance_result=fin_out)

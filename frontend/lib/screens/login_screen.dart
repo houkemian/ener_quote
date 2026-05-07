@@ -80,6 +80,12 @@ class _LoginScreenState extends State<LoginScreen> {
     return regex.hasMatch(email);
   }
 
+  void _traceLogin(String message) {
+    final line = '[LoginFlow] $message';
+    debugPrint(line);
+    print(line);
+  }
+
   Future<void> _login() async {
     final l10n = AppLocalizations.of(context)!;
     final email = _emailController.text.trim();
@@ -104,51 +110,59 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = '';
     });
 
+
     try {
-      // 走 Firebase Auth：邮箱密码 → ID token → 后端 /auth/firebase 同步用户
+      // 邮箱密码统一走 Firebase -> 后端 /auth/firebase 同步账号体系。
+      _traceLogin('start email/password sign-in for $email');
       final credential = await _firebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+      _traceLogin('Firebase signInWithEmailAndPassword success');
       final user = credential.user;
       if (user == null) {
+        _traceLogin('Firebase returned null user');
         throw FirebaseAuthException(code: 'user-not-found');
       }
-
-      // 后端 /auth/firebase 强制要求 email_verified=true，未验证就拦截在这里。
       if (!user.emailVerified) {
+        _traceLogin('Firebase user email not verified');
         await _firebaseAuth.signOut();
-        setState(() {
-          _errorMessage = l10n.errEmailNotVerified;
-        });
-        return;
+        throw FirebaseAuthException(code: 'email-not-verified');
       }
 
       final firebaseToken = await user.getIdToken();
       if (firebaseToken == null || firebaseToken.isEmpty) {
+        _traceLogin('Firebase token empty');
         throw Exception('Firebase did not return ID token');
       }
-
+      _traceLogin('Firebase token ready, calling /auth/firebase');
       final data = await ApiClient().authenticateWithFirebaseIdToken(
         firebaseIdToken: firebaseToken,
       );
+      _traceLogin('Backend /auth/firebase success');
       await _persistTokenAndNavigate(
         firebaseToken,
         tierHint: data['tier']?.toString(),
       );
     } on FirebaseAuthException catch (e) {
+      _traceLogin('FirebaseAuthException code=${e.code} message=${e.message}');
       setState(() {
         _errorMessage = _firebaseAuthErrorMessage(e, l10n);
       });
     } on DioException catch (e) {
+      _traceLogin(
+        'DioException status=${e.response?.statusCode} data=${e.response?.data}',
+      );
       setState(() {
         _errorMessage = _dioOAuthExchangeMessage(e, l10n);
       });
     } catch (e) {
+      _traceLogin('Unknown error $e');
       setState(() {
         _errorMessage = l10n.errSystem(e.toString());
       });
     } finally {
+      // 增加 mounted 判断，防止组件被替换后还执行 setState
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -162,22 +176,19 @@ class _LoginScreenState extends State<LoginScreen> {
     AppLocalizations l10n,
   ) {
     switch (e.code) {
-      case 'invalid-credential':
-      case 'wrong-password':
-      case 'user-not-found':
-      case 'user-disabled':
-      case 'invalid-login-credentials':
-        return l10n.errAuthFailed401;
       case 'invalid-email':
         return l10n.errInvalidEmail;
-      case 'too-many-requests':
-        return l10n.errSystem(
-          'Too many sign-in attempts. Please wait a moment before retrying.',
-        );
+      case 'user-not-found':
+      case 'wrong-password':
+      case 'invalid-credential':
+      case 'invalid-login-credentials':
+        return '${l10n.errAuthFailed401} [firebase:${e.code}]';
+      case 'email-not-verified':
+        return '${l10n.errEmailNotVerified} [firebase:${e.code}]';
       case 'network-request-failed':
-        return l10n.errNetwork(e.message ?? 'network-request-failed');
+        return l10n.errNetwork('Network request failed [firebase:${e.code}]');
       default:
-        return l10n.errSystem('${e.code}: ${e.message ?? ''}');
+        return l10n.errSystem('${e.message ?? e.code} [firebase:${e.code}]');
     }
   }
 

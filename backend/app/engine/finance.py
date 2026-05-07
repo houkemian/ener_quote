@@ -25,11 +25,21 @@ class FinancialInput(BaseModel):
     project_lifespan: int 
 
 class FinancialOutput(BaseModel):
+    # New dual-metric output
+    project_npv: float
+    project_irr: float
+    project_payback_years: float
+    equity_npv: float
+    equity_irr: float
+    equity_payback_years: float
+    # Backward-compatible aliases (mapped to project metrics)
     npv: float
     irr: float
     payback_period_years: float
     lcoe: float
     cash_flow_statement: List[Dict[str, float]]
+    project_cash_flow_statement: List[Dict[str, float]]
+    equity_cash_flow_statement: List[Dict[str, float]]
 
 def calculate_pmt(principal: float, annual_rate: float, years: int) -> float:
     if annual_rate == 0:
@@ -52,6 +62,20 @@ def calculate_irr(cash_flows: List[float], max_iterations=1000, tolerance=1e-6) 
         r0, r1 = r1, r_new
     return r1
 
+def calculate_payback(cash_flows: List[float], default_years: float = 20.0) -> float:
+    cumulative = cash_flows[0] if cash_flows else 0.0
+    if cumulative >= 0:
+        return 0.0
+    for year in range(1, len(cash_flows)):
+        prev_cumulative = cumulative
+        cumulative += cash_flows[year]
+        if cumulative >= 0:
+            current_cf = cash_flows[year]
+            if current_cf == 0:
+                return float(year)
+            return (year - 1) + abs(prev_cumulative) / current_cf
+    return default_years
+
 def run_financial_simulation(params: FinancialInput) -> FinancialOutput:
     n_years = params.project_lifespan
     
@@ -59,20 +83,31 @@ def run_financial_simulation(params: FinancialInput) -> FinancialOutput:
     loan_principal = params.total_capex - down_payment
     annual_loan_payment = calculate_pmt(loan_principal, params.loan_interest_rate, params.loan_term_years)
 
-    cash_flows = []
-    cumulative_cash_flow = -down_payment
-    payback_period = -1.0
-    
-    cash_flows.append({
+    equity_cash_flow_rows = []
+    equity_cumulative = -down_payment
+    equity_cash_flow_rows.append({
         "year": 0,
         "energy_savings_revenue": 0.0,
         "backup_power_value": 0.0,
         "opex_and_replacement": 0.0,
         "debt_service": 0.0,
         "net_cash_flow": -down_payment,
-        "cumulative_cash_flow": cumulative_cash_flow
+        "cumulative_cash_flow": equity_cumulative
     })
-    pure_cash_flow_array = [-down_payment]
+    equity_cash_flow_array = [-down_payment]
+
+    project_cash_flow_rows = []
+    project_cumulative = -params.total_capex
+    project_cash_flow_rows.append({
+        "year": 0,
+        "energy_savings_revenue": 0.0,
+        "backup_power_value": 0.0,
+        "opex_and_replacement": 0.0,
+        "debt_service": 0.0,
+        "net_cash_flow": -params.total_capex,
+        "cumulative_cash_flow": project_cumulative
+    })
+    project_cash_flow_array = [-params.total_capex]
 
     for year in range(1, n_years + 1):
         degradation_factor = (1 - params.system_degradation_rate) ** (year - 1)
@@ -93,31 +128,52 @@ def run_financial_simulation(params: FinancialInput) -> FinancialOutput:
             
         debt_service = annual_loan_payment if year <= params.loan_term_years else 0.0
         
-        net_cf = total_revenue - opex - debt_service
-        cumulative_cash_flow += net_cf
-        
-        if payback_period < 0 and cumulative_cash_flow >= 0:
-            previous_cum = cash_flows[-1]["cumulative_cash_flow"]
-            payback_period = (year - 1) + abs(previous_cum) / net_cf
+        equity_net_cf = total_revenue - opex - debt_service
+        project_net_cf = total_revenue - opex
+        equity_cumulative += equity_net_cf
+        project_cumulative += project_net_cf
 
-        pure_cash_flow_array.append(net_cf)
-        cash_flows.append({
+        equity_cash_flow_array.append(equity_net_cf)
+        project_cash_flow_array.append(project_net_cf)
+        equity_cash_flow_rows.append({
             "year": year,
             "energy_savings_revenue": round(energy_revenue, 2),
             "backup_power_value": round(backup_value, 2),
             "opex_and_replacement": round(opex, 2),
             "debt_service": round(debt_service, 2),
-            "net_cash_flow": round(net_cf, 2),
-            "cumulative_cash_flow": round(cumulative_cash_flow, 2)
+            "net_cash_flow": round(equity_net_cf, 2),
+            "cumulative_cash_flow": round(equity_cumulative, 2)
+        })
+        project_cash_flow_rows.append({
+            "year": year,
+            "energy_savings_revenue": round(energy_revenue, 2),
+            "backup_power_value": round(backup_value, 2),
+            "opex_and_replacement": round(opex, 2),
+            "debt_service": 0.0,
+            "net_cash_flow": round(project_net_cf, 2),
+            "cumulative_cash_flow": round(project_cumulative, 2)
         })
 
-    npv = sum(cf / ((1 + params.discount_rate) ** i) for i, cf in enumerate(pure_cash_flow_array))
-    irr = calculate_irr(pure_cash_flow_array)
+    project_npv = sum(cf / ((1 + params.discount_rate) ** i) for i, cf in enumerate(project_cash_flow_array))
+    project_irr = calculate_irr(project_cash_flow_array)
+    project_payback = calculate_payback(project_cash_flow_array, default_years=float(n_years))
+
+    equity_npv = sum(cf / ((1 + params.discount_rate) ** i) for i, cf in enumerate(equity_cash_flow_array))
+    equity_irr = calculate_irr(equity_cash_flow_array)
+    equity_payback = calculate_payback(equity_cash_flow_array, default_years=float(n_years))
 
     return FinancialOutput(
-        npv=round(npv, 2),
-        irr=round(irr * 100, 2), 
-        payback_period_years=round(payback_period, 2) if payback_period > 0 else 20.0, 
+        project_npv=round(project_npv, 2),
+        project_irr=round(project_irr * 100, 2),
+        project_payback_years=round(project_payback, 2),
+        equity_npv=round(equity_npv, 2),
+        equity_irr=round(equity_irr * 100, 2),
+        equity_payback_years=round(equity_payback, 2),
+        npv=round(project_npv, 2),
+        irr=round(project_irr * 100, 2),
+        payback_period_years=round(project_payback, 2),
         lcoe=0.0, # TOU 场景下 LCOE 意义不大，设为 0
-        cash_flow_statement=cash_flows
+        cash_flow_statement=equity_cash_flow_rows,
+        project_cash_flow_statement=project_cash_flow_rows,
+        equity_cash_flow_statement=equity_cash_flow_rows,
     )

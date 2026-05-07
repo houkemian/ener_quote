@@ -1,11 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart'; // 🌟 引入 UI 库
-import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
+import 'package:flutter/foundation.dart' show debugPrint;
 import '../../main.dart'; // 🌟 引入全局钥匙
 import '../../screens/login_screen.dart'; // 🌟 引入登录页
 import '../../l10n/app_localizations.dart'; // 👈 新增这行
 import '../auth/token_manager.dart';
+
+const String _kApiBaseUrl = 'https://api.dothings.one/api/v1';
 
 class ProjectItem {
   final String id;
@@ -68,6 +70,48 @@ class ProjectCalculationItem {
   }
 }
 
+class FinanceResult {
+  final double? projectIrr;
+  final double? projectNpv;
+  final double? projectPaybackYears;
+  final double? equityIrr;
+  final double? equityNpv;
+  final double? equityPaybackYears;
+  final List<Map<String, dynamic>> cashFlowStatement;
+
+  const FinanceResult({
+    required this.projectIrr,
+    required this.projectNpv,
+    required this.projectPaybackYears,
+    required this.equityIrr,
+    required this.equityNpv,
+    required this.equityPaybackYears,
+    required this.cashFlowStatement,
+  });
+
+  factory FinanceResult.fromJson(Map<String, dynamic> json) {
+    final statement = (json['cash_flow_statement'] as List? ?? const [])
+        .whereType<Map>()
+        .map((row) => row.cast<String, dynamic>())
+        .toList();
+    final projectIrr = (json['project_irr'] as num?)?.toDouble() ?? (json['irr'] as num?)?.toDouble();
+    final projectNpv = (json['project_npv'] as num?)?.toDouble() ?? (json['npv'] as num?)?.toDouble();
+    final projectPayback = (json['project_payback_years'] as num?)?.toDouble() ??
+        (json['payback_period_years'] as num?)?.toDouble();
+    return FinanceResult(
+      projectIrr: projectIrr,
+      projectNpv: projectNpv,
+      projectPaybackYears: projectPayback,
+      // Backward compatibility: if backend still returns old single-set KPIs,
+      // keep Equity card populated instead of showing blanks.
+      equityIrr: (json['equity_irr'] as num?)?.toDouble() ?? projectIrr,
+      equityNpv: (json['equity_npv'] as num?)?.toDouble() ?? projectNpv,
+      equityPaybackYears: (json['equity_payback_years'] as num?)?.toDouble() ?? projectPayback,
+      cashFlowStatement: statement,
+    );
+  }
+}
+
 class PaywallGateException implements Exception {
   final String message;
   const PaywallGateException(this.message);
@@ -84,25 +128,57 @@ class ApiClient {
   late Dio dio;
 
   void _debugLog(String message) {
-    if (kDebugMode) {
-      debugPrint(message);
+    debugPrint(message);
+    print(message);
+  }
+
+  void _sanitizeSimulationPayload(RequestOptions options) {
+    final path = options.path.toLowerCase();
+    if (!path.contains('/simulate')) {
+      return;
     }
+    final data = options.data;
+    if (data is! Map) {
+      return;
+    }
+
+    final root = data.cast<dynamic, dynamic>();
+    final physicsParamsRaw = root['physics_params'];
+    final financialParamsRaw = root['financial_params'];
+    if (physicsParamsRaw is! Map || financialParamsRaw is! Map) {
+      return;
+    }
+
+    final physicsParams = physicsParamsRaw.cast<dynamic, dynamic>();
+    final financialParams = financialParamsRaw.cast<dynamic, dynamic>();
+    final envRaw = physicsParams['env'];
+    if (envRaw is! Map) {
+      return;
+    }
+    final env = envRaw.cast<dynamic, dynamic>();
+
+    // Hard guardrail: disable VoLL and outage assumptions before /simulate request.
+    financialParams['voll_price'] = 0.0;
+    env['grid_status_8760'] = List<int>.filled(8760, 1);
+    _debugLog(
+      '[SIM-GUARD] force financial_params.voll_price=0.0, '
+      'physics_params.env.grid_status_8760=List.filled(8760,1)',
+    );
   }
 
   ApiClient._internal() {
     // 2. 统一基础配置 (Base URL)
     BaseOptions options = BaseOptions(
-      // 🌟 统一切换开关：
-      // 模拟器用：http://10.0.2.2:8000/api/v1
-      // 真机用：http://192.168.x.x:8000/api/v1 (你的电脑局域网 IP)
-      // baseUrl: 'http://10.1.50.211:8000/api/v1',
-      // 🌟 核心修改：枪口一致对外，直连 API 子域
-      baseUrl: 'https://api.dothings.one/api/v1',
+      // 可由 --dart-define=API_BASE_URL 覆盖。
+      // Android 模拟器本地后端可用 http://10.0.2.2:8000/api/v1
+      // 真机可用 http://<你的局域网IP>:8000/api/v1
+      baseUrl: _kApiBaseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
     );
 
     dio = Dio(options);
+    _debugLog('[ApiClient] baseUrl=${dio.options.baseUrl}');
     bool isAuthEndpoint(String path) {
       final normalized = path.toLowerCase();
       return normalized.contains('/auth/') || normalized.startsWith('auth/');
@@ -115,6 +191,10 @@ class ApiClient {
     // 3. 🌟 核心魔法：全局拦截器 (Interceptor)
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
+        _sanitizeSimulationPayload(options);
+        _debugLog(
+          '[HTTP] ${options.method} ${options.baseUrl}${options.path}',
+        );
         // 登录态同步接口（仅 Firebase 同步）不需要已有 Token
         final p = options.path.toLowerCase();
         if (p.contains('/auth/firebase')) {
@@ -132,6 +212,10 @@ class ApiClient {
         return handler.next(options);
       },
       onError: (DioException e, handler) async {
+        _debugLog(
+          '[HTTP-ERR] ${e.requestOptions.method} ${e.requestOptions.baseUrl}${e.requestOptions.path} '
+          'status=${e.response?.statusCode} detail=${e.response?.data}',
+        );
         // 🌟 全局 401 拦截：Token 过期或被篡改，自动踢回登录页！
         final path = e.requestOptions.path;
         final hasAuthHeader = e.requestOptions.headers.keys.any(
