@@ -98,6 +98,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'Registration failed, please check your input';
 
   @override
+  String get errEmailAlreadyInUse =>
+      'This email is already registered. Please sign in or reset your password.';
+
+  @override
+  String get errEmailNotVerified =>
+      'Your email has not been verified yet. Please open the verification link in your inbox and try again.';
+
+  @override
+  String get msgVerifyEmailSent =>
+      'A verification email has been sent. Please verify your email before signing in.';
+
+  @override
+  String get msgPasswordResetEmailSent =>
+      'Password reset email sent. Please follow the link in your inbox to finish resetting.';
+
+  @override
   String get unauthorized => 'Unauthorized, please log in again';
 
   @override

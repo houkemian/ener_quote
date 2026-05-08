@@ -44,6 +44,10 @@
     }
     },
     "errRegisterFailedFallback": "注册失败，请检查输入",
+    "errEmailAlreadyInUse": "该邮箱已被注册，请直接登录或重置密码。",
+    "errEmailNotVerified": "邮箱尚未验证，请到邮箱点击验证链接后再登录。",
+    "msgVerifyEmailSent": "验证邮件已发送，请前往邮箱完成验证后再登录。",
+    "msgPasswordResetEmailSent": "密码重置邮件已发送，请按邮件指引完成重置。",
     "unauthorized": "未授权，请重新登录",
     "simulateFailed": "测算失败: {error}",
     "@simulateFailed": {

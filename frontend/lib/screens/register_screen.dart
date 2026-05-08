@@ -1,10 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
-import '../core/network/api_client.dart';
-import '../l10n/app_localizations.dart'; // 🌟 引入多语言
+import '../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../widgets/marketing_footer.dart';
-import 'register_otp_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,18 +15,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
   static const double _uiScale = 0.8;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
   bool _isLoading = false;
   bool _isPasswordVisible = false;
   String _errorMessage = '';
 
-  Future<void> _sendOtp() async {
+  Future<void> _register() async {
     final l10n = AppLocalizations.of(context)!;
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      setState(() => _errorMessage = l10n.errEmpty); // 🌟 动态错误提示
+      setState(() => _errorMessage = l10n.errEmpty);
       return;
     }
     if (password.length < 6) {
@@ -40,32 +39,66 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _errorMessage = '';
     });
 
-
     try {
-      if (!mounted) return;
       final langCode = Localizations.localeOf(context).languageCode;
-      await ApiClient().sendRegisterOtp(email, langCode);
+      try {
+        await _firebaseAuth.setLanguageCode(langCode);
+      } catch (_) {
+        // setLanguageCode may throw on some platforms; safe to ignore.
+      }
 
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => RegisterOtpScreen(
-            email: email,
-            password: password,
-          ),
+      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      final user = credential.user;
+      if (user == null) {
+        throw FirebaseAuthException(code: 'unknown');
+      }
+
+      await user.sendEmailVerification();
+      // Sign out so the next /auth/firebase call (after verification) carries
+      // a fresh ID token with email_verified=true.
+      await _firebaseAuth.signOut();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.msgVerifyEmailSent),
+          backgroundColor: Colors.green,
         ),
       );
-    } on DioException catch (e) {
+      Navigator.of(context).pop();
+    } on FirebaseAuthException catch (e) {
       setState(() {
-        if (e.response?.statusCode == 400 || e.response?.statusCode == 409) {
-          _errorMessage = e.response?.data['detail'] ?? l10n.errRegisterFailedFallback;
-        } else {
-          _errorMessage = l10n.errNetwork(e.message ?? 'Unknown Error');
-        }
+        _errorMessage = _firebaseRegisterErrorMessage(e, l10n);
       });
     } catch (e) {
       setState(() => _errorMessage = l10n.errSystem(e.toString()));
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  String _firebaseRegisterErrorMessage(
+    FirebaseAuthException e,
+    AppLocalizations l10n,
+  ) {
+    switch (e.code) {
+      case 'email-already-in-use':
+        return l10n.errEmailAlreadyInUse;
+      case 'invalid-email':
+        return l10n.errInvalidEmail;
+      case 'weak-password':
+        return l10n.errPasswordLength;
+      case 'operation-not-allowed':
+        return l10n.errSystem(
+          'Email/password sign-in is disabled in Firebase Console.',
+        );
+      case 'network-request-failed':
+        return l10n.errNetwork(e.message ?? 'network-request-failed');
+      default:
+        return l10n.errSystem('${e.code}: ${e.message ?? ''}');
     }
   }
 
@@ -111,7 +144,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            l10n.registerTitle, // 🌟 动态注册标题
+                            l10n.registerTitle,
                             style: TextStyle(
                               fontSize: 24 * _uiScale,
                               fontWeight: FontWeight.bold,
@@ -120,7 +153,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           SizedBox(height: 8 * _uiScale),
                           Text(
-                            l10n.registerSubtitle, // 🌟 动态注册副标题
+                            l10n.registerSubtitle,
                             style: TextStyle(
                               fontSize: 14 * _uiScale,
                               color: AppColors.onSurfaceVariant,
@@ -150,7 +183,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 SizedBox(height: 24 * _uiScale),
 
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _sendOtp,
+                  onPressed: _isLoading ? null : _register,
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 16 * _uiScale),
                     shape: RoundedRectangleBorder(
@@ -166,7 +199,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         )
                       : Text(
-                    "Get verification code",
+                    l10n.freeRegisterBtn,
                     style: TextStyle(
                       fontSize: 16 * _uiScale,
                       fontWeight: FontWeight.bold,

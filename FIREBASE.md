@@ -98,3 +98,17 @@ Firebase 登录配置总览（Google + Microsoft）
 - Dart `--dart-define`：跨平台覆盖（CI 或临时环境）
 - 后端 `.env`：`FIREBASE_PROJECT_ID`（必须与 Firebase 项目一致）
 
+
+
+
+
+部署前必做的 Firebase 配置
+这三件事必须在 Firebase Console 配好，否则上线后用户会看到错误：
+
+Authentication → Sign-in method → Email/Password → Enable。如果没开，注册会报 operation-not-allowed。
+Authentication → Templates → Email address verification。把发件人显示名、模板内容、Action URL 调成你的品牌；可以选择多语言模板。Firebase 会用 Console 里 user 的 languageCode（前端我们已经在 _register 里调了 setLanguageCode(langCode)）来选模板。
+Authentication → Templates → Password reset。同上，调发件人和文案，多语言。
+可选但强烈建议：
+
+Authorized domains（Authentication → Settings → Authorized domains）：把你的产品域名（如 dothings.one、api.dothings.one）加上，否则点击邮件链接到你自定义域名会被拒。
+如果以后要做"邮件验证后自动跳回 App"，可以配 Action URL 走 Firebase Dynamic Links + 自定义域名。

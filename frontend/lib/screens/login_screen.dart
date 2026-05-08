@@ -104,44 +104,80 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = '';
     });
 
-
     try {
-      // 🌟 极致瘦身：不再需要写完整的 URL，不再需要手动处理 header！
-      final response = await ApiClient().dio.post(
-        '/auth/login', // 直接写路由短地址即可
-        data: {
-          'username': email,
-          'password': password,
-        },
-        // 告诉 Dio 我们发的是表单格式 (FastAPI 登录强依赖这个)
-        options: Options(contentType: Headers.formUrlEncodedContentType),
+      // 走 Firebase Auth：邮箱密码 → ID token → 后端 /auth/firebase 同步用户
+      final credential = await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
       );
+      final user = credential.user;
+      if (user == null) {
+        throw FirebaseAuthException(code: 'user-not-found');
+      }
 
+      // 后端 /auth/firebase 强制要求 email_verified=true，未验证就拦截在这里。
+      if (!user.emailVerified) {
+        await _firebaseAuth.signOut();
+        setState(() {
+          _errorMessage = l10n.errEmailNotVerified;
+        });
+        return;
+      }
 
-      // Dio 的 response.statusCode 正常是 200，且 response.data 已经是解析好的 Map 了！不需要再 jsonDecode
-      final token = response.data['access_token'] as String;
-      await _persistTokenAndNavigate(token);
-    } on DioException catch (e) {
-      // Dio 捕获异常更优雅
+      final firebaseToken = await user.getIdToken();
+      if (firebaseToken == null || firebaseToken.isEmpty) {
+        throw Exception('Firebase did not return ID token');
+      }
+
+      final data = await ApiClient().authenticateWithFirebaseIdToken(
+        firebaseIdToken: firebaseToken,
+      );
+      await _persistTokenAndNavigate(
+        firebaseToken,
+        tierHint: data['tier']?.toString(),
+      );
+    } on FirebaseAuthException catch (e) {
       setState(() {
-        if (e.response?.statusCode == 401) {
-          _errorMessage = l10n.errAuthFailed401;
-        } else {
-          _errorMessage = l10n.errNetwork(e.message ?? 'Unknown Error');
-        }
+        _errorMessage = _firebaseAuthErrorMessage(e, l10n);
+      });
+    } on DioException catch (e) {
+      setState(() {
+        _errorMessage = _dioOAuthExchangeMessage(e, l10n);
       });
     } catch (e) {
-      // 捕获极其罕见的未知错误
       setState(() {
         _errorMessage = l10n.errSystem(e.toString());
       });
     } finally {
-      // 增加 mounted 判断，防止组件被替换后还执行 setState
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  String _firebaseAuthErrorMessage(
+    FirebaseAuthException e,
+    AppLocalizations l10n,
+  ) {
+    switch (e.code) {
+      case 'invalid-credential':
+      case 'wrong-password':
+      case 'user-not-found':
+      case 'user-disabled':
+      case 'invalid-login-credentials':
+        return l10n.errAuthFailed401;
+      case 'invalid-email':
+        return l10n.errInvalidEmail;
+      case 'too-many-requests':
+        return l10n.errSystem(
+          'Too many sign-in attempts. Please wait a moment before retrying.',
+        );
+      case 'network-request-failed':
+        return l10n.errNetwork(e.message ?? 'network-request-failed');
+      default:
+        return l10n.errSystem('${e.code}: ${e.message ?? ''}');
     }
   }
 

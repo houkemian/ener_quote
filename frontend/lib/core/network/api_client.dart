@@ -7,17 +7,6 @@ import '../../screens/login_screen.dart'; // 🌟 引入登录页
 import '../../l10n/app_localizations.dart'; // 👈 新增这行
 import '../auth/token_manager.dart';
 
-class SendOtpResponse {
-  final int ttlSeconds;
-  const SendOtpResponse({required this.ttlSeconds});
-}
-
-class VerifyOtpRegisterResponse {
-  final String accessToken;
-  final String? tier;
-  const VerifyOtpRegisterResponse({required this.accessToken, this.tier});
-}
-
 class ProjectItem {
   final String id;
   final String userId;
@@ -126,9 +115,9 @@ class ApiClient {
     // 3. 🌟 核心魔法：全局拦截器 (Interceptor)
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        // 登录态同步接口不需要已有 Token
+        // 登录态同步接口（仅 Firebase 同步）不需要已有 Token
         final p = options.path.toLowerCase();
-        if (p.contains('/auth/login') || p.contains('/auth/firebase')) {
+        if (p.contains('/auth/firebase')) {
           return handler.next(options);
         }
 
@@ -239,68 +228,7 @@ class ApiClient {
     }
   }
 
-  // 请求重置密码验证码
-  Future<bool> requestPasswordReset(String email, String langCode) async {
-
-    try {
-      await dio.post('/auth/forgot-password', data: {"email": email, "language":langCode});
-      return true; // 不管后端返回什么，前端都展示发送成功
-    } catch (e) {
-      _debugLog("Failed to request password reset.");
-      return false;
-    }
-  }
-
-  // 提交新密码
-  Future<bool> resetPassword(String email, String code, String newPassword) async {
-    try {
-      final response = await dio.post('/auth/reset-password', data: {
-        "email": email,
-        "reset_code": code,
-        "new_password": newPassword
-      });
-      return response.statusCode == 200;
-    } catch (e) {
-      _debugLog("Failed to reset password.");
-      return false;
-    }
-  }
-
-  Future<SendOtpResponse> sendRegisterOtp(String email, String langCode) async {
-    final response = await dio.post(
-      '/auth/send-otp',
-      data: {
-        "email": email,
-        "language": langCode,
-      },
-    );
-    final ttl = response.data is Map<String, dynamic>
-        ? (response.data['ttl_seconds'] as int? ?? 300)
-        : 300;
-    return SendOtpResponse(ttlSeconds: ttl);
-  }
-
-  Future<VerifyOtpRegisterResponse> verifyOtpAndRegister({
-    required String email,
-    required String password,
-    required String otpCode,
-  }) async {
-    final response = await dio.post(
-      '/auth/verify-otp-and-register',
-      data: {
-        "email": email,
-        "password": password,
-        "otp_code": otpCode,
-      },
-    );
-    final data = response.data as Map<String, dynamic>;
-    return VerifyOtpRegisterResponse(
-      accessToken: data['access_token'] as String,
-      tier: data['tier'] as String?,
-    );
-  }
-
-  /// Google / Microsoft：将 Firebase ID token 同步到后端账号体系。
+  /// Email/Google/Microsoft：将 Firebase ID token 同步到后端账号体系。
   Future<Map<String, dynamic>> authenticateWithFirebaseIdToken({
     required String firebaseIdToken,
   }) async {

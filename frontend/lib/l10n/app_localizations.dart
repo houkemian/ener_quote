@@ -254,6 +254,30 @@ abstract class AppLocalizations {
   /// **'注册失败，请检查输入'**
   String get errRegisterFailedFallback;
 
+  /// No description provided for @errEmailAlreadyInUse.
+  ///
+  /// In zh, this message translates to:
+  /// **'该邮箱已被注册，请直接登录或重置密码。'**
+  String get errEmailAlreadyInUse;
+
+  /// No description provided for @errEmailNotVerified.
+  ///
+  /// In zh, this message translates to:
+  /// **'邮箱尚未验证，请到邮箱点击验证链接后再登录。'**
+  String get errEmailNotVerified;
+
+  /// No description provided for @msgVerifyEmailSent.
+  ///
+  /// In zh, this message translates to:
+  /// **'验证邮件已发送，请前往邮箱完成验证后再登录。'**
+  String get msgVerifyEmailSent;
+
+  /// No description provided for @msgPasswordResetEmailSent.
+  ///
+  /// In zh, this message translates to:
+  /// **'密码重置邮件已发送，请按邮件指引完成重置。'**
+  String get msgPasswordResetEmailSent;
+
   /// No description provided for @unauthorized.
   ///
   /// In zh, this message translates to:

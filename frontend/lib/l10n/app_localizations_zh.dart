@@ -96,6 +96,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errRegisterFailedFallback => '注册失败，请检查输入';
 
   @override
+  String get errEmailAlreadyInUse => '该邮箱已被注册，请直接登录或重置密码。';
+
+  @override
+  String get errEmailNotVerified => '邮箱尚未验证，请到邮箱点击验证链接后再登录。';
+
+  @override
+  String get msgVerifyEmailSent => '验证邮件已发送，请前往邮箱完成验证后再登录。';
+
+  @override
+  String get msgPasswordResetEmailSent => '密码重置邮件已发送，请按邮件指引完成重置。';
+
+  @override
   String get unauthorized => '未授权，请重新登录';
 
   @override
