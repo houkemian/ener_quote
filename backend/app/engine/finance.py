@@ -1,8 +1,8 @@
-import math
-from typing import List, Dict, Optional
-from pydantic import BaseModel, Field
+from typing import List, Dict
+from pydantic import BaseModel
 
 class FinancialInput(BaseModel):
+    first_year_generation_kwh: float  # 🟢 新增：物理引擎传过来的首年发电量
     # 🟢 接收 API 层结算好的具体美元节省金额
     first_year_tou_savings: float       
     first_year_demand_savings: float    
@@ -162,6 +162,33 @@ def run_financial_simulation(params: FinancialInput) -> FinancialOutput:
     equity_irr = calculate_irr(equity_cash_flow_array)
     equity_payback = calculate_payback(equity_cash_flow_array, default_years=float(n_years))
 
+
+    # ---------------- LCOE 计算 ----------------
+    discount_rate = params.discount_rate
+    
+    total_cost_pv = 0.0
+    total_energy_pv = 0.0
+    
+    # 初始投资算作第 0 年的成本
+    total_cost_pv += params.total_capex 
+    
+    for year in range(1, params.project_lifespan + 1):
+        # 1. 计算当年的真实花销 (OPEX + 电池更换)
+        yearly_cost = params.annual_opex * ((1 + params.electricity_inflation_rate) ** (year - 1))
+        if year == params.battery_replacement_year:
+            yearly_cost += params.battery_replacement_cost
+            
+        # 2. 成本折现到今天
+        total_cost_pv += yearly_cost / ((1 + discount_rate) ** year)
+        
+        # 3. 计算当年衰减后的发电量并折现
+        yearly_gen = params.first_year_generation_kwh * ((1 - params.system_degradation_rate) ** (year - 1))
+        total_energy_pv += yearly_gen / ((1 + discount_rate) ** year)
+
+    # 容错：防止除以 0
+    lcoe_value = total_cost_pv / total_energy_pv if total_energy_pv > 0 else 0.0
+    # ---------------------------------------------
+
     return FinancialOutput(
         project_npv=round(project_npv, 2),
         project_irr=round(project_irr * 100, 2),
@@ -172,7 +199,7 @@ def run_financial_simulation(params: FinancialInput) -> FinancialOutput:
         npv=round(project_npv, 2),
         irr=round(project_irr * 100, 2),
         payback_period_years=round(project_payback, 2),
-        lcoe=0.0, # TOU 场景下 LCOE 意义不大，设为 0
+        lcoe=round(lcoe_value, 4),
         cash_flow_statement=equity_cash_flow_rows,
         project_cash_flow_statement=project_cash_flow_rows,
         equity_cash_flow_statement=equity_cash_flow_rows,

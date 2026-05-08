@@ -38,9 +38,15 @@ class FullQuoteRequest(BaseModel):
     financial_params: FinancialBaseConfig
 
 class ProjectFinanceOutput(BaseModel):
+    """Subset of ``FinancialOutput`` returned by ``/simulate`` (equity detail omitted)."""
+
     project_npv: float
     project_irr: float
     project_payback_years: float
+    npv: float
+    irr: float
+    payback_period_years: float
+    lcoe: float
     cash_flow_statement: List[Dict[str, float]]
 
 class FullQuoteResponse(BaseModel):
@@ -125,6 +131,7 @@ async def simulate_pv_ess_project(
 
         # 4. 运行金融引擎
         fin_input = FinancialInput(
+            first_year_generation_kwh=phys_out.kpis.total_generation_kwh,
             first_year_tou_savings=tou_savings,
             first_year_demand_savings=demand_savings,
             first_year_backup_revenue=backup_revenue,
