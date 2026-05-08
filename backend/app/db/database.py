@@ -1,7 +1,8 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import declarative_base
 import os
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.pool import NullPool
 
 # PostgreSQL connection config (can be overridden by DATABASE_URL).
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -16,10 +17,39 @@ if not DATABASE_URL:
         f"@{db_host}:{db_port}/{db_name}"
     )
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+# Neon (serverless Postgres) auto-suspends compute only when there are zero
+# active connections. SQLAlchemy's default QueuePool keeps idle TCP/SSL
+# connections alive forever, which prevents auto-suspend and pins CU usage
+# at 0.25. For Neon we therefore use NullPool: each request opens a fresh
+# connection and closes it on session.close(), so Neon can suspend.
+_is_neon = "neon.tech" in (DATABASE_URL or "")
 
-# 创建一个工厂，用来给每个请求生成独立的数据库会话 (Session)
+_engine_kwargs: dict = {
+    "pool_pre_ping": True,
+    "future": True,
+}
+
+if _is_neon:
+    _engine_kwargs["poolclass"] = NullPool
+    # TCP keepalives prevent half-open connections during a single request;
+    # they are TCP-layer packets and do NOT generate SQL traffic / CU usage.
+    _engine_kwargs["connect_args"] = {
+        "connect_timeout": 10,
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 5,
+        "sslmode": "require",
+    }
+else:
+    # Local / self-hosted Postgres: use the standard pool but recycle
+    # connections before NAT/firewall idle timeouts can kill them.
+    _engine_kwargs["pool_size"] = 5
+    _engine_kwargs["max_overflow"] = 10
+    _engine_kwargs["pool_recycle"] = 280
+
+engine = create_engine(DATABASE_URL, **_engine_kwargs)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# 🌟 这就是你的 models.py 苦苦寻找的那个 Base 基类！
 Base = declarative_base()
