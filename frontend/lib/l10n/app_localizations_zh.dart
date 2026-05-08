@@ -284,6 +284,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pdfTotalCapex => '项目总投资 (CAPEX)';
 
   @override
+  String get financeDownPayment => '首付款';
+
+  @override
+  String get financeLcoe => '平准化度电成本 (LCOE)';
+
+  @override
   String get pdfFinancialHighlights => '2. 核心财务指标';
 
   @override

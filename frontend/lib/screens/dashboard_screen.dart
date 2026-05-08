@@ -52,9 +52,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<double> _cashFlowData = List.filled(20, 0.0);
   List<dynamic> _fullCashFlowData = [];
 
+  double _equityDownPayment() {
+    for (final row in _fullCashFlowData) {
+      if (row is Map && (row['year'] as num?)?.toInt() == 0) {
+        final ncf = (row['net_cash_flow'] as num?)?.toDouble();
+        if (ncf != null) return ncf.abs();
+      }
+    }
+    return _totalCapex * 0.20;
+  }
+
   double _npv = 0.0;
   double _irr = 0.0;
   double _payback = 0.0;
+  double? _lcoe;
   double _annualGeneration = 0.0;
 
   bool _isLoading = false;
@@ -207,6 +218,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _irr = (financial['irr'] as num?)?.toDouble() ?? 0.0;
         _npv = (financial['npv'] as num?)?.toDouble() ?? 0.0;
         _payback = (financial['payback_period_years'] as num?)?.toDouble() ?? 0.0;
+        _lcoe = (financial['lcoe'] as num?)?.toDouble();
 
         if (financial['cash_flow_statement'] != null) {
           _cashFlowData = (financial['cash_flow_statement'] as List)
@@ -307,6 +319,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     pvCapacity: _pvCapacity,
                     batteryCapacity: _batteryCapacity,
                     totalCapex: _totalCapex,
+                    downPayment: _equityDownPayment(),
+                    lcoe: _lcoe,
                     npv: _npv,
                     irr: _irr,
                     payback: _payback,

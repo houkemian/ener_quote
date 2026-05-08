@@ -128,6 +128,8 @@
     "pdfEssBattery": "储能系统额定容量",
     "pdfGridPolicy": "并网策略：防逆流 (零上网)",
     "pdfTotalCapex": "项目总投资 (CAPEX)",
+    "financeDownPayment": "首付款",
+    "financeLcoe": "平准化度电成本 (LCOE)",
     "pdfFinancialHighlights": "2. 核心财务指标",
     "pdfNpv": "项目净现值 (NPV)",
     "pdfIrr": "内部收益率 (IRR)",

@@ -1,11 +1,20 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/billing/revenuecat_service.dart';
 import '../core/network/api_client.dart';
+import '../l10n/app_localizations.dart';
+import '../theme/app_colors.dart';
+import '../widgets/pro_gold_badge.dart';
+import '../widgets/pro_paywall_sheet.dart';
+import 'paddle_checkout_webview.dart';
 import 'pdf_preview_screen.dart';
 
 class CalculationScreen extends StatefulWidget {
@@ -37,6 +46,8 @@ class _CalculationScreenState extends State<CalculationScreen> {
   bool _restoring = false;
   bool _isProUser = false;
   bool _isEditingVersionCosts = false;
+  bool _paywallUpgradeBusy = false;
+  bool _paywallPurchaseBusy = false;
   String _error = '';
   Map<String, dynamic>? _latestResult;
 
@@ -122,6 +133,132 @@ class _CalculationScreenState extends State<CalculationScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('PRO only: tariff settings are read-only on Free plan.')),
     );
+  }
+
+  Future<void> _showVersionCostPaywall() async {
+    if (_isProUser || !mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    await showProPaywallSheet(
+      context: context,
+      triggerSource: PaywallTriggerSource.customCost,
+      ctaBaseText: l10n.unlockProBtn,
+      isPurchasing: _paywallUpgradeBusy || _paywallPurchaseBusy,
+      onPurchase: _checkoutFromVersionCostPaywall,
+      debugTag: 'Calculation',
+    );
+  }
+
+  Future<void> _checkoutFromVersionCostPaywall(
+    BuildContext bottomSheetContext,
+    Package? selectedPackage,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    if (!kIsWeb && Platform.isAndroid) {
+      await _purchaseAndroidFromPaywall(bottomSheetContext, selectedPackage);
+      return;
+    }
+    if (!kIsWeb) {
+      Navigator.pop(bottomSheetContext);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.paymentError('This platform does not support checkout yet.')),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    Navigator.pop(bottomSheetContext);
+    setState(() => _paywallUpgradeBusy = true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.redirectingToPayment)),
+    );
+
+    try {
+      final urlStr = await ApiClient().getPaddleCheckoutUrl();
+      if (urlStr == null || !mounted) return;
+      final ptxn = await Navigator.of(context).push<String>(
+        MaterialPageRoute(builder: (_) => PaddleCheckoutWebView(checkoutUrl: urlStr)),
+      );
+      if (!mounted || ptxn == null || ptxn.isEmpty) return;
+      final newTier = await ApiClient().refreshUserTierWithRetry();
+      if (!mounted) return;
+      if (newTier == 'PRO') {
+        await _loadUserTier();
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(newTier == 'PRO' ? l10n.paymentSuccessPro : l10n.paymentPending),
+          backgroundColor: newTier == 'PRO' ? AppColors.success : Colors.orange,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.paymentError(e.toString())), backgroundColor: Colors.redAccent),
+      );
+    } finally {
+      if (mounted) setState(() => _paywallUpgradeBusy = false);
+    }
+  }
+
+  Future<void> _purchaseAndroidFromPaywall(
+    BuildContext paywallContext,
+    Package? selectedPackage,
+  ) async {
+    if (_paywallPurchaseBusy) return;
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _paywallPurchaseBusy = true);
+    try {
+      await RevenueCatService.ensureInitialized();
+      final offerings = await Purchases.getOfferings();
+      final packages = offerings.current?.availablePackages ?? const <Package>[];
+      if (packages.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No Android subscription package is currently available.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      final packageToBuy = selectedPackage ?? packages.first;
+      final purchaseResult = await Purchases.purchasePackage(packageToBuy);
+      final isProActive = purchaseResult.customerInfo.entitlements.all['pro']?.isActive == true;
+      if (!isProActive) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Purchase completed, waiting entitlement sync.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      await SharedPreferences.getInstance().then((p) => p.setString('user_tier', 'PRO'));
+      if (!mounted) return;
+      await _loadUserTier();
+      if (mounted) Navigator.pop(paywallContext);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.paymentSuccessPro), backgroundColor: AppColors.success),
+      );
+    } on PlatformException catch (e) {
+      final code = PurchasesErrorHelper.getErrorCode(e);
+      if (code == PurchasesErrorCode.purchaseCancelledError) return;
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.paymentError(e.message ?? e.toString())),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _paywallPurchaseBusy = false);
+    }
   }
 
   Map<String, dynamic> _buildPayload() {
@@ -302,9 +439,11 @@ class _CalculationScreenState extends State<CalculationScreen> {
           pvCapacity: _pvCapacity,
           batteryCapacity: _batteryCapacity,
           totalCapex: (_buildPayload()['financial_params']?['total_capex'] as num?)?.toDouble() ?? 0.0,
+          downPayment: _downPaymentAmount(finance),
           npv: finance.projectNpv ?? 0.0,
           irr: finance.projectIrr ?? 0.0,
           payback: finance.projectPaybackYears ?? 0.0,
+          lcoe: finance.lcoe,
           fullCashFlowData: cashFlowData,
         ),
       ),
@@ -328,6 +467,35 @@ class _CalculationScreenState extends State<CalculationScreen> {
     return '${value.toStringAsFixed(1)} yrs';
   }
 
+  String _formatCurrency0(double value) {
+    return '\$${value.toStringAsFixed(0)}';
+  }
+
+  double _totalCapexDisplay() {
+    final fp = (_buildPayload()['financial_params'] as Map?)?.cast<String, dynamic>() ?? const {};
+    return (fp['total_capex'] as num?)?.toDouble() ?? 0.0;
+  }
+
+  /// Equity statement year 0 is the down-payment outflow; matches `finance.py` cash flow.
+  String _formatLcoePerKwh(double? value) {
+    if (value == null) return '-';
+    return '\$${value.toStringAsFixed(4)}/kWh';
+  }
+
+  double _downPaymentAmount(FinanceResult finance) {
+    for (final row in finance.cashFlowStatement) {
+      if ((row['year'] as num?)?.toInt() == 0) {
+        final ncf = (row['net_cash_flow'] as num?)?.toDouble();
+        if (ncf != null) return ncf.abs();
+      }
+    }
+    final fp = (_buildPayload()['financial_params'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final capex = (fp['total_capex'] as num?)?.toDouble() ?? 0.0;
+    final pct = (fp['down_payment_pct'] as num?)?.toDouble() ?? 0.0;
+    final p = pct.abs() <= 1 ? pct : pct / 100.0;
+    return capex * p;
+  }
+
   Map<String, String> _buildSimulationParamsDisplay() {
     final payload = _buildPayload();
     final physics =
@@ -338,11 +506,20 @@ class _CalculationScreenState extends State<CalculationScreen> {
     final tariff = (physics['tariff'] as Map?)?.cast<String, dynamic>() ?? const {};
     final projectCost =
         (payload['project_cost_settings'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final financial =
+        (payload['financial_params'] as Map?)?.cast<String, dynamic>() ?? const {};
 
     String fmtNum(dynamic v, {int fixed = 2}) {
       final n = (v as num?)?.toDouble();
       if (n == null) return '-';
       return n.toStringAsFixed(fixed);
+    }
+
+    String fmtInterestPct(dynamic v) {
+      final n = (v as num?)?.toDouble();
+      if (n == null) return '-';
+      final pct = n.abs() <= 1 ? n * 100 : n;
+      return '${pct.toStringAsFixed(2)}%';
     }
 
     return {
@@ -362,6 +539,8 @@ class _CalculationScreenState extends State<CalculationScreen> {
       'PV Base Cost (\$ / kW)': fmtNum(projectCost['pv_cost']),
       'ESS Base Cost (\$ / kWh)': fmtNum(projectCost['ess_cost']),
       'Target Margin (%)': fmtNum(projectCost['margin_pct']),
+      'Loan Term (years)': fmtNum(financial['loan_term_years'], fixed: 0),
+      'Loan Interest Rate (%)': fmtInterestPct(financial['loan_interest_rate']),
     };
   }
 
@@ -490,6 +669,12 @@ class _CalculationScreenState extends State<CalculationScreen> {
     required Color accentColor,
     required Color backgroundColor,
     required IconData icon,
+    String? capexLabel,
+    String? capexValue,
+    String? downPaymentLabel,
+    String? downPaymentValue,
+    String? lcoeLabel,
+    String? lcoeValue,
   }) {
     return Card(
       elevation: 0,
@@ -551,6 +736,18 @@ class _CalculationScreenState extends State<CalculationScreen> {
                 ],
               ),
               const SizedBox(height: 12),
+              if (capexLabel != null && capexValue != null) ...[
+                _buildMetricLine(label: capexLabel, value: capexValue, textColor: accentColor),
+                const SizedBox(height: 6),
+              ],
+              if (downPaymentLabel != null && downPaymentValue != null) ...[
+                _buildMetricLine(label: downPaymentLabel, value: downPaymentValue, textColor: accentColor),
+                const SizedBox(height: 6),
+              ],
+              if (lcoeLabel != null && lcoeValue != null) ...[
+                _buildMetricLine(label: lcoeLabel, value: lcoeValue, textColor: accentColor),
+                const SizedBox(height: 6),
+              ],
               _buildMetricLine(label: 'IRR', value: irr, textColor: accentColor),
               const SizedBox(height: 6),
               _buildMetricLine(label: 'Payback', value: payback, textColor: accentColor),
@@ -563,6 +760,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final financeMap = (_latestResult?['finance_result'] as Map?)?.cast<String, dynamic>() ?? const {};
     final finance = FinanceResult.fromJson(financeMap);
     final cashFlows = finance.cashFlowStatement
@@ -676,9 +874,15 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                           label: Text(_isEditingVersionCosts ? 'Done' : 'Edit'),
                                         )
                                       else
-                                        Text(
-                                          'PRO only',
-                                          style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w600),
+                                        InkWell(
+                                          onTap: (_paywallUpgradeBusy || _paywallPurchaseBusy)
+                                              ? null
+                                              : () {
+                                                  HapticFeedback.lightImpact();
+                                                  _showVersionCostPaywall();
+                                                },
+                                          borderRadius: BorderRadius.circular(999),
+                                          child: const ProGoldBadge(),
                                         ),
                                     ],
                                   ),
@@ -895,30 +1099,28 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                   const SizedBox(height: 8),
                                   LayoutBuilder(
                                     builder: (context, constraints) {
+                                      final showCapex = _latestResult != null;
+                                      final projectCard = _buildReturnCard(
+                                        title: 'Project Returns',
+                                        subtitle: 'Unlevered (Cash Purchase)',
+                                        irr: _formatPercent(finance.projectIrr),
+                                        payback: _formatYears(finance.projectPaybackYears),
+                                        accentColor: const Color(0xFF1F3B70),
+                                        backgroundColor: const Color(0xFFEFF3FB),
+                                        icon: Icons.account_balance_wallet_outlined,
+                                        capexLabel: showCapex ? l10n.kpiTotalCapex : null,
+                                        capexValue: showCapex ? _formatCurrency0(_totalCapexDisplay()) : null,
+                                        downPaymentLabel: showCapex ? l10n.financeDownPayment : null,
+                                        downPaymentValue: showCapex ? _formatCurrency0(_downPaymentAmount(finance)) : null,
+                                        lcoeLabel: showCapex ? l10n.financeLcoe : null,
+                                        lcoeValue: showCapex ? _formatLcoePerKwh(finance.lcoe) : null,
+                                      );
                                       if (constraints.maxWidth > 720) {
-                                        return _buildReturnCard(
-                                          title: 'Project Returns',
-                                          subtitle: 'Unlevered (Cash Purchase)',
-                                          irr: _formatPercent(finance.projectIrr),
-                                          payback: _formatYears(finance.projectPaybackYears),
-                                          accentColor: const Color(0xFF1F3B70),
-                                          backgroundColor: const Color(0xFFEFF3FB),
-                                          icon: Icons.account_balance_wallet_outlined,
-                                        );
+                                        return projectCard;
                                       }
                                       return Column(
                                         crossAxisAlignment: CrossAxisAlignment.stretch,
-                                        children: [
-                                          _buildReturnCard(
-                                            title: 'Project Returns',
-                                            subtitle: 'Unlevered (Cash Purchase)',
-                                            irr: _formatPercent(finance.projectIrr),
-                                            payback: _formatYears(finance.projectPaybackYears),
-                                            accentColor: const Color(0xFF1F3B70),
-                                            backgroundColor: const Color(0xFFEFF3FB),
-                                            icon: Icons.account_balance_wallet_outlined,
-                                          ),
-                                        ],
+                                        children: [projectCard],
                                       );
                                     },
                                   ),

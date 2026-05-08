@@ -11,6 +11,7 @@ import '../core/auth/token_manager.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert'; // 用于 Base64 转换
 import '../theme/app_colors.dart';
+import '../widgets/pro_gold_badge.dart';
 import 'paddle_checkout_webview.dart';
 import 'billing_management_screen.dart';
 import 'login_screen.dart';
@@ -549,22 +550,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Expanded(
           child: Text(title, style: const TextStyle(color: AppColors.onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
         ),
-        if (showProBadge)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFD66B),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: const Text(
-              '[PRO]',
-              style: TextStyle(
-                color: Color(0xFF5B3A00),
-                fontWeight: FontWeight.bold,
-                fontSize: 11,
-              ),
-            ),
-          ),
+        if (showProBadge) const ProGoldBadge(),
       ],
     );
   }

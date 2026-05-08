@@ -300,6 +300,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pdfTotalCapex => 'Total System CAPEX';
 
   @override
+  String get financeDownPayment => 'Down payment';
+
+  @override
+  String get financeLcoe => 'LCOE';
+
+  @override
   String get pdfFinancialHighlights => '2. Financial Highlights';
 
   @override

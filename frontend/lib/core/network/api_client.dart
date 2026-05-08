@@ -77,6 +77,8 @@ class FinanceResult {
   final double? equityIrr;
   final double? equityNpv;
   final double? equityPaybackYears;
+  /// Levelized cost of energy from backend ($/kWh).
+  final double? lcoe;
   final List<Map<String, dynamic>> cashFlowStatement;
 
   const FinanceResult({
@@ -86,6 +88,7 @@ class FinanceResult {
     required this.equityIrr,
     required this.equityNpv,
     required this.equityPaybackYears,
+    required this.lcoe,
     required this.cashFlowStatement,
   });
 
@@ -107,6 +110,7 @@ class FinanceResult {
       equityIrr: (json['equity_irr'] as num?)?.toDouble() ?? projectIrr,
       equityNpv: (json['equity_npv'] as num?)?.toDouble() ?? projectNpv,
       equityPaybackYears: (json['equity_payback_years'] as num?)?.toDouble() ?? projectPayback,
+      lcoe: (json['lcoe'] as num?)?.toDouble(),
       cashFlowStatement: statement,
     );
   }
@@ -195,9 +199,9 @@ class ApiClient {
         _debugLog(
           '[HTTP] ${options.method} ${options.baseUrl}${options.path}',
         );
-        // 登录态同步接口（仅 Firebase 同步）不需要已有 Token
+        // 登录态同步接口（Firebase / dev-login）不需要已有 Token
         final p = options.path.toLowerCase();
-        if (p.contains('/auth/firebase')) {
+        if (p.contains('/auth/firebase') || p.contains('/auth/dev-login')) {
           return handler.next(options);
         }
 
@@ -330,7 +334,7 @@ class ApiClient {
     return data;
   }
 
-  /// Dev only: backend signs a real JWT for local testing.
+  /// Local/dev only: POST `/auth/dev-login`. Backend returns 404 when disabled.
   Future<Map<String, dynamic>> devLogin({
     required String email,
     required String firebaseUid,
@@ -348,7 +352,14 @@ class ApiClient {
         'is_active': isActive,
       },
     );
-    return response.data ?? const {};
+    final data = response.data;
+    if (data == null) {
+      throw DioException(
+        requestOptions: response.requestOptions,
+        error: 'Empty dev-login response',
+      );
+    }
+    return data;
   }
 
   Future<void> deleteAccount() async {

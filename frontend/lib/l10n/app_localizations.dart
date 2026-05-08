@@ -608,6 +608,18 @@ abstract class AppLocalizations {
   /// **'项目总投资 (CAPEX)'**
   String get pdfTotalCapex;
 
+  /// No description provided for @financeDownPayment.
+  ///
+  /// In zh, this message translates to:
+  /// **'首付款'**
+  String get financeDownPayment;
+
+  /// No description provided for @financeLcoe.
+  ///
+  /// In zh, this message translates to:
+  /// **'平准化度电成本 (LCOE)'**
+  String get financeLcoe;
+
   /// No description provided for @pdfFinancialHighlights.
   ///
   /// In zh, this message translates to:

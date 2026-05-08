@@ -20,6 +20,9 @@ class PdfPreviewScreen extends StatefulWidget {
   final double pvCapacity;
   final double batteryCapacity;
   final double totalCapex;
+  final double downPayment;
+  /// Backend LCOE ($/kWh); null if older API responses omit it.
+  final double? lcoe;
   final double npv;
   final double irr;
   final double payback;
@@ -33,6 +36,8 @@ class PdfPreviewScreen extends StatefulWidget {
     required this.pvCapacity,
     required this.batteryCapacity,
     required this.totalCapex,
+    required this.downPayment,
+    this.lcoe,
     required this.npv,
     required this.irr,
     required this.payback,
@@ -140,6 +145,18 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
                     '${l10n.pdfTotalCapex}: \$${widget.totalCapex.toStringAsFixed(0)}',
                     style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent),
                   ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${l10n.financeDownPayment}: \$${widget.downPayment.toStringAsFixed(0)}',
+                    style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.onSurface),
+                  ),
+                  if (widget.lcoe != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      '${l10n.financeLcoe}: \$${widget.lcoe!.toStringAsFixed(4)}/kWh',
+                      style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.onSurface),
+                    ),
+                  ],
                   const SizedBox(height: 22),
                   if (_isProUser) ...[
                     Text(
@@ -260,6 +277,8 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
       pvCapacity: widget.pvCapacity,
       batteryCapacity: widget.batteryCapacity,
       totalCapex: widget.totalCapex,
+      downPayment: widget.downPayment,
+      lcoe: widget.lcoe,
       npv: widget.npv,
       irr: widget.irr,
       payback: widget.payback,

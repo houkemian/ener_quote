@@ -124,6 +124,8 @@
     "pdfEssBattery": "ESS Battery Capacity",
     "pdfGridPolicy": "Grid Policy: Zero Export (Anti-backflow)",
     "pdfTotalCapex": "Total System CAPEX",
+    "financeDownPayment": "Down payment",
+    "financeLcoe": "LCOE",
     "pdfFinancialHighlights": "2. Financial Highlights",
     "pdfNpv": "Net Present Value (NPV)",
     "pdfIrr": "Internal Rate of Return",

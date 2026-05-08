@@ -21,6 +21,8 @@ class PdfExport {
     required double pvCapacity,
     required double batteryCapacity,
     required double totalCapex,
+    required double downPayment,
+    double? lcoe,
     required double npv,
     required double irr,
     required double payback,
@@ -152,6 +154,8 @@ class PdfExport {
                 pvCapacity: pvCapacity,
                 batteryCapacity: batteryCapacity,
                 totalCapex: totalCapex,
+                downPayment: downPayment,
+                lcoe: lcoe,
                 npv: npv,
                 irr: irr,
                 payback: payback,
@@ -162,6 +166,8 @@ class PdfExport {
                 pvCapacity: pvCapacity,
                 batteryCapacity: batteryCapacity,
                 totalCapex: totalCapex,
+                downPayment: downPayment,
+                lcoe: lcoe,
               ),
       ),
     );
@@ -186,6 +192,8 @@ class PdfExport {
     required double pvCapacity,
     required double batteryCapacity,
     required double totalCapex,
+    required double downPayment,
+    double? lcoe,
   }) {
     return [
       pw.SizedBox(height: 20),
@@ -196,6 +204,8 @@ class PdfExport {
         pvCapacity: pvCapacity,
         batteryCapacity: batteryCapacity,
         totalCapex: totalCapex,
+        downPayment: downPayment,
+        lcoe: lcoe,
       ),
       pw.SizedBox(height: 20),
       _buildFinancialPaywallPlaceholder(),
@@ -210,6 +220,8 @@ class PdfExport {
     required double pvCapacity,
     required double batteryCapacity,
     required double totalCapex,
+    required double downPayment,
+    double? lcoe,
     required double npv,
     required double irr,
     required double payback,
@@ -224,6 +236,8 @@ class PdfExport {
         pvCapacity: pvCapacity,
         batteryCapacity: batteryCapacity,
         totalCapex: totalCapex,
+        downPayment: downPayment,
+        lcoe: lcoe,
       ),
       pw.SizedBox(height: 20),
       pw.Text(l10n.pdfFinancialHighlights, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.teal800)),
@@ -281,6 +295,8 @@ class PdfExport {
     required double pvCapacity,
     required double batteryCapacity,
     required double totalCapex,
+    required double downPayment,
+    double? lcoe,
   }) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -295,6 +311,18 @@ class PdfExport {
           '${l10n.pdfTotalCapex}: \$${totalCapex.toStringAsFixed(0)}',
           style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.red800),
         ),
+        pw.SizedBox(height: 4),
+        pw.Text(
+          '${l10n.financeDownPayment}: \$${downPayment.toStringAsFixed(0)}',
+          style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.teal900),
+        ),
+        if (lcoe != null) ...[
+          pw.SizedBox(height: 4),
+          pw.Text(
+            '${l10n.financeLcoe}: \$${lcoe.toStringAsFixed(4)}/kWh',
+            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.teal900),
+          ),
+        ],
       ],
     );
   }
