@@ -37,6 +37,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
   bool _restoring = false;
   bool _isProUser = false;
   bool _isEditingVersionCosts = false;
+  bool _showProjectCashFlowChart = true;
   String _error = '';
   Map<String, dynamic>? _latestResult;
 
@@ -168,10 +169,11 @@ class _CalculationScreenState extends State<CalculationScreen> {
         "voll_price": 2.0,
         "system_degradation_rate": 0.015,
         "down_payment_pct": 0.20,
-        "loan_term_years": 5,
-        "loan_interest_rate": 0.12,
+        "loan_term_years": 10,
+        "loan_interest_rate": 0.07,
         "discount_rate": 0.10,
         "project_lifespan": 20,
+        "annual_cycles": 500,
       },
       "project_cost_settings": {
         "pv_cost": _pvBaseCost,
@@ -189,7 +191,17 @@ class _CalculationScreenState extends State<CalculationScreen> {
     try {
       final payload = _buildPayload();
       final response = await _api.dio
-          .post('/simulate', data: payload)
+          .post(
+            '/simulate',
+            data: payload,
+            options: Options(
+              // /simulate may include external irradiance fetch; keep timeout
+              // longer than ApiClient's global 10s default.
+              connectTimeout: const Duration(seconds: 20),
+              sendTimeout: const Duration(seconds: 20),
+              receiveTimeout: const Duration(seconds: 60),
+            ),
+          )
           .timeout(const Duration(seconds: 30));
       if (!mounted) return;
       final rawData = response.data;
@@ -328,6 +340,242 @@ class _CalculationScreenState extends State<CalculationScreen> {
     return 'Levered (With ${(downPaymentPct * 100).toStringAsFixed(0)}% Down Payment)';
   }
 
+  int _currentLoanTermYears() {
+    final latestParams =
+        (_latestResult?['financial_params'] as Map?)?.cast<String, dynamic>() ??
+            const {};
+    final latest = (latestParams['loan_term_years'] as num?)?.toInt();
+    if (latest != null) {
+      return latest;
+    }
+    final payloadParams =
+        (_buildPayload()['financial_params'] as Map?)?.cast<String, dynamic>() ??
+            const {};
+    return (payloadParams['loan_term_years'] as num?)?.toInt() ?? 0;
+  }
+
+  double _currentLoanInterestRate() {
+    final latestParams =
+        (_latestResult?['financial_params'] as Map?)?.cast<String, dynamic>() ??
+            const {};
+    final latest = (latestParams['loan_interest_rate'] as num?)?.toDouble();
+    if (latest != null) {
+      return latest;
+    }
+    final payloadParams =
+        (_buildPayload()['financial_params'] as Map?)?.cast<String, dynamic>() ??
+            const {};
+    return (payloadParams['loan_interest_rate'] as num?)?.toDouble() ?? 0.0;
+  }
+
+  void _showEquityLoanInfo() {
+    final termYears = _currentLoanTermYears();
+    final interestRate = _currentLoanInterestRate();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => SafeArea(
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              Row(
+                children: const [
+                  Icon(Icons.info_outline, size: 20, color: Color(0xFF127A43)),
+                  SizedBox(width: 8),
+                  Text(
+                    'Equity Returns Assumptions',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F7EF),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF127A43).withValues(alpha: 0.25)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Financing Parameters',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF127A43),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text('loan_term_years: $termYears years'),
+                    const SizedBox(height: 6),
+                    Text(
+                      'loan_interest_rate: ${interestRate.toStringAsFixed(2)} '
+                      '(${(interestRate * 100).toStringAsFixed(2)}%)',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Got it'),
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Map<String, String> _buildSimulationParamsDisplay() {
+    final payload = _buildPayload();
+    final physics =
+        (payload['physics_params'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final pv = (physics['pv'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final ess = (physics['ess'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final grid = (physics['grid'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final tariff = (physics['tariff'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final projectCost =
+        (payload['project_cost_settings'] as Map?)?.cast<String, dynamic>() ?? const {};
+
+    String fmtNum(dynamic v, {int fixed = 2}) {
+      final n = (v as num?)?.toDouble();
+      if (n == null) return '-';
+      return n.toStringAsFixed(fixed);
+    }
+
+    return {
+      'PV Capacity (kWp)': fmtNum(pv['pv_dc_capacity_kwp'], fixed: 0),
+      'Inverter Capacity (kW)': fmtNum(pv['inverter_ac_capacity_kw']),
+      'System Loss Factor': fmtNum(pv['system_loss_factor']),
+      'ESS Capacity (kWh)': fmtNum(ess['batt_nominal_capacity_kwh'], fixed: 0),
+      'DoD Limit': fmtNum(ess['dod_limit']),
+      'Max Charge/Discharge (kW)': fmtNum(ess['max_charge_discharge_kw']),
+      'Round Trip Efficiency': fmtNum(ess['rte_efficiency']),
+      'Initial SOC': fmtNum(ess['initial_soc']),
+      'Export Limit (kW)': fmtNum(grid['export_limit_kw']),
+      'Peak Price (\$ / kWh)': fmtNum(tariff['peak_price'], fixed: 3),
+      'Mid Price (\$ / kWh)': fmtNum(tariff['mid_price'], fixed: 3),
+      'Valley Price (\$ / kWh)': fmtNum(tariff['valley_price'], fixed: 3),
+      'Demand Charge (\$ / kW)': fmtNum(tariff['demand_charge_per_kw']),
+      'PV Base Cost (\$ / kW)': fmtNum(projectCost['pv_cost']),
+      'ESS Base Cost (\$ / kWh)': fmtNum(projectCost['ess_cost']),
+      'Target Margin (%)': fmtNum(projectCost['margin_pct']),
+    };
+  }
+
+  void _showSimulationParamsInfo() {
+    final params = _buildSimulationParamsDisplay();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => SafeArea(
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              Row(
+                children: const [
+                  Icon(Icons.info_outline, size: 20, color: Color(0xFF1F3B70)),
+                  SizedBox(width: 8),
+                  Text(
+                    'Simulation Parameters',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 380),
+                child: SingleChildScrollView(
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF3FB),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFF1F3B70).withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Column(
+                      children: params.entries.map((entry) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  entry.key,
+                                  style: TextStyle(color: Colors.grey[800]),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                entry.value,
+                                style: const TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Got it'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMetricLine({
     required String label,
     required String value,
@@ -363,57 +611,88 @@ class _CalculationScreenState extends State<CalculationScreen> {
     required Color accentColor,
     required Color backgroundColor,
     required IconData icon,
+    VoidCallback? onInfoTap,
+    bool isSelected = false,
+    VoidCallback? onTap,
   }) {
     return Card(
       elevation: 0,
       color: backgroundColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: accentColor.withValues(alpha: 0.35), width: 1),
+        side: BorderSide(
+          color: accentColor.withValues(alpha: isSelected ? 0.85 : 0.35),
+          width: isSelected ? 2 : 1,
+        ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: accentColor.withValues(alpha: 0.14),
-                  child: Icon(icon, color: accentColor, size: 17),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: accentColor,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: accentColor.withValues(alpha: 0.88),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: accentColor.withValues(alpha: 0.14),
+                    child: Icon(icon, color: accentColor, size: 17),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildMetricLine(label: 'IRR', value: irr, textColor: accentColor),
-            const SizedBox(height: 6),
-            _buildMetricLine(label: 'Payback', value: payback, textColor: accentColor),
-          ],
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: accentColor,
+                                ),
+                              ),
+                            ),
+                            if (onInfoTap != null)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 6),
+                                child: InkWell(
+                                  onTap: onInfoTap,
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Icon(
+                                    Icons.error_outline,
+                                    size: 18,
+                                    color: accentColor.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: accentColor.withValues(alpha: 0.88),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _buildMetricLine(label: 'IRR', value: irr, textColor: accentColor),
+              const SizedBox(height: 6),
+              _buildMetricLine(label: 'Payback', value: payback, textColor: accentColor),
+            ],
+          ),
         ),
       ),
     );
@@ -423,7 +702,20 @@ class _CalculationScreenState extends State<CalculationScreen> {
   Widget build(BuildContext context) {
     final financeMap = (_latestResult?['finance_result'] as Map?)?.cast<String, dynamic>() ?? const {};
     final finance = FinanceResult.fromJson(financeMap);
-    final cashFlows = finance.cashFlowStatement
+    final projectCashFlowRows =
+        (financeMap['project_cash_flow_statement'] as List? ?? const [])
+            .whereType<Map>()
+            .map((row) => row.cast<String, dynamic>())
+            .toList();
+    final equityCashFlowRows =
+        (financeMap['equity_cash_flow_statement'] as List? ?? const [])
+            .whereType<Map>()
+            .map((row) => row.cast<String, dynamic>())
+            .toList();
+    final activeRows = _showProjectCashFlowChart
+        ? (projectCashFlowRows.isNotEmpty ? projectCashFlowRows : finance.cashFlowStatement)
+        : (equityCashFlowRows.isNotEmpty ? equityCashFlowRows : finance.cashFlowStatement);
+    final cashFlows = activeRows
         .map((row) => (row['net_cash_flow'] as num?)?.toDouble() ?? 0.0)
         .toList();
     // Visual hierarchy optimization:
@@ -736,6 +1028,15 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                       'Simulation Results',
                                       style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                                     ),
+                                    trailing: InkWell(
+                                      onTap: _showSimulationParamsInfo,
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Icon(
+                                        Icons.error_outline,
+                                        size: 20,
+                                        color: Theme.of(context).colorScheme.secondary,
+                                      ),
+                                    ),
                                     subtitle: Text(
                                       'Latest financial KPIs',
                                       style: TextStyle(color: Colors.grey[600]),
@@ -757,6 +1058,8 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                                 accentColor: const Color(0xFF1F3B70),
                                                 backgroundColor: const Color(0xFFEFF3FB),
                                                 icon: Icons.account_balance_wallet_outlined,
+                                                isSelected: _showProjectCashFlowChart,
+                                                onTap: () => setState(() => _showProjectCashFlowChart = true),
                                               ),
                                             ),
                                             const SizedBox(width: 12),
@@ -769,6 +1072,9 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                                 accentColor: const Color(0xFF127A43),
                                                 backgroundColor: const Color(0xFFE8F7EF),
                                                 icon: Icons.trending_up_rounded,
+                                                onInfoTap: _showEquityLoanInfo,
+                                                isSelected: !_showProjectCashFlowChart,
+                                                onTap: () => setState(() => _showProjectCashFlowChart = false),
                                               ),
                                             ),
                                           ],
@@ -785,6 +1091,8 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                             accentColor: const Color(0xFF1F3B70),
                                             backgroundColor: const Color(0xFFEFF3FB),
                                             icon: Icons.account_balance_wallet_outlined,
+                                            isSelected: _showProjectCashFlowChart,
+                                            onTap: () => setState(() => _showProjectCashFlowChart = true),
                                           ),
                                           const SizedBox(height: 12),
                                           _buildReturnCard(
@@ -795,6 +1103,9 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                             accentColor: const Color(0xFF127A43),
                                             backgroundColor: const Color(0xFFE8F7EF),
                                             icon: Icons.trending_up_rounded,
+                                            onInfoTap: _showEquityLoanInfo,
+                                            isSelected: !_showProjectCashFlowChart,
+                                            onTap: () => setState(() => _showProjectCashFlowChart = false),
                                           ),
                                         ],
                                       );
