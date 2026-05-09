@@ -6,10 +6,17 @@ from sqlalchemy.orm import Session
 from app.api.deps import TokenPayload, get_current_user_payload, get_db
 from app.models.user_settings import UserSettings
 from app.modules.iam.models import PaymentOrder, User as IAMUser
-from app.modules.iam.schemas import FirebaseIdTokenRequest
+from app.modules.iam.schemas import DevLoginRequest, FirebaseIdTokenRequest
+from app.core.config import APP_ENV, ENABLE_DEV_LOGIN
+from app.core.security import create_access_token
 from app.services.firebase_auth import verify_firebase_id_token
 
 router = APIRouter()
+_DEV_LOGIN_ALLOWED_EMAILS = {
+    "gavinhkm@gmail.com",
+    "houkemian@outlook.com",
+    "cs5213344@163.com",
+}
 
 
 def _resolve_effective_tier(user: IAMUser) -> str:
@@ -106,6 +113,60 @@ async def authenticate_with_firebase(
         "user_id": user.id,
         "firebase_uid": user.firebase_uid,
         "auth_provider": user.auth_provider,
+    }
+
+
+@router.post("/dev-login")
+async def dev_login(
+    body: DevLoginRequest,
+    db: Session = Depends(get_db),
+):
+    """Development-only local login: upsert user and issue server JWT."""
+    if not ENABLE_DEV_LOGIN or APP_ENV not in {"dev", "development", "local", "test"}:
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    email = body.email.strip().lower()
+    firebase_uid = body.firebase_uid.strip()
+    if not email or not firebase_uid:
+        raise HTTPException(status_code=400, detail="email/firebase_uid is required")
+    if email not in _DEV_LOGIN_ALLOWED_EMAILS:
+        raise HTTPException(status_code=403, detail="dev-login email is not allowed")
+
+    user = _upsert_firebase_user(
+        db,
+        email=email,
+        firebase_uid=firebase_uid,
+        auth_provider="dev",
+    )
+    user.tier = (body.tier or "FREE").strip().upper()
+    user.is_active = bool(body.is_active)
+    if body.pro_expire_date.strip():
+        try:
+            user.pro_expire_date = datetime.strptime(body.pro_expire_date.strip(), "%Y-%m-%d")
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="pro_expire_date must be YYYY-MM-DD") from exc
+    db.commit()
+    db.refresh(user)
+
+    access_token = create_access_token(
+        {
+            "sub": user.id,
+            "user_id": user.id,
+            "firebase_uid": user.firebase_uid or firebase_uid,
+            "email": user.email,
+            "company_id": "solo-tenant",
+            "role": "SALES",
+            "tier": _resolve_effective_tier(user),
+            "auth_provider": "dev",
+        }
+    )
+    return {
+        "token_type": "bearer",
+        "access_token": access_token,
+        "tier": user.tier,
+        "user_id": user.id,
+        "firebase_uid": user.firebase_uid,
+        "auth_provider": "dev",
     }
 
 

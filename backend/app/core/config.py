@@ -62,3 +62,12 @@ SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "false").strip().lower() == "true"
 
 # Firebase Auth
 FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "").strip()
+
+# --- Dev/Test auth switches ---
+APP_ENV = os.getenv("APP_ENV", "production").strip().lower()
+ENABLE_DEV_LOGIN = os.getenv("ENABLE_DEV_LOGIN", "false").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}

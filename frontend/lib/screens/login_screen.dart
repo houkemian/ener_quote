@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, kIsWeb, TargetPlatform;
+    show defaultTargetPlatform, kDebugMode, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -36,6 +36,11 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   static const double _uiScale = 0.8;
+  static const String _mockEmail = 'gavinhkm@gmail.com';
+  static const String _mockUserId = 'fb54a649-2adf-4ad1-b0cb-e5b1f46dd940';
+  static const String _mockTier = 'PRO';
+  static const String _mockProExpireDate = '2026-09-01';
+  static const bool _mockIsActive = true;
   final TextEditingController _emailController = TextEditingController(
     text: '',
   );
@@ -86,8 +91,60 @@ class _LoginScreenState extends State<LoginScreen> {
     print(line);
   }
 
+  Future<void> _mockLoginForTesting() async {
+    if (_isLoading) {
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final devLoginData = await ApiClient().devLogin(
+        email: _mockEmail,
+        firebaseUid: _mockUserId,
+        tier: _mockTier,
+        proExpireDate: _mockProExpireDate,
+        isActive: _mockIsActive,
+      );
+      final accessToken = devLoginData['access_token']?.toString();
+      if (accessToken == null || accessToken.isEmpty) {
+        throw Exception('dev-login did not return access_token');
+      }
+
+      await TokenManager.saveAccessToken(accessToken);
+      await prefs.setString('user_tier', devLoginData['tier']?.toString() ?? _mockTier);
+      await prefs.setString('user_id', devLoginData['user_id']?.toString() ?? _mockUserId);
+      await prefs.setString('user_email', _mockEmail);
+      await prefs.setString('pro_expire_date', _mockProExpireDate);
+      await prefs.setBool('is_active', _mockIsActive);
+
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const ProjectListScreen()),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      setState(() {
+        _errorMessage = l10n.errSystem('Mock login failed: $e');
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   Future<void> _login() async {
     final l10n = AppLocalizations.of(context)!;
+    if (_isLoading) {
+      _traceLogin('skip duplicate login request while loading');
+      return;
+    }
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
@@ -114,10 +171,12 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // 邮箱密码统一走 Firebase -> 后端 /auth/firebase 同步账号体系。
       _traceLogin('start email/password sign-in for $email');
-      final credential = await _firebaseAuth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      final credential = await _firebaseAuth
+          .signInWithEmailAndPassword(
+            email: email,
+            password: password,
+          )
+          .timeout(const Duration(seconds: 25));
       _traceLogin('Firebase signInWithEmailAndPassword success');
       final user = credential.user;
       if (user == null) {
@@ -136,14 +195,23 @@ class _LoginScreenState extends State<LoginScreen> {
         throw Exception('Firebase did not return ID token');
       }
       _traceLogin('Firebase token ready, calling /auth/firebase');
-      final data = await ApiClient().authenticateWithFirebaseIdToken(
-        firebaseIdToken: firebaseToken,
-      );
+      final data = await ApiClient()
+          .authenticateWithFirebaseIdToken(
+            firebaseIdToken: firebaseToken,
+          )
+          .timeout(const Duration(seconds: 25));
       _traceLogin('Backend /auth/firebase success');
       await _persistTokenAndNavigate(
         firebaseToken,
         tierHint: data['tier']?.toString(),
       );
+    } on TimeoutException catch (_) {
+      _traceLogin('Timeout while waiting Firebase/backend auth response');
+      setState(() {
+        _errorMessage = l10n.errNetwork(
+          'Login timeout, please check network and try again.',
+        );
+      });
     } on FirebaseAuthException catch (e) {
       _traceLogin('FirebaseAuthException code=${e.code} message=${e.message}');
       setState(() {
@@ -504,6 +572,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
+                if (kDebugMode) ...[
+                  SizedBox(height: 10 * _uiScale),
+                  OutlinedButton(
+                    onPressed: _isLoading ? null : _mockLoginForTesting,
+                    child: Text(
+                      'Debug: Mock PRO Login',
+                      style: TextStyle(fontSize: 14 * _uiScale),
+                    ),
+                  ),
+                ],
                 SizedBox(height: 16 * _uiScale),
                 Row(
                   children: [

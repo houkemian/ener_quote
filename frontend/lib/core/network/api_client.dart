@@ -330,6 +330,27 @@ class ApiClient {
     return data;
   }
 
+  /// Dev only: backend signs a real JWT for local testing.
+  Future<Map<String, dynamic>> devLogin({
+    required String email,
+    required String firebaseUid,
+    required String tier,
+    required String proExpireDate,
+    required bool isActive,
+  }) async {
+    final response = await dio.post<Map<String, dynamic>>(
+      '/auth/dev-login',
+      data: {
+        'email': email,
+        'firebase_uid': firebaseUid,
+        'tier': tier,
+        'pro_expire_date': proExpireDate,
+        'is_active': isActive,
+      },
+    );
+    return response.data ?? const {};
+  }
+
   Future<void> deleteAccount() async {
     await dio.delete('/auth/logout');
   }
