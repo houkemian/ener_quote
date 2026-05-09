@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, requests # 引入 Depends
 from pydantic import BaseModel
+from typing import List, Dict
 import logging
 import time
 import traceback
 from pprint import pformat
 
 from app.engine.schemas import SimulationInput, SimulationOutput
-from app.engine.finance import FinancialInput, FinancialOutput, run_financial_simulation
+from app.engine.finance import FinancialInput, run_financial_simulation
 from app.engine.physics import run_physics_simulation
 from app.api.deps import get_current_user_payload, TokenPayload # 引入安检门
 
@@ -36,9 +37,15 @@ class FullQuoteRequest(BaseModel):
     physics_params: SimulationInput
     financial_params: FinancialBaseConfig
 
+class ProjectFinanceOutput(BaseModel):
+    project_npv: float
+    project_irr: float
+    project_payback_years: float
+    cash_flow_statement: List[Dict[str, float]]
+
 class FullQuoteResponse(BaseModel):
     physics_result: SimulationOutput
-    finance_result: FinancialOutput
+    finance_result: ProjectFinanceOutput
 
 @router.post("/simulate", response_model=FullQuoteResponse)
 async def simulate_pv_ess_project(
@@ -145,17 +152,25 @@ async def simulate_pv_ess_project(
         if fin_out.project_irr >= 40 or fin_out.project_payback_years <= 3:
             logger.warning(
                 "[SIM] suspicious_result project_irr=%.2f project_npv=%.2f project_payback=%.2f "
-                "equity_irr=%.2f equity_npv=%.2f equity_payback=%.2f "
                 "(check tariff/voll/load profile/capex units)",
                 fin_out.project_irr,
                 fin_out.project_npv,
                 fin_out.project_payback_years,
-                fin_out.equity_irr,
-                fin_out.equity_npv,
-                fin_out.equity_payback_years,
             )
         
-        return FullQuoteResponse(physics_result=phys_out, finance_result=fin_out)
+        finance_payload = fin_out.model_dump(
+            exclude={
+                "equity_npv",
+                "equity_irr",
+                "equity_payback_years",
+                "project_cash_flow_statement",
+                "equity_cash_flow_statement",
+            }
+        )
+        return FullQuoteResponse(
+            physics_result=phys_out,
+            finance_result=ProjectFinanceOutput(**finance_payload),
+        )
     # 🌟 进阶捕获 1：专门捕获第三方 API 的 HTTP 错误 (如果你用的是 requests)
     except requests.exceptions.HTTPError as e:
         # 这样可以直接提取气象局服务器返回的真实错误 JSON

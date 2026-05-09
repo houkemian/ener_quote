@@ -37,7 +37,6 @@ class _CalculationScreenState extends State<CalculationScreen> {
   bool _restoring = false;
   bool _isProUser = false;
   bool _isEditingVersionCosts = false;
-  bool _showProjectCashFlowChart = true;
   String _error = '';
   Map<String, dynamic>? _latestResult;
 
@@ -329,126 +328,6 @@ class _CalculationScreenState extends State<CalculationScreen> {
     return '${value.toStringAsFixed(1)} yrs';
   }
 
-  String _leveredLabel() {
-    final latestParams = (_latestResult?['financial_params'] as Map?)?.cast<String, dynamic>() ?? const {};
-    final latestDownPayment = (latestParams['down_payment_pct'] as num?)?.toDouble();
-    final payloadDownPayment = ((_buildPayload()['financial_params'] as Map?)?['down_payment_pct'] as num?)?.toDouble();
-    final downPaymentPct = latestDownPayment ?? payloadDownPayment;
-    if (downPaymentPct == null) {
-      return 'Levered (With Financing)';
-    }
-    return 'Levered (With ${(downPaymentPct * 100).toStringAsFixed(0)}% Down Payment)';
-  }
-
-  int _currentLoanTermYears() {
-    final latestParams =
-        (_latestResult?['financial_params'] as Map?)?.cast<String, dynamic>() ??
-            const {};
-    final latest = (latestParams['loan_term_years'] as num?)?.toInt();
-    if (latest != null) {
-      return latest;
-    }
-    final payloadParams =
-        (_buildPayload()['financial_params'] as Map?)?.cast<String, dynamic>() ??
-            const {};
-    return (payloadParams['loan_term_years'] as num?)?.toInt() ?? 0;
-  }
-
-  double _currentLoanInterestRate() {
-    final latestParams =
-        (_latestResult?['financial_params'] as Map?)?.cast<String, dynamic>() ??
-            const {};
-    final latest = (latestParams['loan_interest_rate'] as num?)?.toDouble();
-    if (latest != null) {
-      return latest;
-    }
-    final payloadParams =
-        (_buildPayload()['financial_params'] as Map?)?.cast<String, dynamic>() ??
-            const {};
-    return (payloadParams['loan_interest_rate'] as num?)?.toDouble() ?? 0.0;
-  }
-
-  void _showEquityLoanInfo() {
-    final termYears = _currentLoanTermYears();
-    final interestRate = _currentLoanInterestRate();
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => SafeArea(
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: 0.35),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              Row(
-                children: const [
-                  Icon(Icons.info_outline, size: 20, color: Color(0xFF127A43)),
-                  SizedBox(width: 8),
-                  Text(
-                    'Equity Returns Assumptions',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F7EF),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF127A43).withValues(alpha: 0.25)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Financing Parameters',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF127A43),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text('loan_term_years: $termYears years'),
-                    const SizedBox(height: 6),
-                    Text(
-                      'loan_interest_rate: ${interestRate.toStringAsFixed(2)} '
-                      '(${(interestRate * 100).toStringAsFixed(2)}%)',
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Got it'),
-                ),
-              )
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Map<String, String> _buildSimulationParamsDisplay() {
     final payload = _buildPayload();
     final physics =
@@ -611,9 +490,6 @@ class _CalculationScreenState extends State<CalculationScreen> {
     required Color accentColor,
     required Color backgroundColor,
     required IconData icon,
-    VoidCallback? onInfoTap,
-    bool isSelected = false,
-    VoidCallback? onTap,
   }) {
     return Card(
       elevation: 0,
@@ -621,13 +497,13 @@ class _CalculationScreenState extends State<CalculationScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: accentColor.withValues(alpha: isSelected ? 0.85 : 0.35),
-          width: isSelected ? 2 : 1,
+          color: accentColor.withValues(alpha: 0.35),
+          width: 1,
         ),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
+        onTap: null,
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
@@ -658,19 +534,6 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                 ),
                               ),
                             ),
-                            if (onInfoTap != null)
-                              Padding(
-                                padding: const EdgeInsets.only(left: 6),
-                                child: InkWell(
-                                  onTap: onInfoTap,
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Icon(
-                                    Icons.error_outline,
-                                    size: 18,
-                                    color: accentColor.withValues(alpha: 0.9),
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
                         const SizedBox(height: 2),
@@ -702,20 +565,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
   Widget build(BuildContext context) {
     final financeMap = (_latestResult?['finance_result'] as Map?)?.cast<String, dynamic>() ?? const {};
     final finance = FinanceResult.fromJson(financeMap);
-    final projectCashFlowRows =
-        (financeMap['project_cash_flow_statement'] as List? ?? const [])
-            .whereType<Map>()
-            .map((row) => row.cast<String, dynamic>())
-            .toList();
-    final equityCashFlowRows =
-        (financeMap['equity_cash_flow_statement'] as List? ?? const [])
-            .whereType<Map>()
-            .map((row) => row.cast<String, dynamic>())
-            .toList();
-    final activeRows = _showProjectCashFlowChart
-        ? (projectCashFlowRows.isNotEmpty ? projectCashFlowRows : finance.cashFlowStatement)
-        : (equityCashFlowRows.isNotEmpty ? equityCashFlowRows : finance.cashFlowStatement);
-    final cashFlows = activeRows
+    final cashFlows = finance.cashFlowStatement
         .map((row) => (row['net_cash_flow'] as num?)?.toDouble() ?? 0.0)
         .toList();
     // Visual hierarchy optimization:
@@ -1046,38 +896,14 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                   LayoutBuilder(
                                     builder: (context, constraints) {
                                       if (constraints.maxWidth > 720) {
-                                        return Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Expanded(
-                                              child: _buildReturnCard(
-                                                title: 'Project Returns',
-                                                subtitle: 'Unlevered (Cash Purchase)',
-                                                irr: _formatPercent(finance.projectIrr),
-                                                payback: _formatYears(finance.projectPaybackYears),
-                                                accentColor: const Color(0xFF1F3B70),
-                                                backgroundColor: const Color(0xFFEFF3FB),
-                                                icon: Icons.account_balance_wallet_outlined,
-                                                isSelected: _showProjectCashFlowChart,
-                                                onTap: () => setState(() => _showProjectCashFlowChart = true),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: _buildReturnCard(
-                                                title: 'Equity Returns',
-                                                subtitle: _leveredLabel(),
-                                                irr: _formatPercent(finance.equityIrr),
-                                                payback: _formatYears(finance.equityPaybackYears),
-                                                accentColor: const Color(0xFF127A43),
-                                                backgroundColor: const Color(0xFFE8F7EF),
-                                                icon: Icons.trending_up_rounded,
-                                                onInfoTap: _showEquityLoanInfo,
-                                                isSelected: !_showProjectCashFlowChart,
-                                                onTap: () => setState(() => _showProjectCashFlowChart = false),
-                                              ),
-                                            ),
-                                          ],
+                                        return _buildReturnCard(
+                                          title: 'Project Returns',
+                                          subtitle: 'Unlevered (Cash Purchase)',
+                                          irr: _formatPercent(finance.projectIrr),
+                                          payback: _formatYears(finance.projectPaybackYears),
+                                          accentColor: const Color(0xFF1F3B70),
+                                          backgroundColor: const Color(0xFFEFF3FB),
+                                          icon: Icons.account_balance_wallet_outlined,
                                         );
                                       }
                                       return Column(
@@ -1091,21 +917,6 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                             accentColor: const Color(0xFF1F3B70),
                                             backgroundColor: const Color(0xFFEFF3FB),
                                             icon: Icons.account_balance_wallet_outlined,
-                                            isSelected: _showProjectCashFlowChart,
-                                            onTap: () => setState(() => _showProjectCashFlowChart = true),
-                                          ),
-                                          const SizedBox(height: 12),
-                                          _buildReturnCard(
-                                            title: 'Equity Returns',
-                                            subtitle: _leveredLabel(),
-                                            irr: _formatPercent(finance.equityIrr),
-                                            payback: _formatYears(finance.equityPaybackYears),
-                                            accentColor: const Color(0xFF127A43),
-                                            backgroundColor: const Color(0xFFE8F7EF),
-                                            icon: Icons.trending_up_rounded,
-                                            onInfoTap: _showEquityLoanInfo,
-                                            isSelected: !_showProjectCashFlowChart,
-                                            onTap: () => setState(() => _showProjectCashFlowChart = false),
                                           ),
                                         ],
                                       );
