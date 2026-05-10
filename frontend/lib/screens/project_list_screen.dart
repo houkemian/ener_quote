@@ -5,9 +5,9 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io' show Platform;
 
+import '../core/billing/revenuecat_purchase_helper.dart';
 import '../core/billing/revenuecat_service.dart';
 import '../core/network/api_client.dart';
-import '../theme/app_colors.dart';
 import '../widgets/pro_paywall_sheet.dart';
 import 'project_detail_screen.dart';
 import 'settings_screen.dart';
@@ -62,7 +62,17 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   Future<void> _createProjectDialog() async {
     final nameController = TextEditingController();
     final clientController = TextEditingController();
-    final locationController = TextEditingController();
+
+    final cities = await _api.getSupportedCities();
+    if (!mounted) return;
+
+    final localeCode = Localizations.localeOf(context).languageCode;
+    String cityDisplayName(dynamic city) {
+      final nameMap = (city['name'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+      return (nameMap[localeCode] ?? nameMap['en'] ?? city['id'] ?? '').toString();
+    }
+
+    String? selectedCityId;
 
     final created = await showDialog<bool>(
       context: context,
@@ -79,141 +89,167 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               constraints: const BoxConstraints(maxWidth: 560, maxHeight: 460),
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                child: StatefulBuilder(
+                  builder: (context, setDialogState) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
-                          radius: 16,
-                          backgroundColor: colorScheme.primary.withValues(alpha: 0.12),
-                          child: Icon(
-                            Icons.work_outline,
-                            size: 18,
-                            color: colorScheme.primary,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: colorScheme.primary.withValues(alpha: 0.12),
+                              child: Icon(
+                                Icons.work_outline,
+                                size: 18,
+                                color: colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            const Expanded(
+                              child: Text(
+                                'Create New Project',
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              visualDensity: VisualDensity.compact,
+                              tooltip: 'Close',
+                              onPressed: () => Navigator.pop(context, false),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Use projects to group quote scenarios, compare versions, and keep a clear history.',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.grey[700],
+                                height: 1.35,
+                              ),
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.42),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Project Information',
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              TextField(
+                                controller: nameController,
+                                textInputAction: TextInputAction.next,
+                                decoration: const InputDecoration(
+                                  labelText: 'Project Name *',
+                                  hintText: 'e.g. Texas Walmart Rooftop',
+                                  prefixIcon: Icon(Icons.folder_open_outlined),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              TextField(
+                                controller: clientController,
+                                textInputAction: TextInputAction.next,
+                                decoration: const InputDecoration(
+                                  labelText: 'Client Name',
+                                  hintText: 'Optional',
+                                  prefixIcon: Icon(Icons.business_outlined),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              DropdownButtonFormField<String>(
+                                value: selectedCityId,
+                                isExpanded: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'Location',
+                                  hintText: 'Optional',
+                                ),
+                                items: cities.map<DropdownMenuItem<String>>((city) {
+                                  return DropdownMenuItem<String>(
+                                    value: (city['id'] ?? '').toString(),
+                                    child: Text(
+                                      cityDisplayName(city),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: cities.isEmpty
+                                    ? null
+                                    : (v) => setDialogState(() => selectedCityId = v),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Text(
-                            'Create New Project',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                          ),
+                        const SizedBox(height: 14),
+                        Text(
+                          '* Required field',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Colors.grey[600],
+                              ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          visualDensity: VisualDensity.compact,
-                          tooltip: 'Close',
-                          onPressed: () => Navigator.pop(context, false),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Cancel'),
+                            ),
+                            const SizedBox(width: 8),
+                            FilledButton.icon(
+                              onPressed: () async {
+                                final projectName = nameController.text.trim();
+                                if (projectName.isEmpty) {
+                                  return;
+                                }
+                                String? locationArg;
+                                if (selectedCityId != null) {
+                                  for (final city in cities) {
+                                    if ((city['id'] ?? '').toString() == selectedCityId) {
+                                      locationArg = cityDisplayName(city);
+                                      break;
+                                    }
+                                  }
+                                }
+                                try {
+                                  await _api.createProject(
+                                    projectName: projectName,
+                                    clientName:
+                                        clientController.text.trim().isEmpty ? null : clientController.text.trim(),
+                                    location: locationArg,
+                                  );
+                                } on PaywallGateException {
+                                  if (!context.mounted) return;
+                                  Navigator.pop(context, false);
+                                  await _showCapacityWallPaywall(PaywallTriggerSource.projectLimit);
+                                  return;
+                                }
+                                if (!context.mounted) return;
+                                Navigator.pop(context, true);
+                              },
+                              icon: const Icon(Icons.add_circle_outline),
+                              label: const Text('Create Project'),
+                            ),
+                          ],
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Use projects to group quote scenarios, compare versions, and keep a clear history.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[700],
-                            height: 1.35,
-                          ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.42),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: colorScheme.outlineVariant.withValues(alpha: 0.6),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Project Information',
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: nameController,
-                            textInputAction: TextInputAction.next,
-                            decoration: const InputDecoration(
-                              labelText: 'Project Name *',
-                              hintText: 'e.g. Texas Walmart Rooftop',
-                              prefixIcon: Icon(Icons.folder_open_outlined),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          TextField(
-                            controller: clientController,
-                            textInputAction: TextInputAction.next,
-                            decoration: const InputDecoration(
-                              labelText: 'Client Name',
-                              hintText: 'Optional',
-                              prefixIcon: Icon(Icons.business_outlined),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          TextField(
-                            controller: locationController,
-                            textInputAction: TextInputAction.done,
-                            decoration: const InputDecoration(
-                              labelText: 'Location',
-                              hintText: 'City / State / Address',
-                              prefixIcon: Icon(Icons.location_on_outlined),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      '* Required field',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
-                          ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
-                        ),
-                        const SizedBox(width: 8),
-                        FilledButton.icon(
-                          onPressed: () async {
-                            final projectName = nameController.text.trim();
-                            if (projectName.isEmpty) {
-                              return;
-                            }
-                            try {
-                              await _api.createProject(
-                                projectName: projectName,
-                                clientName: clientController.text.trim().isEmpty ? null : clientController.text.trim(),
-                                location: locationController.text.trim().isEmpty ? null : locationController.text.trim(),
-                              );
-                            } on PaywallGateException catch (e) {
-                              if (!context.mounted) return;
-                              Navigator.pop(context, false);
-                              await _showCapacityWallPaywall(PaywallTriggerSource.projectLimit);
-                              return;
-                            }
-                            if (!context.mounted) return;
-                            Navigator.pop(context, true);
-                          },
-                          icon: const Icon(Icons.add_circle_outline),
-                          label: const Text('Create Project'),
-                        ),
-                      ],
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -224,7 +260,6 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
 
     nameController.dispose();
     clientController.dispose();
-    locationController.dispose();
 
     if (created == true) {
       await _loadProjects();
@@ -233,10 +268,6 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Visual hierarchy optimization:
-    // 1) Add page-level spacing for better breathing room.
-    // 2) Encapsulate each project row into a soft card.
-    // 3) Promote project name, demote metadata with muted subtitle color.
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -297,7 +328,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                     itemCount: _projects.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final p = _projects[index];
                       final metadata = [
@@ -386,7 +417,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         return;
       }
       final packageToBuy = selectedPackage ?? packages.first;
-      final result = await Purchases.purchasePackage(packageToBuy);
+      final result = await RevenueCatPurchaseHelper.purchasePackage(packageToBuy);
       final isPro = result.customerInfo.entitlements.all['pro']?.isActive == true;
       if (!isPro) return;
       final prefs = await SharedPreferences.getInstance();

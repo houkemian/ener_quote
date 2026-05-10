@@ -159,6 +159,7 @@
     "logoutMessage": "Are you sure you want to log out of the current account?",
     "cancel": "Cancel",
     "confirmLogout": "Logout",
+    "deleteAccountLink": "Delete account",
     "tierFree": "Current Plan: FREE Edition",
     "tierPro": "👑 PRO Subscription Member",
     "accountEmailLabel": "Account Email: ",

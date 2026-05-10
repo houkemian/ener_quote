@@ -406,6 +406,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmLogout => 'Logout';
 
   @override
+  String get deleteAccountLink => 'Delete account';
+
+  @override
   String get tierFree => 'Current Plan: FREE Edition';
 
   @override

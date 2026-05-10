@@ -806,6 +806,12 @@ abstract class AppLocalizations {
   /// **'退出'**
   String get confirmLogout;
 
+  /// No description provided for @deleteAccountLink.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除账号'**
+  String get deleteAccountLink;
+
   /// No description provided for @tierFree.
   ///
   /// In zh, this message translates to:

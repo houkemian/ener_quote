@@ -7,6 +7,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'dart:io' show Platform;
 import '../l10n/app_localizations.dart'; // 👈 新增这行
 import '../core/network/api_client.dart';
+import '../core/billing/revenuecat_purchase_helper.dart';
 import '../core/billing/revenuecat_service.dart';
 import '../theme/app_colors.dart';
 import '../utils/pdf_export.dart';
@@ -388,7 +389,7 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
       }
 
       final packageToBuy = selectedPackage ?? packages.first;
-      final purchaseResult = await Purchases.purchasePackage(packageToBuy);
+      final purchaseResult = await RevenueCatPurchaseHelper.purchasePackage(packageToBuy);
       final isProActive =
           purchaseResult.customerInfo.entitlements.all['pro']?.isActive == true;
       if (!isProActive) {

@@ -76,7 +76,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     DropdownButtonFormField<String>(
                       value: selectedCityId,
                       isExpanded: true,
-                      decoration: const InputDecoration(labelText: 'Location (from cities)'),
+                      decoration: const InputDecoration(labelText: 'Location'),
                       items: cities.map<DropdownMenuItem<String>>((city) {
                         return DropdownMenuItem<String>(
                           value: (city['id'] ?? '').toString(),

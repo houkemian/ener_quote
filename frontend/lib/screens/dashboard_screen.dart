@@ -7,6 +7,7 @@ import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:purchases_flutter/purchases_flutter.dart';
 import '../core/network/api_client.dart';
+import '../core/billing/revenuecat_purchase_helper.dart';
 import '../core/billing/revenuecat_service.dart';
 import '../core/auth/token_manager.dart';
 import 'package:dio/dio.dart';
@@ -1010,7 +1011,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
 
       final packageToBuy = selectedPackage ?? packages.first;
-      final purchaseResult = await Purchases.purchasePackage(packageToBuy);
+      final purchaseResult = await RevenueCatPurchaseHelper.purchasePackage(packageToBuy);
       final isProActive =
           purchaseResult.customerInfo.entitlements.all['pro']?.isActive == true;
       if (!isProActive) {

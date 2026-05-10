@@ -6,6 +6,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'dart:io' show Platform;
 import '../l10n/app_localizations.dart';
 import '../core/network/api_client.dart';
+import '../core/billing/revenuecat_purchase_helper.dart';
 import '../core/billing/revenuecat_service.dart';
 import '../core/auth/token_manager.dart';
 import 'package:image_picker/image_picker.dart';
@@ -13,7 +14,6 @@ import 'dart:convert'; // 用于 Base64 转换
 import '../theme/app_colors.dart';
 import '../widgets/pro_gold_badge.dart';
 import 'paddle_checkout_webview.dart';
-import 'billing_management_screen.dart';
 import 'login_screen.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -324,7 +324,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child: const CircularProgressIndicator(strokeWidth: 2)
+                            child: CircularProgressIndicator(strokeWidth: 2),
                         )
                             : Text(l10n.upgradeNow, style: const TextStyle(fontWeight: FontWeight.bold)),
                       ),
@@ -497,40 +497,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: _showDeleteAccountDialog,
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.border),
-                  foregroundColor: AppColors.onSurfaceVariant,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: const Text(
-                  'Delete Account',
-                ),
-              ),
               const SizedBox(height: 24),
               SafeArea(
                 top: false,
-                child: Center(
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(6),
-                    onLongPress: _copyVersionInfo,
-                    onDoubleTap: _copyVersionInfo,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                      child: Text(
-                        l10n.versionDisplay(_appVersion, _appBuildNumber),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.onSurfaceVariant,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Center(
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(6),
+                        onLongPress: _copyVersionInfo,
+                        onDoubleTap: _copyVersionInfo,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          child: Text(
+                            l10n.versionDisplay(_appVersion, _appBuildNumber),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 4),
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: _showDeleteAccountDialog,
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.onSurfaceVariant,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        icon: Icon(
+                          Icons.delete_outline,
+                          size: 18,
+                          color: AppColors.onSurfaceVariant.withValues(alpha: 0.85),
+                        ),
+                        label: Text(
+                          l10n.deleteAccountLink,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            decoration: TextDecoration.underline,
+                            decorationColor: AppColors.borderStrong,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 20),
@@ -589,7 +606,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         labelText: tooltipMessage == null || tooltipMessage.trim().isEmpty ? label : null,
         hintText: hintText,
         helperText: helperText,
-        hintStyle: TextStyle(color: AppColors.onSurfaceVariant.withOpacity(0.75)),
+        hintStyle: TextStyle(color: AppColors.onSurfaceVariant.withValues(alpha: 0.75)),
         prefixIcon: Icon(icon, color: AppColors.onSurfaceVariant, size: 20),
         suffixIcon: suffixIcon, // 🌟 挂载右侧的相册按钮
       ),
@@ -905,7 +922,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
     try {
       await RevenueCatService.ensureInitialized();
-      final purchaseResult = await Purchases.purchasePackage(package);
+      final purchaseResult = await RevenueCatPurchaseHelper.purchasePackage(package);
       final isProActive =
           purchaseResult.customerInfo.entitlements.all['pro']?.isActive == true;
       if (!isProActive) {

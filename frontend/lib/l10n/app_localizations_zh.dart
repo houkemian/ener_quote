@@ -388,6 +388,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get confirmLogout => '退出';
 
   @override
+  String get deleteAccountLink => '删除账号';
+
+  @override
   String get tierFree => '当前版本：基础免费版';
 
   @override

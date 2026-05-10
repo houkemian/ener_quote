@@ -8,6 +8,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/billing/revenuecat_purchase_helper.dart';
 import '../core/billing/revenuecat_service.dart';
 import '../core/network/api_client.dart';
 import '../l10n/app_localizations.dart';
@@ -30,6 +31,13 @@ class CalculationScreen extends StatefulWidget {
 class _CalculationScreenState extends State<CalculationScreen> {
   final ApiClient _api = ApiClient();
   final TextEditingController _versionController = TextEditingController();
+  late final TextEditingController _pvBaseCostController;
+  late final TextEditingController _essBaseCostController;
+  late final TextEditingController _marginController;
+  late final TextEditingController _peakPriceController;
+  late final TextEditingController _midPriceController;
+  late final TextEditingController _valleyPriceController;
+  late final TextEditingController _demandChargeController;
 
   double _pvCapacity = 60;
   double _batteryCapacity = 50;
@@ -55,10 +63,35 @@ class _CalculationScreenState extends State<CalculationScreen> {
   void initState() {
     super.initState();
     SystemChrome.setPreferredOrientations(const [DeviceOrientation.portraitUp]);
-    _loadUserTier();
+    _pvBaseCostController = TextEditingController(text: _pvBaseCost.toStringAsFixed(2));
+    _essBaseCostController = TextEditingController(text: _essBaseCost.toStringAsFixed(2));
+    _marginController = TextEditingController(text: _targetMargin.toStringAsFixed(2));
+    _peakPriceController = TextEditingController(text: _peakPrice.toStringAsFixed(3));
+    _midPriceController = TextEditingController(text: _midPrice.toStringAsFixed(3));
+    _valleyPriceController = TextEditingController(text: _valleyPrice.toStringAsFixed(3));
+    _demandChargeController = TextEditingController(text: _demandChargePerKw.toStringAsFixed(2));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _bootstrapInitialData();
+    });
+  }
+
+  /// Tier/prefs first, then restore saved calculation so async work does not race and overwrite fields.
+  Future<void> _bootstrapInitialData() async {
+    await _loadUserTier();
+    if (!mounted) return;
     if (widget.calculationId != null && widget.projectId != null) {
-      _restoreFromCalculation();
+      await _restoreFromCalculation();
     }
+  }
+
+  void _syncCostEditingControllersFromState() {
+    _pvBaseCostController.text = _pvBaseCost.toStringAsFixed(2);
+    _essBaseCostController.text = _essBaseCost.toStringAsFixed(2);
+    _marginController.text = _targetMargin.toStringAsFixed(2);
+    _peakPriceController.text = _peakPrice.toStringAsFixed(3);
+    _midPriceController.text = _midPrice.toStringAsFixed(3);
+    _valleyPriceController.text = _valleyPrice.toStringAsFixed(3);
+    _demandChargeController.text = _demandChargePerKw.toStringAsFixed(2);
   }
 
   Future<void> _loadUserTier() async {
@@ -71,6 +104,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
       _valleyPrice = prefs.getDouble('tariff_valley_price') ?? 0.12;
       _demandChargePerKw = prefs.getDouble('tariff_demand_charge_per_kw') ?? 10.0;
     });
+    _syncCostEditingControllersFromState();
   }
 
   Future<void> _restoreFromCalculation() async {
@@ -110,6 +144,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
         _demandChargePerKw = (tariff['demand_charge_per_kw'] as num?)?.toDouble() ?? _demandChargePerKw;
         _latestResult = currentCalc.results;
       });
+      _syncCostEditingControllersFromState();
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = 'Failed to restore calculation: $e');
@@ -225,7 +260,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
       }
 
       final packageToBuy = selectedPackage ?? packages.first;
-      final purchaseResult = await Purchases.purchasePackage(packageToBuy);
+      final purchaseResult = await RevenueCatPurchaseHelper.purchasePackage(packageToBuy);
       final isProActive = purchaseResult.customerInfo.entitlements.all['pro']?.isActive == true;
       if (!isProActive) {
         if (!mounted) return;
@@ -453,6 +488,13 @@ class _CalculationScreenState extends State<CalculationScreen> {
   @override
   void dispose() {
     _versionController.dispose();
+    _pvBaseCostController.dispose();
+    _essBaseCostController.dispose();
+    _marginController.dispose();
+    _peakPriceController.dispose();
+    _midPriceController.dispose();
+    _valleyPriceController.dispose();
+    _demandChargeController.dispose();
     super.dispose();
   }
 
@@ -780,7 +822,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   return SingleChildScrollView(
-                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
                     padding: const EdgeInsets.all(16),
                     child: ConstrainedBox(
                       constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
@@ -887,9 +929,8 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                     ],
                                   ),
                                   const SizedBox(height: 4),
-                                  TextFormField(
-                                    key: ValueKey('pv_base_${_pvBaseCost.toStringAsFixed(2)}'),
-                                    initialValue: _pvBaseCost.toStringAsFixed(2),
+                                  TextField(
+                                    controller: _pvBaseCostController,
                                     enabled: _isProUser && _isEditingVersionCosts,
                                     decoration: const InputDecoration(
                                       labelText: 'PV Base Cost (\$ / kW)',
@@ -904,9 +945,8 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                     },
                                   ),
                                   const SizedBox(height: 8),
-                                  TextFormField(
-                                    key: ValueKey('ess_base_${_essBaseCost.toStringAsFixed(2)}'),
-                                    initialValue: _essBaseCost.toStringAsFixed(2),
+                                  TextField(
+                                    controller: _essBaseCostController,
                                     enabled: _isProUser && _isEditingVersionCosts,
                                     decoration: const InputDecoration(
                                       labelText: 'ESS Base Cost (\$ / kWh)',
@@ -921,9 +961,8 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                     },
                                   ),
                                   const SizedBox(height: 8),
-                                  TextFormField(
-                                    key: ValueKey('margin_${_targetMargin.toStringAsFixed(2)}'),
-                                    initialValue: _targetMargin.toStringAsFixed(2),
+                                  TextField(
+                                    controller: _marginController,
                                     enabled: _isProUser && _isEditingVersionCosts,
                                     decoration: const InputDecoration(
                                       labelText: 'Target Margin (%)',
@@ -938,9 +977,8 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                     },
                                   ),
                                   const SizedBox(height: 8),
-                                  TextFormField(
-                                    key: ValueKey('peak_price_${_peakPrice.toStringAsFixed(3)}'),
-                                    initialValue: _peakPrice.toStringAsFixed(3),
+                                  TextField(
+                                    controller: _peakPriceController,
                                     enabled: _isProUser && _isEditingVersionCosts,
                                     readOnly: !_isProUser,
                                     decoration: const InputDecoration(
@@ -957,9 +995,8 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                     },
                                   ),
                                   const SizedBox(height: 8),
-                                  TextFormField(
-                                    key: ValueKey('mid_price_${_midPrice.toStringAsFixed(3)}'),
-                                    initialValue: _midPrice.toStringAsFixed(3),
+                                  TextField(
+                                    controller: _midPriceController,
                                     enabled: _isProUser && _isEditingVersionCosts,
                                     readOnly: !_isProUser,
                                     decoration: const InputDecoration(
@@ -976,9 +1013,8 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                     },
                                   ),
                                   const SizedBox(height: 8),
-                                  TextFormField(
-                                    key: ValueKey('valley_price_${_valleyPrice.toStringAsFixed(3)}'),
-                                    initialValue: _valleyPrice.toStringAsFixed(3),
+                                  TextField(
+                                    controller: _valleyPriceController,
                                     enabled: _isProUser && _isEditingVersionCosts,
                                     readOnly: !_isProUser,
                                     decoration: const InputDecoration(
@@ -995,9 +1031,8 @@ class _CalculationScreenState extends State<CalculationScreen> {
                                     },
                                   ),
                                   const SizedBox(height: 8),
-                                  TextFormField(
-                                    key: ValueKey('demand_charge_${_demandChargePerKw.toStringAsFixed(2)}'),
-                                    initialValue: _demandChargePerKw.toStringAsFixed(2),
+                                  TextField(
+                                    controller: _demandChargeController,
                                     enabled: _isProUser && _isEditingVersionCosts,
                                     readOnly: !_isProUser,
                                     decoration: const InputDecoration(

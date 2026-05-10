@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart'; // 🌟 引入 UI 库
@@ -8,6 +10,11 @@ import '../../l10n/app_localizations.dart'; // 👈 新增这行
 import '../auth/token_manager.dart';
 
 const String _kApiBaseUrl = 'https://api.dothings.one/api/v1';
+
+/// 城市列表本地缓存（与语言无关的原始 JSON，展示名由各界面按 locale 解析）。
+const String _kCitiesCacheJsonKey = 'supported_cities_json_v1';
+const String _kCitiesCacheAtMsKey = 'supported_cities_cached_at_ms_v1';
+const Duration _kCitiesCacheTtl = Duration(days: 7);
 
 class ProjectItem {
   final String id;
@@ -305,14 +312,44 @@ class ApiClient {
     return "FREE";
   }
 
-  // 🌟 动态拉取云端城市列表
+  /// 支持的城市列表：优先读本地缓存，7 天内不重复请求；过期或缓存无效时再拉取并写回。网络失败时回退到已缓存数据。
   Future<List<dynamic>> getSupportedCities() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedJson = prefs.getString(_kCitiesCacheJsonKey);
+    final cachedAtMs = prefs.getInt(_kCitiesCacheAtMsKey);
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    List<dynamic>? decodeCached() {
+      if (cachedJson == null || cachedJson.isEmpty) return null;
+      try {
+        final decoded = jsonDecode(cachedJson);
+        if (decoded is List && decoded.isNotEmpty) return decoded;
+      } catch (_) {}
+      return null;
+    }
+
+    final ttlMs = _kCitiesCacheTtl.inMilliseconds;
+    final cacheFresh =
+        cachedAtMs != null && (now - cachedAtMs) < ttlMs;
+    if (cacheFresh) {
+      final cached = decodeCached();
+      if (cached != null) return cached;
+    }
+
     try {
       final response = await dio.get('/locations/cities');
-      return response.data as List<dynamic>;
+      final data = response.data as List<dynamic>;
+      if (data.isNotEmpty) {
+        await prefs.setString(_kCitiesCacheJsonKey, jsonEncode(data));
+        await prefs.setInt(_kCitiesCacheAtMsKey, now);
+      }
+      if (data.isNotEmpty) return data;
+      final stale = decodeCached();
+      return stale ?? data;
     } catch (e) {
       _debugLog("Failed to fetch city list.");
-      return [];
+      final stale = decodeCached();
+      return stale ?? <dynamic>[];
     }
   }
 
